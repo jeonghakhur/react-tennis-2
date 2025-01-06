@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Noto_Sans } from 'next/font/google';
 import { Theme, ThemePanel } from '@radix-ui/themes';
+import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import '@radix-ui/themes/styles.css';
 
@@ -25,6 +26,7 @@ export default function RootLayout({
         <Theme accentColor="crimson" grayColor="sand" radius="large" scaling="95%">
           {children}
           {/* <ThemePanel /> */}
+          <Toaster />
         </Theme>
       </body>
     </html>
