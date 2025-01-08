@@ -70,3 +70,10 @@ body {
     @apply bg-background text-foreground;
   }
 }
+/* 
+[data-radix-popper-content-wrapper] {
+  width: 100%;
+  padding-left: 32px;
+  padding-right: 32px;
+} */
+

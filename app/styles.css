@@ -127,3 +127,8 @@ button {
 .PopoverArrow {
   fill: white;
 }
+
+[data-radix-popper-content-wrapper] {
+  width: 100%;
+}
+
