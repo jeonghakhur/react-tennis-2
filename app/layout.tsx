@@ -23,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={notoSans.className}>
-        <Theme accentColor="crimson" grayColor="sand" radius="large" scaling="95%">
+        <Theme accentColor="crimson" grayColor="olive" radius="large" scaling="100%">
           {children}
           {/* <ThemePanel /> */}
           <Toaster />

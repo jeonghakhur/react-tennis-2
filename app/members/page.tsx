@@ -33,6 +33,10 @@ const MyForm = () => {
   });
 
   const handleAddAttendee = () => {
+    if (newAttendee.name === '') {
+      console.log('not name');
+      return;
+    }
     append(newAttendee);
 
     setNewAttendee({

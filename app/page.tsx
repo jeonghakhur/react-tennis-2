@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { CalendarIcon, Check, ChevronsUpDown } from 'lucide-react';
-import { useForm, ControllerRenderProps } from 'react-hook-form';
+import { useForm, ControllerRenderProps, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 
 import { cn } from '@/lib/utils';
@@ -12,45 +12,46 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 const memberList = [
-  { value: '허정학', label: '허정학' },
-  { value: '윤슬', label: '윤슬' },
-  { value: '이금순', label: '이금순' },
-  { value: '김성재', label: '김성재' },
-  { value: '김은아', label: '김은아' },
-  { value: '김진환', label: '김진환' },
-  { value: '목진성', label: '목진성' },
-  { value: '박정선', label: '박정선' },
-  { value: '박정필', label: '박정필' },
-  { value: '박현천', label: '박현천' },
-  { value: '이범영', label: '이범영' },
-  { value: '송호석', label: '송호석' },
-  { value: '양진용', label: '양진용' },
-  { value: '이은하', label: '이은하' },
-  { value: '이덕희', label: '이덕희' },
-  { value: '이원태', label: '이원태' },
-  { value: '이태호', label: '이태호' },
-  { value: '이현우', label: '이현우' },
-  { value: '이현철', label: '이현철' },
-  { value: '장영숙', label: '장영숙' },
-  { value: '장진석', label: '장진석' },
-  { value: '전소빈', label: '전소빈' },
-  { value: '조준형', label: '조준형' },
-  { value: '하지원', label: '하지원' },
-  { value: '한양연', label: '한양연' },
-  { value: '정현수', label: '정현수' },
-  { value: '홍성애', label: '홍성애' },
-  { value: '이명진', label: '이명진' },
-  { value: '나리메', label: '나리메' },
-  { value: '손상미', label: '손상미' },
+  { name: '직접입력', gender: '' },
+  { name: '김성재', gender: '남성' },
+  { name: '김은아', gender: '여성' },
+  { name: '김진환', gender: '남성' },
+  { name: '나리메', gender: '여성' },
+  { name: '목진성', gender: '남성' },
+  { name: '박정선', gender: '여성' },
+  { name: '박정필', gender: '남성' },
+  { name: '박현천', gender: '남성' },
+  { name: '손상미', gender: '여성' },
+  { name: '송호석', gender: '남성' },
+  { name: '양진용', gender: '남성' },
+  { name: '윤슬', gender: '여성' },
+  { name: '이금순', gender: '여성' },
+  { name: '이덕희', gender: '남성' },
+  { name: '이명진', gender: '남성' },
+  { name: '이범영', gender: '남성' },
+  { name: '이원태', gender: '남성' },
+  { name: '이은하', gender: '여성' },
+  { name: '이태호', gender: '남성' },
+  { name: '이현우', gender: '남성' },
+  { name: '이현철', gender: '남성' },
+  { name: '장영숙', gender: '여성' },
+  { name: '장진석', gender: '남성' },
+  { name: '전소빈', gender: '여성' },
+  { name: '정현수', gender: '여성' },
+  { name: '조준형', gender: '남성' },
+  { name: '하지원', gender: '여성' },
+  { name: '한양연', gender: '여성' },
+  { name: '허정학', gender: '남성' },
+  { name: '홍성애', gender: '여성' },
 ];
 
-memberList.sort((a, b) => a.label.localeCompare(b.label));
+// memberList.sort((a, b) => a.name.localeCompare(b.name));
 
 const FormSchema = z.object({
   date: z.date({
@@ -73,26 +74,71 @@ const FormSchema = z.object({
       required_error: '코트 번호를 입력해주세요.',
     }),
   ),
+  attendees: z.array(
+    z.object({
+      name: z.string(),
+      gender: z.string(),
+      startTime: z.string(),
+      endTime: z.string(),
+    }),
+  ),
 });
 
 type OnSelectHandler = (select: Date | undefined, field: ControllerRenderProps<z.infer<typeof FormSchema>>) => void;
 
 export default function CalendarForm() {
   const [popoverOpen, setpopoverOpen] = useState(false);
-  const [memberInputs, setMemberInputs] = useState<string[]>([]);
   const [popoverMembersOpen, setPopoverMembersOpen] = useState(false);
   const [membersValue, setMembersValue] = useState('');
+  const [newAttendee, setNewAttendee] = useState({
+    name: '',
+    gender: '',
+    startTime: '',
+    endTime: '',
+  });
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       startTime: '19',
       endTime: '22',
+      attendees: [],
     },
   });
 
   const startTime = parseInt(form.watch('startTime'), 10);
   const endTime = parseInt(form.watch('endTime'), 10);
+
+  const [attendanceTime, setAttendanceTime] = useState({
+    startHour: startTime.toString(),
+    startMinute: '00',
+    endHour: endTime.toString(),
+    endMinute: '00',
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'attendees',
+  });
+
+  const handleAddMemberAttendee = (name: string) => {
+    const member = memberList.find((member) => member.name === name);
+
+    if (member) {
+      const alreadyExists = fields.some((attendee) => attendee.name === name);
+
+      if (alreadyExists) {
+        alert('이미 추가된 참석자입니다.');
+        return; // 중복인 경우 함수 종료
+      }
+
+      append({
+        ...member,
+        startTime: '19',
+        endTime: '22',
+      });
+    }
+  };
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
     console.log(JSON.stringify(data, null, 2));
@@ -127,16 +173,23 @@ export default function CalendarForm() {
     return newValue;
   }
 
-  const handleMemberChange = (member: string) => {
-    console.log('memberInputs', memberInputs);
-    if (!memberInputs.includes(member)) {
-      setMemberInputs((pre) => [...pre, member]);
-    }
-  };
+  useEffect(() => {
+    setAttendanceTime((prev) => ({
+      ...prev,
+      startHour: startTime.toString(),
+    }));
+  }, [startTime]);
+
+  useEffect(() => {
+    setAttendanceTime((prev) => ({
+      ...prev,
+      endHour: endTime.toString(),
+    }));
+  }, [endTime]);
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-5">
         <FormField
           control={form.control}
           name="date"
@@ -185,7 +238,7 @@ export default function CalendarForm() {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent align="start">
+                <SelectContent align="start" className="h-[200px]">
                   {Array.from({ length: 24 - 6 + 1 }, (_, i) => (
                     <SelectItem value={`${6 + i}`} key={`startTime_${i}`}>
                       {timeFormat(6 + i)}
@@ -308,7 +361,7 @@ export default function CalendarForm() {
           )}
         /> */}
         <FormItem className="flex flex-col">
-          <FormLabel>참석자 선택</FormLabel>
+          <FormLabel>참석자 및 참석 시간 선택</FormLabel>
           <FormControl>
             <div className="flex">
               <Popover open={popoverMembersOpen} onOpenChange={setPopoverMembersOpen}>
@@ -320,7 +373,7 @@ export default function CalendarForm() {
                     className="flex-1 mr-2 justify-between"
                   >
                     {membersValue
-                      ? memberList.find((memberList) => memberList.value === membersValue)?.label
+                      ? memberList.find((member) => member.name === membersValue)?.name
                       : '참석자를 선택해주세요'}
                     <ChevronsUpDown className="opacity-50" />
                   </Button>
@@ -334,16 +387,16 @@ export default function CalendarForm() {
                       <CommandGroup>
                         {memberList.map((member) => (
                           <CommandItem
-                            key={member.value}
-                            value={member.value}
+                            key={member.name}
+                            value={member.name}
                             onSelect={(currentValue) => {
                               setMembersValue(currentValue);
                               setPopoverMembersOpen(false);
                             }}
                           >
-                            {member.label}
+                            {member.name}
                             <Check
-                              className={cn('ml-auto', membersValue === member.value ? 'opacity-100' : 'opacity-0')}
+                              className={cn('ml-auto', membersValue === member.name ? 'opacity-100' : 'opacity-0')}
                             />
                           </CommandItem>
                         ))}
@@ -352,29 +405,110 @@ export default function CalendarForm() {
                   </Command>
                 </PopoverContent>
               </Popover>
-              <Button type="button" variant="outline" onClick={() => handleMemberChange(membersValue)}>
-                추가
-              </Button>
             </div>
           </FormControl>
         </FormItem>
+        <FormItem>
+          <div className="flex gap-x-2 items-center">
+            <Select
+              value={attendanceTime.startHour}
+              onValueChange={(value) => {
+                setAttendanceTime((pre) => ({ ...pre, startHour: value }));
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: endTime - startTime + 1 }, (_, idx) => (
+                  <SelectItem value={`${startTime + idx}`} key={idx}>
+                    {startTime + idx}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              defaultValue="00"
+              onValueChange={(value) => {
+                setAttendanceTime((pre) => ({ ...pre, startMinute: value }));
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="00">00</SelectItem>
+                <SelectItem value="30">30</SelectItem>
+              </SelectContent>
+            </Select>
+            <span>~</span>
+            <Select
+              value={attendanceTime.endHour}
+              onValueChange={(value) => {
+                setAttendanceTime((pre) => ({ ...pre, endHour: value }));
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: endTime - startTime + 1 }, (_, idx) => (
+                  <SelectItem value={`${startTime + idx}`} key={idx}>
+                    {startTime + idx}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              defaultValue="00"
+              onValueChange={(value) => {
+                setAttendanceTime((pre) => ({ ...pre, endMinute: value }));
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="00">00</SelectItem>
+                <SelectItem value="30">30</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </FormItem>
 
-        <table className="table">
+        <Button
+          className="w-full bg-gray-500"
+          type="button"
+          // variant="outline"
+          onClick={() => handleAddMemberAttendee(membersValue)}
+        >
+          참석자 추가
+        </Button>
+
+        <table className="table w-full text-center text-xs">
           <thead>
             <tr>
               <th>번호</th>
               <th>참석자명</th>
               <th>성별</th>
               <th>참석시간</th>
+              <th>삭제</th>
             </tr>
           </thead>
           <tbody>
-            {memberInputs.map((value, idx) => (
+            {fields.map((field, idx) => (
               <tr key={idx}>
                 <td>{idx + 1}</td>
-                <td>{value}</td>
-                <td>-</td>
-                <td>-</td>
+                <td>{field.name}</td>
+                <td>{field.gender}</td>
+                <td>
+                  {field.startTime}~{field.endTime}
+                </td>
+                <td>
+                  <Button type="button" size="xs" variant="destructive" onClick={() => remove(idx)}>
+                    삭제
+                  </Button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -418,54 +552,6 @@ export default function CalendarForm() {
               <SelectItem value="2">1.5</SelectItem>
             </SelectContent>
           </Select>
-        </FormItem>
-        <FormItem>
-          <FormLabel>참석자 참석시간</FormLabel>
-          <div className="flex gap-x-2 items-center">
-            <Select defaultValue={`${startTime}`}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: endTime - startTime + 1 }, (_, idx) => (
-                  <SelectItem value={`${startTime + idx}`} key={idx}>
-                    {startTime + idx}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select defaultValue="00">
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="00">00</SelectItem>
-                <SelectItem value="30">30</SelectItem>
-              </SelectContent>
-            </Select>
-            <span>~</span>
-            <Select defaultValue={`${startTime}`}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: endTime - startTime + 1 }, (_, idx) => (
-                  <SelectItem value={`${startTime + idx}`} key={idx}>
-                    {startTime + idx}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select defaultValue="00">
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="00">00</SelectItem>
-                <SelectItem value="30">30</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </FormItem>
 
         <Button type="submit" className="w-full bg-blue-600">
