@@ -125,8 +125,8 @@ export default function CalendarForm() {
     name: 'attendees',
   });
 
-  const handleAddMemberAttendee = (name: string) => {
-    if (name === '직접입력') {
+  const handleAddMemberAttendee = () => {
+    if (membersValue === '직접입력') {
       if (guestName === '') {
         alert('참석자 이름을 입력해주세요.');
         return;
@@ -165,10 +165,10 @@ export default function CalendarForm() {
       });
       return;
     }
-    const member = memberList.find((member) => member.name === name);
+    const member = memberList.find((member) => member.name === membersValue);
 
     if (member) {
-      const alreadyExists = fields.some((attendee) => attendee.name === name);
+      const alreadyExists = fields.some((attendee) => attendee.name === member.name);
 
       if (alreadyExists) {
         alert('이미 추가된 참석자입니다.');
@@ -181,6 +181,10 @@ export default function CalendarForm() {
         endTime: `${attendanceTime.endHour}:${attendanceTime.endMinute}`,
       });
     }
+  };
+
+  const handleAddGuestAttendee = () => {
+    console.log('guest');
   };
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
@@ -572,9 +576,9 @@ export default function CalendarForm() {
           // variant="outline"
           onClick={() => {
             if (guestField) {
-              alert(guestName);
+              handleAddGuestAttendee();
             } else {
-              handleAddMemberAttendee(membersValue);
+              handleAddMemberAttendee();
             }
           }}
         >
