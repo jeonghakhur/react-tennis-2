@@ -90,12 +90,16 @@ export default function CalendarForm() {
   const [popoverOpen, setpopoverOpen] = useState(false);
   const [popoverMembersOpen, setPopoverMembersOpen] = useState(false);
   const [membersValue, setMembersValue] = useState('');
-  const [newAttendee, setNewAttendee] = useState({
-    name: '',
-    gender: '',
-    startTime: '',
-    endTime: '',
-  });
+  // const [newAttendee, setNewAttendee] = useState({
+  //   name: '',
+  //   gender: '',
+  //   startTime: '',
+  //   endTime: '',
+  // });
+  const [guestField, setGuestField] = useState<boolean>(false);
+  const [guestName, setGuestName] = useState<string>('');
+  const [gender, setGender] = useState<string>('');
+  const [old, setOld] = useState<string>('');
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -122,6 +126,45 @@ export default function CalendarForm() {
   });
 
   const handleAddMemberAttendee = (name: string) => {
+    if (name === '직접입력') {
+      if (guestName === '') {
+        alert('참석자 이름을 입력해주세요.');
+        return;
+      }
+      if (gender === '') {
+        alert('참석자 성별을 선택해주세요');
+        return;
+      }
+      if (old === '') {
+        alert('참석자 구력을 선택해주세요');
+        return;
+      }
+
+      const alreadyExists = fields.some((attendee) => attendee.name === guestName);
+
+      if (alreadyExists) {
+        alert('이미 추가된 참석자입니다.');
+        return; // 중복인 경우 함수 종료
+      }
+
+      append({
+        name: guestName,
+        gender,
+        startTime: `${attendanceTime.startHour}:${attendanceTime.startMinute}`,
+        endTime: `${attendanceTime.endHour}:${attendanceTime.endMinute}`,
+      });
+
+      setGuestName('');
+      setGender('');
+      setOld('');
+      setAttendanceTime({
+        startHour: startTime.toString(),
+        startMinute: '00',
+        endHour: endTime.toString(),
+        endMinute: '00',
+      });
+      return;
+    }
     const member = memberList.find((member) => member.name === name);
 
     if (member) {
@@ -134,8 +177,8 @@ export default function CalendarForm() {
 
       append({
         ...member,
-        startTime: '19',
-        endTime: '22',
+        startTime: `${attendanceTime.startHour}:${attendanceTime.startMinute}`,
+        endTime: `${attendanceTime.endHour}:${attendanceTime.endMinute}`,
       });
     }
   };
@@ -163,6 +206,16 @@ export default function CalendarForm() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const updatedCourtNumbers = Array.from({ length: countNumber }, (_, i) => `${i + 1}`);
     form.setValue('courtNumbers', updatedCourtNumbers);
+  };
+
+  const handleMemberChange = (member: string) => {
+    if (member === '직접입력') {
+      setGuestField(true);
+    } else {
+      setGuestField(false);
+    }
+    setMembersValue(member);
+    setPopoverMembersOpen(false);
   };
 
   function timeFormat(value: number): string {
@@ -390,8 +443,7 @@ export default function CalendarForm() {
                             key={member.name}
                             value={member.name}
                             onSelect={(currentValue) => {
-                              setMembersValue(currentValue);
-                              setPopoverMembersOpen(false);
+                              handleMemberChange(currentValue);
                             }}
                           >
                             {member.name}
@@ -408,6 +460,44 @@ export default function CalendarForm() {
             </div>
           </FormControl>
         </FormItem>
+        {guestField && (
+          <FormItem>
+            <div className="flex gap-x-2">
+              <Input
+                type="text"
+                value={guestName}
+                onChange={(e) => {
+                  setGuestName(e.target.value);
+                }}
+                placeholder="참석자 이름을 입력해주세요."
+                className="flex-1 text-sm"
+              />
+              <Select value={gender} onValueChange={setGender}>
+                <SelectTrigger className="basis-[70px]">
+                  <SelectValue placeholder="성별" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="남성">남성</SelectItem>
+                  <SelectItem value="여성">여성</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={old} onValueChange={setOld}>
+                <SelectTrigger className="basis-[90px]">
+                  <SelectValue placeholder="구력" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1년</SelectItem>
+                  <SelectItem value="2">2년</SelectItem>
+                  <SelectItem value="3">3년</SelectItem>
+                  <SelectItem value="4">4년</SelectItem>
+                  <SelectItem value="5">5년</SelectItem>
+                  <SelectItem value="6">5이상</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </FormItem>
+        )}
+
         <FormItem>
           <div className="flex gap-x-2 items-center">
             <Select
@@ -428,7 +518,7 @@ export default function CalendarForm() {
               </SelectContent>
             </Select>
             <Select
-              defaultValue="00"
+              value={attendanceTime.startMinute}
               onValueChange={(value) => {
                 setAttendanceTime((pre) => ({ ...pre, startMinute: value }));
               }}
@@ -460,7 +550,7 @@ export default function CalendarForm() {
               </SelectContent>
             </Select>
             <Select
-              defaultValue="00"
+              value={attendanceTime.endMinute}
               onValueChange={(value) => {
                 setAttendanceTime((pre) => ({ ...pre, endMinute: value }));
               }}
@@ -480,79 +570,46 @@ export default function CalendarForm() {
           className="w-full bg-gray-500"
           type="button"
           // variant="outline"
-          onClick={() => handleAddMemberAttendee(membersValue)}
+          onClick={() => {
+            if (guestField) {
+              alert(guestName);
+            } else {
+              handleAddMemberAttendee(membersValue);
+            }
+          }}
         >
           참석자 추가
         </Button>
-
-        <table className="table w-full text-center text-xs">
-          <thead>
-            <tr>
-              <th>번호</th>
-              <th>참석자명</th>
-              <th>성별</th>
-              <th>참석시간</th>
-              <th>삭제</th>
-            </tr>
-          </thead>
-          <tbody>
-            {fields.map((field, idx) => (
-              <tr key={idx}>
-                <td>{idx + 1}</td>
-                <td>{field.name}</td>
-                <td>{field.gender}</td>
-                <td>
-                  {field.startTime}~{field.endTime}
-                </td>
-                <td>
-                  <Button type="button" size="xs" variant="destructive" onClick={() => remove(idx)}>
-                    삭제
-                  </Button>
-                </td>
+        {fields.length > 0 && (
+          <table className="table w-full text-center text-xs">
+            <thead>
+              <tr>
+                <th>번호</th>
+                <th>참석자명</th>
+                <th>성별</th>
+                <th>참석시간</th>
+                <th>삭제</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <FormItem>
-          <FormLabel>참석자 집접 입력</FormLabel>
-          <div className="flex gap-x-2">
-            <Input type="text" placeholder="참석자 이름을 입력해주세요." className="flex-1 text-sm" />
-          </div>
-        </FormItem>
-
-        <FormItem>
-          <FormLabel>성별 선택</FormLabel>
-          <Select>
-            <SelectTrigger className="basis-[70px]">
-              <SelectValue placeholder="성별" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="M">남성</SelectItem>
-              <SelectItem value="F">여성</SelectItem>
-            </SelectContent>
-          </Select>
-          <FormLabel>구력 선택</FormLabel>
-          <Select>
-            <SelectTrigger className="basis-[70px]">
-              <SelectValue placeholder="구력" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">1년</SelectItem>
-              <SelectItem value="2">2년</SelectItem>
-            </SelectContent>
-          </Select>
-          <FormLabel>NTRP 선택</FormLabel>
-          <Select>
-            <SelectTrigger className="basis-[70px]">
-              <SelectValue placeholder="NTRP" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">1.0</SelectItem>
-              <SelectItem value="2">1.5</SelectItem>
-            </SelectContent>
-          </Select>
-        </FormItem>
+            </thead>
+            <tbody>
+              {fields.map((field, idx) => (
+                <tr key={idx}>
+                  <td>{idx + 1}</td>
+                  <td>{field.name}</td>
+                  <td>{field.gender}</td>
+                  <td>
+                    {field.startTime}~{field.endTime}
+                  </td>
+                  <td>
+                    <Button type="button" size="xs" variant="destructive" onClick={() => remove(idx)}>
+                      삭제
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
 
         <Button type="submit" className="w-full bg-blue-600">
           일정 등록
