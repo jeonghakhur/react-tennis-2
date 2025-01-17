@@ -3,6 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ChevronsUpDown } from 'lucide-react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 interface Attendee {
   name: string;
@@ -30,24 +33,18 @@ const data = {
   endTime: '22',
   courtName: '망원한강공원',
   courtCount: '3',
-  courtNumbers: ['1', '2', '3'],
+  courtNumbers: ['1', '2'],
   attendees: [
-    { name: '김성재', gender: '남성', startTime: '19:30', endTime: '21:00' },
-    { name: '김은아', gender: '여성', startTime: '19:30', endTime: '22:00' },
-    { name: '김진환', gender: '남성', startTime: '19:30', endTime: '21:30' },
-    { name: '나리메', gender: '여성', startTime: '19:30', endTime: '22:00' },
-    { name: '목진성', gender: '남성', startTime: '19:30', endTime: '22:00' },
-    { name: '박정선', gender: '여성', startTime: '19:30', endTime: '22:00' },
-    { name: '박현천', gender: '남성', startTime: '19:00', endTime: '22:00' },
-    { name: '손상미', gender: '여성', startTime: '19:00', endTime: '22:00' },
-    { name: '송호석', gender: '남성', startTime: '19:00', endTime: '22:00' },
-    { name: '양진용', gender: '남성', startTime: '19:00', endTime: '22:00' },
+    { name: '이현우', gender: '남성', startTime: '19:30', endTime: '22:00' },
+    { name: '장진석', gender: '남성', startTime: '19:30', endTime: '22:00' },
+    { name: '이현철', gender: '남성', startTime: '19:00', endTime: '22:30' },
+    { name: '하지원', gender: '여성', startTime: '19:30', endTime: '22:00' },
+    { name: '전소빈', gender: '여성', startTime: '19:00', endTime: '22:00' },
     { name: '윤슬', gender: '여성', startTime: '19:00', endTime: '22:00' },
-    { name: '이금순', gender: '여성', startTime: '19:00', endTime: '22:00' },
-    { name: '이덕희', gender: '남성', startTime: '19:00', endTime: '22:00' },
-    { name: '이명진', gender: '남성', startTime: '19:00', endTime: '22:00' },
-    { name: '이범영', gender: '남성', startTime: '19:00', endTime: '22:00' },
-    { name: '이원태', gender: '남성', startTime: '19:00', endTime: '22:00' },
+    { name: '신광호', gender: '남성', startTime: '19:00', endTime: '21:30' },
+    { name: '진형록', gender: '남성', startTime: '19:30', endTime: '22:00' },
+    { name: '김유진', gender: '여성', startTime: '19:00', endTime: '22:00' },
+    { name: '윤문환', gender: '남성', startTime: '20:00', endTime: '22:00' },
   ],
 };
 
@@ -55,7 +52,8 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
   const [matches, setMatches] = useState<Match[]>([]);
   const [idleSummary, setIdleSummary] = useState<Record<string, string[]>>({});
   const [gamesPlayed, setGamesPlayed] = useState<Record<string, number>>({});
-  const womenFirst = false;
+  const [activePopoverId, setActivePopoverId] = useState<string | null>(null);
+  const womenFirst = true;
 
   const generateSchedule = useCallback(() => {
     const timeSlots: string[] = [];
@@ -87,7 +85,10 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
       for (let court = 1; court <= courts; court++) {
         if (womenFirst && availableWomen.length >= 4) {
           // 여복 게임 생성
-          const womenPlayers = availableWomen.slice(0, 4);
+          const womenPlayers = availableWomen
+            .sort((a, b) => gamesCount[a.name] - gamesCount[b.name])
+            .slice(0, 4)
+            .sort(() => Math.random() - 0.5);
           womenPlayers.forEach((player) => {
             gamesCount[player.name] += 1;
             playing.push(player);
@@ -135,13 +136,85 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
     generateSchedule();
   }, [generateSchedule]);
 
-  const atGames = (time: string) => {
-    return matches.filter((match) => match.time === time).length;
+  const handlePlayersChange = (player: string, matchIndex: number, playerIndex: number) => {
+    const updateMatches = [...matches];
+    const prevName = updateMatches[matchIndex].players[playerIndex];
+    const prevIndex = updateMatches[matchIndex].players.findIndex((item) => item === player);
+
+    // 교체 작업
+    updateMatches[matchIndex].players[playerIndex] = player;
+    if (prevIndex !== -1) {
+      updateMatches[matchIndex].players[prevIndex] = prevName;
+    }
+
+    // 대기자 업데이트
+    const matchTime = updateMatches[matchIndex].time;
+    const updateIdleSummary = { ...idleSummary };
+
+    const idleIndex = updateIdleSummary[matchTime]?.findIndex((item) => item === player);
+    if (idleIndex !== -1) {
+      updateIdleSummary[matchTime] = [
+        ...updateIdleSummary[matchTime].slice(0, idleIndex),
+        prevName,
+        ...updateIdleSummary[matchTime].slice(idleIndex + 1),
+      ];
+    }
+
+    setMatches(updateMatches);
+    setIdleSummary(updateIdleSummary);
+    setActivePopoverId(null);
   };
 
-  const atIdlePlayers = (time: string) => {
-    // return idleSummary.filter((idle: any) => idle.time === time);
-    return time;
+  const attendessAtTime = (time: string, name: string) => {
+    const attendessPlayers = matches
+      .filter((match) => match.time === time)
+      .flatMap((match) => match.players)
+      .filter((player) => player !== name);
+    const idleplayers = idleSummary[time];
+    return [...attendessPlayers, ...idleplayers];
+  };
+
+  type AttendeePopoverProp = {
+    matchIndex: number;
+    match: Match;
+    playerIndex: number;
+  };
+
+  const AttendeePopover: React.FC<AttendeePopoverProp> = ({ matchIndex, match, playerIndex }) => {
+    return (
+      <Popover
+        open={activePopoverId === `popover${matchIndex}${playerIndex}`}
+        onOpenChange={(isOpen) => setActivePopoverId(isOpen ? `popover${matchIndex}${playerIndex}` : null)}
+      >
+        <PopoverTrigger asChild>
+          <Button variant="outline" role="combobox" className="my-1">
+            {match.players[playerIndex]}
+            <ChevronsUpDown className="opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="h-[300px]">
+          <Command>
+            <CommandInput placeholder="Search member" />
+            <CommandList>
+              <CommandEmpty>No member found.</CommandEmpty>
+              <CommandGroup>
+                {attendessAtTime(match.time, match.players[playerIndex]).map((player, idx) => (
+                  <CommandItem
+                    key={idx}
+                    value={player}
+                    onSelect={(currentValue) => {
+                      handlePlayersChange(currentValue, matchIndex, playerIndex);
+                    }}
+                  >
+                    {player}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    );
   };
 
   return (
@@ -171,12 +244,22 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
                 {isFirstMatch && <td rowSpan={rowspan}>{match.time}</td>}
                 <td>{match.court}</td>
                 <td>
-                  <Input type="text" value={match.players[0]} className="w-full " />
-                  <Input type="text" value={match.players[1]} className="w-full" />
+                  <AttendeePopover matchIndex={index} match={match} playerIndex={0} />
+                  <AttendeePopover matchIndex={index} match={match} playerIndex={1} />
                 </td>
                 <td>
-                  <Input type="text" value={match.players[2]} className="w-full" />
-                  <Input type="text" value={match.players[3]} className="w-full" />
+                  <Input
+                    type="text"
+                    value={match.players[2]}
+                    onChange={(e) => handlePlayersChange(e.target.value, index, 2)}
+                    className="w-full"
+                  />
+                  <Input
+                    type="text"
+                    value={match.players[3]}
+                    onChange={(e) => handlePlayersChange(e.target.value, index, 3)}
+                    className="w-full"
+                  />
                 </td>
                 {isFirstMatch && (
                   <td rowSpan={rowspan} className="text-xs">

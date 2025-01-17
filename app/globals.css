@@ -79,7 +79,7 @@ body {
 
 .table {
   width: 100%;
-  border-collapse: separate;
+  /* border-collapse: separate; */
 }
 th {
   background: #f8f9fa;
