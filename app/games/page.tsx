@@ -4,8 +4,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 interface Attendee {
   name: string;
@@ -18,6 +20,7 @@ interface Match {
   time: string;
   court: number;
   players: string[];
+  score: string[];
 }
 
 interface Props {
@@ -53,7 +56,7 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
   const [idleSummary, setIdleSummary] = useState<Record<string, string[]>>({});
   const [gamesPlayed, setGamesPlayed] = useState<Record<string, number>>({});
   const [activePopoverId, setActivePopoverId] = useState<string | null>(null);
-  const womenFirst = true;
+  const womenFirst = false;
 
   const generateSchedule = useCallback(() => {
     const timeSlots: string[] = [];
@@ -97,6 +100,7 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
             time: slot,
             court,
             players: womenPlayers.map((p) => p.name),
+            score: ['0', '0'],
           });
           womenPlayers.forEach((p) => {
             availableWomen.splice(availableWomen.indexOf(p), 1);
@@ -116,6 +120,7 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
             time: slot,
             court,
             players: players.map((p) => p.name),
+            score: ['0', '0'],
           });
           players.forEach((p) => available.splice(available.indexOf(p), 1));
         }
@@ -136,40 +141,83 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
     generateSchedule();
   }, [generateSchedule]);
 
-  const handlePlayersChange = (player: string, matchIndex: number, playerIndex: number) => {
-    const updateMatches = [...matches];
-    const prevName = updateMatches[matchIndex].players[playerIndex];
-    const prevIndex = updateMatches[matchIndex].players.findIndex((item) => item === player);
+  const handlePlayersChange = useCallback(
+    (player: string, matchIndex: number, playerIndex: number) => {
+      const updateMatches = [...matches];
+      const prevName = updateMatches[matchIndex].players[playerIndex];
+      const prevIndex = updateMatches[matchIndex].players.findIndex((item) => item === player);
 
-    // 교체 작업
-    updateMatches[matchIndex].players[playerIndex] = player;
-    if (prevIndex !== -1) {
-      updateMatches[matchIndex].players[prevIndex] = prevName;
-    }
+      // 교체 작업
+      updateMatches[matchIndex].players[playerIndex] = player;
+      console.log(updateMatches[matchIndex].players);
+      if (prevIndex !== -1) {
+        updateMatches[matchIndex].players[prevIndex] = prevName;
+      }
 
-    // 대기자 업데이트
-    const matchTime = updateMatches[matchIndex].time;
-    const updateIdleSummary = { ...idleSummary };
+      // 대기자 업데이트
+      const matchTime = updateMatches[matchIndex].time;
+      const updateIdleSummary = { ...idleSummary };
 
-    const idleIndex = updateIdleSummary[matchTime]?.findIndex((item) => item === player);
-    if (idleIndex !== -1) {
-      updateIdleSummary[matchTime] = [
-        ...updateIdleSummary[matchTime].slice(0, idleIndex),
-        prevName,
-        ...updateIdleSummary[matchTime].slice(idleIndex + 1),
-      ];
-    }
+      const idleIndex = updateIdleSummary[matchTime]?.findIndex((item) => item === player);
+      if (idleIndex !== -1) {
+        // 대기자 업데이트가 있는 경우 게임수 조정
+        const updateGamesCount = { ...gamesPlayed };
+        console.log(updateGamesCount);
+        updateGamesCount[player] += 1;
+        updateGamesCount[prevName] -= 1;
+        // setGamesPlayed(updateGamesCount);
+        updateIdleSummary[matchTime] = [
+          ...updateIdleSummary[matchTime].slice(0, idleIndex),
+          prevName,
+          ...updateIdleSummary[matchTime].slice(idleIndex + 1),
+        ];
+      }
 
-    setMatches(updateMatches);
-    setIdleSummary(updateIdleSummary);
-    setActivePopoverId(null);
+      setMatches(updateMatches);
+      setIdleSummary(updateIdleSummary);
+      setActivePopoverId(null);
+    },
+    [gamesPlayed, idleSummary, matches],
+  );
+
+  const handleScoreChange = useCallback(
+    (value: string, matchIndex: number, scoreIndex: number) => {
+      const updateMatches = [...matches];
+      updateMatches[matchIndex].score[scoreIndex] = value;
+      setMatches(updateMatches);
+    },
+    [matches],
+  );
+
+  const handleRegenerate = () => {
+    generateSchedule();
   };
 
-  const attendessAtTime = (time: string, name: string) => {
-    const attendessPlayers = matches
-      .filter((match) => match.time === time)
-      .flatMap((match) => match.players)
-      .filter((player) => player !== name);
+  const handleMatchesReset = () => {
+    const updateMatches = [...matches];
+    if (updateMatches[0].players.length === 0) {
+      alert('초기화 상태입니다.');
+      return;
+    }
+    const updateIdleSummary = { ...idleSummary };
+
+    updateMatches.forEach((item) => {
+      item.players.forEach((player) => {
+        updateIdleSummary[item.time].push(player);
+      });
+    });
+    updateMatches.map((item) => (item.players = []));
+    setIdleSummary(updateIdleSummary);
+    setMatches(updateMatches);
+  };
+
+  const handleSubmit = () => {
+    console.log(matches);
+  };
+
+  const attendessAtTime = (time: string) => {
+    const attendessPlayers = matches.filter((match) => match.time === time).flatMap((match) => match.players);
+    // .filter((player) => player !== name);
     const idleplayers = idleSummary[time];
     return [...attendessPlayers, ...idleplayers];
   };
@@ -187,26 +235,43 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
         onOpenChange={(isOpen) => setActivePopoverId(isOpen ? `popover${matchIndex}${playerIndex}` : null)}
       >
         <PopoverTrigger asChild>
-          <Button variant="outline" role="combobox" className="my-1">
-            {match.players[playerIndex]}
+          <Button variant="outline" role="combobox" className="my-1 w-[80px] text-xs py-1 px-2">
+            {match.players[playerIndex] || '선택'}
             <ChevronsUpDown className="opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="h-[300px]">
+        <PopoverContent align="start" className="w-[180px]">
           <Command>
             <CommandInput placeholder="Search member" />
             <CommandList>
               <CommandEmpty>No member found.</CommandEmpty>
               <CommandGroup>
-                {attendessAtTime(match.time, match.players[playerIndex]).map((player, idx) => (
+                {match.players.map((player, idx) => (
                   <CommandItem
-                    key={idx}
+                    key={`${player}-${idx}`}
                     value={player}
                     onSelect={(currentValue) => {
                       handlePlayersChange(currentValue, matchIndex, playerIndex);
                     }}
                   >
                     {player}
+                    <Check
+                      className={cn('ml-auto', player === match.players[playerIndex] ? 'opacity-100' : 'opacity-0')}
+                    />
+                  </CommandItem>
+                ))}
+                {idleSummary[match.time].map((player, idx) => (
+                  <CommandItem
+                    key={`${player}-${idx}`}
+                    value={player}
+                    onSelect={(currentValue) => {
+                      handlePlayersChange(currentValue, matchIndex, playerIndex);
+                    }}
+                  >
+                    {player}
+                    <Check
+                      className={cn('ml-auto', player === match.players[playerIndex] ? 'opacity-100' : 'opacity-0')}
+                    />
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -216,6 +281,75 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
       </Popover>
     );
   };
+
+  type MatchRowProps = {
+    rowspan: number;
+    isFirstMatch: boolean;
+  } & Omit<AttendeePopoverProp, 'playerIndex'>;
+
+  const MatchRow = React.memo(({ match, matchIndex, rowspan, isFirstMatch }: MatchRowProps) => {
+    return (
+      <tr>
+        {isFirstMatch && (
+          <td rowSpan={rowspan} className="text-xs">
+            {match.time}
+          </td>
+        )}
+        <td className="text-xs">{match.court}</td>
+        <td className="p-0">
+          <div className="flex flex-col">
+            <div className="flex gap-x-1 justify-center border-b-[1px]">
+              <AttendeePopover matchIndex={matchIndex} match={match} playerIndex={0} />
+              <AttendeePopover matchIndex={matchIndex} match={match} playerIndex={1} />
+            </div>
+            <div className="flex gap-x-1 justify-center">
+              <AttendeePopover matchIndex={matchIndex} match={match} playerIndex={2} />
+              <AttendeePopover matchIndex={matchIndex} match={match} playerIndex={3} />
+            </div>
+          </div>
+        </td>
+        <td className="p-0">
+          <div className="px-1 border-b-[1px]">
+            <Select defaultValue={match.score[0]} onValueChange={(value) => handleScoreChange(value, matchIndex, 0)}>
+              <SelectTrigger className="text-xs my-1 pr-1" value="0">
+                <SelectValue>{match.score[0]}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 7 }, (_, i) => (
+                  <SelectItem value={i.toString()} key={i} className="text-xs">
+                    {i}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="px-1">
+            <Select defaultValue={match.score[1]} onValueChange={(value) => handleScoreChange(value, matchIndex, 1)}>
+              <SelectTrigger className="text-xs my-1 pr-1">
+                <SelectValue>{match.score[1]}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 7 }, (_, i) => (
+                  <SelectItem value={i.toString()} key={i} className="text-xs">
+                    {i}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </td>
+        {isFirstMatch && (
+          <td rowSpan={rowspan} className="text-xs">
+            {idleSummary[match.time] && idleSummary[match.time].length > 0
+              ? idleSummary[match.time].map((item, idx) => <div key={idx}>{item}</div>)
+              : ''}
+          </td>
+        )}
+      </tr>
+    );
+  });
+
+  MatchRow.displayName = 'MatchRow';
 
   return (
     <div className="p-5">
@@ -227,8 +361,9 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
           <tr>
             <th>시간</th>
             <th>코트</th>
-            <th style={{ width: '30%' }}>페어 A</th>
-            <th style={{ width: '30%' }}>페어 B</th>
+            <th>페어</th>
+            <th>스코어</th>
+
             <th>대기자</th>
           </tr>
         </thead>
@@ -236,61 +371,14 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
           {matches.map((match, index) => {
             // 현재 시간의 첫 번째 경기인지 확인
             const isFirstMatch = index === 0 || matches[index - 1].time !== match.time;
-
             // 해당 시간대의 경기 수 계산
             const rowspan = matches.filter((m) => m.time === match.time).length;
             return (
-              <tr key={index}>
-                {isFirstMatch && <td rowSpan={rowspan}>{match.time}</td>}
-                <td>{match.court}</td>
-                <td>
-                  <AttendeePopover matchIndex={index} match={match} playerIndex={0} />
-                  <AttendeePopover matchIndex={index} match={match} playerIndex={1} />
-                </td>
-                <td>
-                  <Input
-                    type="text"
-                    value={match.players[2]}
-                    onChange={(e) => handlePlayersChange(e.target.value, index, 2)}
-                    className="w-full"
-                  />
-                  <Input
-                    type="text"
-                    value={match.players[3]}
-                    onChange={(e) => handlePlayersChange(e.target.value, index, 3)}
-                    className="w-full"
-                  />
-                </td>
-                {isFirstMatch && (
-                  <td rowSpan={rowspan} className="text-xs">
-                    {idleSummary[match.time] && idleSummary[match.time].length > 0
-                      ? idleSummary[match.time].map((item, idx) => <div key={idx}>{item}</div>)
-                      : '없음'}
-                  </td>
-                )}
-              </tr>
+              <MatchRow key={index} match={match} matchIndex={index} rowspan={rowspan} isFirstMatch={isFirstMatch} />
             );
           })}
         </tbody>
       </table>
-      {/* 
-      <h2>Idle Players</h2>
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Idle Players</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.entries(idleSummary).map(([time, idle], index) => (
-            <tr key={index}>
-              <td>{time}</td>
-              <td>{idle.join(', ')}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table> */}
 
       <h2>Games Played</h2>
       <table className="table">
@@ -309,30 +397,29 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
           ))}
         </tbody>
       </table>
+      <div className="button-group">
+        <Button onClick={handleRegenerate} size="lg" className="">
+          대진 새로고침
+        </Button>
+        <Button onClick={handleMatchesReset} size="lg" className="">
+          대진 초기화
+        </Button>
+        <Button onClick={() => handleSubmit()} size="lg" className="bg-blue-600">
+          게임 저장
+        </Button>
+      </div>
     </div>
   );
 };
 
 export default function Home() {
-  const [schedulerData, setSchedulerData] = useState(data);
-  const handleRegenerate = () => {
-    const shuffledAttendees = [...schedulerData.attendees].sort(() => Math.random() - 0.5);
-    // console.log(schedulerData);
-    setSchedulerData((prev) => ({
-      ...prev,
-      attendees: shuffledAttendees,
-    }));
-  };
-
   return (
-    <div>
-      <Button onClick={handleRegenerate}>Regenerate Matches</Button>
-      {/* <Button onClick={handleRegenerate}>availableWomen</Button> */}
+    <div className="pb-20">
       <TennisMatchScheduler
-        attendees={schedulerData.attendees}
-        startTime={schedulerData.startTime}
-        endTime={schedulerData.endTime}
-        courts={parseInt(schedulerData.courtCount, 10)}
+        attendees={data.attendees}
+        startTime={data.startTime}
+        endTime={data.endTime}
+        courts={parseInt(data.courtCount, 10)}
       />
     </div>
   );
