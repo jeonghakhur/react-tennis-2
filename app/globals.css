@@ -93,6 +93,7 @@ th {
   &:first-child {
     border-left: 1px solid #e5e7eb;
   }
+  font-size: 0.75rem;
 }
 
 td {
@@ -128,3 +129,18 @@ td {
   }
 }
 
+.text-xxs {
+  font-size: 0.625rem;;
+}
+
+.card {
+
+  border: 1px solid #7786973D;
+  border-radius: 12px;
+  padding: 16px 20px;
+  align-items: center;
+
+  .arrow {
+    margin-left: auto;
+  }
+}
