@@ -4,6 +4,9 @@ import { Theme, ThemePanel } from '@radix-ui/themes';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import '@radix-ui/themes/styles.css';
+import NavBar from '@/components/Navbar';
+import AuthContext from '@/context/AuthContext';
+import SWRConfigContext from '@/context/SWRConfigContext';
 
 const notoSans = Noto_Sans({
   variable: '--font-noto-sans',
@@ -23,13 +26,22 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={notoSans.className}>
-        <Theme accentColor="crimson" grayColor="olive" radius="large" scaling="100%">
-          {children}
-          {/* <ThemePanel /> */}
-          <Toaster />
+        <Theme
+          accentColor="crimson"
+          grayColor="olive"
+          radius="large"
+          scaling="100%"
+        >
+          <AuthContext>
+            <SWRConfigContext>
+              <NavBar />
+              {children}
+              {/* <ThemePanel /> */}
+              <Toaster />
+            </SWRConfigContext>
+          </AuthContext>
         </Theme>
       </body>
     </html>
   );
 }
-

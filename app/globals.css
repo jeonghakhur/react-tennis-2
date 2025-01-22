@@ -134,7 +134,7 @@ td {
 }
 
 .card {
-
+  display: flex;
   border: 1px solid #7786973D;
   border-radius: 12px;
   padding: 16px 20px;
