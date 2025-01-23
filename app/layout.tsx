@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Noto_Sans } from 'next/font/google';
-import { Theme, ThemePanel } from '@radix-ui/themes';
+import { Theme } from '@radix-ui/themes';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import '@radix-ui/themes/styles.css';
