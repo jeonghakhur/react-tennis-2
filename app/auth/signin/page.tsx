@@ -1,18 +1,16 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import SignIn from '@/components/Signin';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { getServerSession } from 'next-auth';
 import { getProviders } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 
-// type Props = {
-//   searchParams: {
-//     callbackUrl: string;
-//   };
-// };
+interface Props {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}
 
-export default async function SignPage({ searchParams }: any) {
-  const callbackUrl = searchParams?.callbackUrl || '/';
+export default async function SignPage({ searchParams }: Props) {
+  const resolvedSearchParams = await searchParams;
+  const callbackUrl = resolvedSearchParams?.callbackUrl || '/';
   const session = await getServerSession(authOptions);
 
   if (session) {

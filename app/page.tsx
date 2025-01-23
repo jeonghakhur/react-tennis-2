@@ -10,12 +10,36 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { useEffect, useState } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 
 const memberList = [
   { name: '김성재', gender: '남성', startTime: '19:30', endTime: '21:00' },
@@ -71,7 +95,7 @@ const FormSchema = z.object({
   courtNumbers: z.array(
     z.string({
       required_error: '코트 번호를 입력해주세요.',
-    }),
+    })
   ),
   attendees: z.array(
     z.object({
@@ -80,11 +104,14 @@ const FormSchema = z.object({
       startTime: z.string(),
       endTime: z.string(),
       memberShip: z.boolean(),
-    }),
+    })
   ),
 });
 
-type OnSelectHandler = (select: Date | undefined, field: ControllerRenderProps<z.infer<typeof FormSchema>>) => void;
+type OnSelectHandler = (
+  select: Date | undefined,
+  field: ControllerRenderProps<z.infer<typeof FormSchema>>
+) => void;
 
 export default function CalendarForm() {
   const [popoverOpen, setpopoverOpen] = useState(false);
@@ -122,7 +149,11 @@ export default function CalendarForm() {
     return fields.some((attendee) => attendee.name === name);
   };
 
-  const attendeeAppend = (name: string, gender: string, memberShip: boolean) => {
+  const attendeeAppend = (
+    name: string,
+    gender: string,
+    memberShip: boolean
+  ) => {
     append({
       name,
       gender,
@@ -202,8 +233,10 @@ export default function CalendarForm() {
   const handleCourtCountChange = (count: string) => {
     form.setValue('courtCount', count);
     const countNumber = parseInt(count, 10);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const updatedCourtNumbers = Array.from({ length: countNumber }, (_, i) => `${i + 1}`);
+    const updatedCourtNumbers = Array.from(
+      { length: countNumber },
+      (_, i) => `${i + 1}`
+    );
     form.setValue('courtNumbers', updatedCourtNumbers);
   };
 
@@ -267,10 +300,17 @@ export default function CalendarForm() {
                   <FormControl>
                     <Button
                       variant={'outline'}
-                      className={cn('pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}
+                      className={cn(
+                        'pl-3 text-left font-normal',
+                        !field.value && 'text-muted-foreground'
+                      )}
                       onClick={() => setpopoverOpen(true)}
                     >
-                      {field.value ? format(field.value, 'yyyy.MM.dd') : <span>Pick a date</span>}
+                      {field.value ? (
+                        format(field.value, 'yyyy.MM.dd')
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
                   </FormControl>
@@ -327,7 +367,10 @@ export default function CalendarForm() {
                 </SelectTrigger>
                 <SelectContent>
                   {Array.from({ length: 24 - startTime }, (_, i) => (
-                    <SelectItem value={`${startTime + i + 1}`} key={`endTime_${i}`}>
+                    <SelectItem
+                      value={`${startTime + i + 1}`}
+                      key={`endTime_${i}`}
+                    >
                       {timeFormat(startTime + i + 1)}
                     </SelectItem>
                   ))}
@@ -406,7 +449,11 @@ export default function CalendarForm() {
               <FormItem className="flex flex-col">
                 <FormLabel>{`코트 번호 ${idx + 1}`}</FormLabel>
                 <FormControl>
-                  <Input {...field} value={field.value} placeholder={`코트 번호 ${idx + 1}`} />
+                  <Input
+                    {...field}
+                    value={field.value}
+                    placeholder={`코트 번호 ${idx + 1}`}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -430,7 +477,10 @@ export default function CalendarForm() {
           <FormLabel>참석자 및 참석 시간 선택</FormLabel>
           <FormControl>
             <div className="flex">
-              <Popover open={popoverMembersOpen} onOpenChange={setPopoverMembersOpen}>
+              <Popover
+                open={popoverMembersOpen}
+                onOpenChange={setPopoverMembersOpen}
+              >
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -440,7 +490,8 @@ export default function CalendarForm() {
                   >
                     {membersValue === '직접입력'
                       ? '직접입력'
-                      : memberList.find((item) => item.name === membersValue)?.name || '참석자를 선택해주세요.'}
+                      : memberList.find((item) => item.name === membersValue)
+                          ?.name || '참석자를 선택해주세요.'}
                     <ChevronsUpDown className="opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -458,7 +509,14 @@ export default function CalendarForm() {
                           }}
                         >
                           직접입력
-                          <Check className={cn('ml-auto', membersValue === '직접입력' ? 'opacity-100' : 'opacity-0')} />
+                          <Check
+                            className={cn(
+                              'ml-auto',
+                              membersValue === '직접입력'
+                                ? 'opacity-100'
+                                : 'opacity-0'
+                            )}
+                          />
                         </CommandItem>
                         {memberList.map((member) => (
                           <CommandItem
@@ -470,7 +528,12 @@ export default function CalendarForm() {
                           >
                             {member.name}
                             <Check
-                              className={cn('ml-auto', membersValue === member.name ? 'opacity-100' : 'opacity-0')}
+                              className={cn(
+                                'ml-auto',
+                                membersValue === member.name
+                                  ? 'opacity-100'
+                                  : 'opacity-0'
+                              )}
                             />
                           </CommandItem>
                         ))}
@@ -610,7 +673,12 @@ export default function CalendarForm() {
                     {field.startTime}~{field.endTime}
                   </td>
                   <td>
-                    <Button type="button" size="xs" variant="destructive" onClick={() => handleAttendeeRemove(idx)}>
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant="destructive"
+                      onClick={() => handleAttendeeRemove(idx)}
+                    >
                       삭제
                     </Button>
                   </td>
@@ -627,4 +695,3 @@ export default function CalendarForm() {
     </Form>
   );
 }
-
