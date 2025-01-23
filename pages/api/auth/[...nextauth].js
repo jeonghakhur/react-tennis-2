@@ -48,6 +48,14 @@ export const authOptions = {
         birthyear = response.birthyear || null;
       }
 
+      if (provider === 'kakao') {
+        const response = profile.kakao_account;
+        gender = response.gender || null;
+        phone_number = response.phone_number || null;
+        birthday = response.birthday || null;
+        birthyear = response.birthyear || null;
+      }
+
       console.log(profile);
 
       if (!email || !name) {
