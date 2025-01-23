@@ -7,9 +7,21 @@ type OauthUser = {
   image?: string | null;
   name: string;
   username: string;
+  provider: string | null;
+  level: number;
+  gender: string | null;
+  phone_number: string | null;
+  birthday: string | null;
+  birthyear: string | null;
 };
 
-export async function addUser({ id, email, name, image, username }: OauthUser) {
+export async function existingUser(email: string) {
+  return client.fetch(
+    `*[_type == "user" && email == "${email}"][0]`,
+  )
+}
+
+export async function addUser({ id, email, name, image, username, provider, level, gender, phone_number, birthday, birthyear }: OauthUser) {
   return client.createIfNotExists({
     _id: id,
     _type: 'user',
@@ -17,6 +29,12 @@ export async function addUser({ id, email, name, image, username }: OauthUser) {
     email,
     image,
     name,
+    provider,
+    level,
+    gender,
+    phone_number,
+    birthyear,
+    birthday,
     following: [],
     followers: [],
   });
