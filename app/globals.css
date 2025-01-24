@@ -144,3 +144,28 @@ td {
     margin-left: auto;
   }
 }
+
+.btn-social {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  height: 50px;
+  border-radius: 12px;
+  padding: 12px;
+  padding-right: 30px;
+  justify-content: center;
+
+  img {
+    margin-right: 10px;
+  }
+
+  &.kakao {
+    background-color: #ffeb00;
+  }
+
+  &.naver {
+    background-color: #02c75a;
+    color: white;
+    margin-top: 12px;
+  }
+}

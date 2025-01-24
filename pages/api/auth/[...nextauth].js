@@ -1,15 +1,15 @@
 import { addUser, existingUser } from '@/service/user';
 import NextAuth from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
+// import GoogleProvider from 'next-auth/providers/google';
 import KakaoProvider from 'next-auth/providers/kakao';
 import NaverProvider from 'next-auth/providers/naver';
 
 export const authOptions = {
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_OAUTH_ID || '',
-      clientSecret: process.env.GOOGLE_OAUTH_SECRET || '',
-    }),
+    // GoogleProvider({
+    //   clientId: process.env.GOOGLE_OAUTH_ID || '',
+    //   clientSecret: process.env.GOOGLE_OAUTH_SECRET || '',
+    // }),
     KakaoProvider({
       clientId: process.env.KAKAO_CLIENT_ID,
       clientSecret: process.env.KAKAO_CLIENT_SECRET,
@@ -26,14 +26,23 @@ export const authOptions = {
   ],
   callbacks: {
     async signIn({ user: { id, name, email, image }, account, profile }) {
+      if (!email || !name) {
+        return false;
+      }
+
       const provider = account.provider;
       let gender = null;
       let phone_number = null;
       let birthday = null;
       let birthyear = null;
 
-      const isEmail = existingUser(email);
-      console.log(isEmail);
+      const isUser = await existingUser(email);
+
+      if (isUser) {
+        if (isUser.provider !== account.provider) {
+          return `/auth/signin?error=ALREADY_REGISTERED`;
+        }
+      }
 
       if (provider === 'naver') {
         const response = profile.response || {};
@@ -54,12 +63,6 @@ export const authOptions = {
         phone_number = response.phone_number || null;
         birthday = response.birthday || null;
         birthyear = response.birthyear || null;
-      }
-
-      console.log(profile);
-
-      if (!email || !name) {
-        return false;
       }
 
       // 새 사용자 추가
