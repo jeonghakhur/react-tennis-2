@@ -16,12 +16,22 @@ type OauthUser = {
 };
 
 export async function existingUser(email: string) {
-  return client.fetch(
-    `*[_type == "user" && email == "${email}"][0]`,
-  )
+  return client.fetch(`*[_type == "user" && email == "${email}"][0]`);
 }
 
-export async function addUser({ id, email, name, image, username, provider, level, gender, phone_number, birthday, birthyear }: OauthUser) {
+export async function addUser({
+  id,
+  email,
+  name,
+  image,
+  username,
+  provider,
+  level,
+  gender,
+  phone_number,
+  birthday,
+  birthyear,
+}: OauthUser) {
   return client.createIfNotExists({
     _id: id,
     _type: 'user',

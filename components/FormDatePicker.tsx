@@ -1,0 +1,70 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState } from 'react';
+import { UseFormReturn } from 'react-hook-form';
+import { format } from 'date-fns';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { ScheduleFormType } from '@/model/schedule';
+
+type FormProps = {
+  form: UseFormReturn<ScheduleFormType>; // ✅ useForm 타입 지정
+};
+
+export default function FormDatePicker({ form }: FormProps) {
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const selectedDate = form?.watch ? form.watch('date') : new Date();
+
+  return (
+    <FormField
+      control={form.control}
+      name="date"
+      render={({ field }) => (
+        <FormItem className="flex flex-col">
+          <FormLabel>날짜 입력</FormLabel>
+          <Popover open={popoverOpen}>
+            <PopoverTrigger asChild>
+              <FormControl>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="pl-3 text-left font-normal"
+                  onClick={() => setPopoverOpen(true)}
+                >
+                  {selectedDate
+                    ? format(selectedDate, 'yyyy.MM.dd')
+                    : format(new Date(), 'yyyy.MM.dd')}
+                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                </Button>
+              </FormControl>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={field.value} // ✅ 기본 선택 날짜 지정
+                onSelect={(date) => {
+                  form.setValue('date', date || new Date()); // ✅ 직접 form 값 업데이트
+                  setPopoverOpen(false);
+                  console.log(form.watch('date'));
+                }}
+              />
+            </PopoverContent>
+          </Popover>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}

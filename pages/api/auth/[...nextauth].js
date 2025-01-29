@@ -5,6 +5,7 @@ import KakaoProvider from 'next-auth/providers/kakao';
 import NaverProvider from 'next-auth/providers/naver';
 
 export const authOptions = {
+  debug: true, // 디버깅 활성화
   providers: [
     // GoogleProvider({
     //   clientId: process.env.GOOGLE_OAUTH_ID || '',
@@ -17,11 +18,6 @@ export const authOptions = {
     NaverProvider({
       clientId: process.env.NAVER_CLIENT_ID || '',
       clientSecret: process.env.NAVER_CLIENT_SECRET || '',
-      authorization: {
-        params: {
-          scope: 'gender',
-        },
-      },
     }),
   ],
   callbacks: {
@@ -58,8 +54,8 @@ export const authOptions = {
       }
 
       if (provider === 'kakao') {
-        const response = profile.kakao_account;
-        gender = response.gender || null;
+        const response = profile.kakao_account || {};
+        gender = response.gender || null; // null로 설정
         phone_number = response.phone_number || null;
         birthday = response.birthday || null;
         birthyear = response.birthyear || null;

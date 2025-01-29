@@ -107,7 +107,7 @@ td {
     border-left: 1px solid #e5e7eb;
   }
 
-  input[type="text"] {
+  input[type='text'] {
     margin-top: 4px;
     margin-bottom: 4px;
   }
@@ -130,12 +130,12 @@ td {
 }
 
 .text-xxs {
-  font-size: 0.625rem;;
+  font-size: 0.625rem;
 }
 
 .card {
   display: flex;
-  border: 1px solid #7786973D;
+  border: 1px solid #7786973d;
   border-radius: 12px;
   padding: 16px 20px;
   align-items: center;
@@ -167,5 +167,21 @@ td {
     background-color: #02c75a;
     color: white;
     margin-top: 12px;
+  }
+}
+
+.grid-wrapper {
+  position: fixed;
+  height: 100vh;
+  width: 100%;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 100;
+
+  svg {
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, 0);
   }
 }

@@ -4,9 +4,10 @@ import { Theme } from '@radix-ui/themes';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import '@radix-ui/themes/styles.css';
-import NavBar from '@/components/Navbar';
 import AuthContext from '@/context/AuthContext';
 import SWRConfigContext from '@/context/SWRConfigContext';
+import clsx from 'clsx';
+import ConditionalNavBar from '@/components/ConditionalNavBar';
 
 const notoSans = Noto_Sans({
   variable: '--font-noto-sans',
@@ -25,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={notoSans.className}>
+      <body className={clsx(notoSans.className)}>
         <Theme
           accentColor="crimson"
           grayColor="olive"
@@ -34,7 +35,8 @@ export default function RootLayout({
         >
           <AuthContext>
             <SWRConfigContext>
-              <NavBar />
+              <ConditionalNavBar />
+              {/* Studio 페이지에서 NavBar 제외 */}
               {children}
               {/* <ThemePanel /> */}
               <Toaster />
