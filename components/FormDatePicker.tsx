@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { format } from 'date-fns';

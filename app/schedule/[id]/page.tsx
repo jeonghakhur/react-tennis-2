@@ -99,8 +99,10 @@ export default function Page({ params }: Props) {
 
       alert('일정이 성공적으로 업데이트되었습니다.');
     } catch (error) {
-      console.error('❌ 업데이트 실패:', error);
-      alert(`업데이트 중 오류 발생: ${error.message}`);
+      if (error instanceof Error) {
+        console.error('❌ 업데이트 실패:', error);
+        alert(`업데이트 중 오류 발생: ${error.message}`);
+      }
     } finally {
       setLoading(false);
     }

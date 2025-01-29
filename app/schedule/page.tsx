@@ -43,7 +43,6 @@ import { ScheduleFormSchema, ScheduleFormType } from '@/model/schedule';
 import FormDatePicker from '@/components/FormDatePicker';
 import FormSelectTime from '@/components/FormSelectTime';
 import FormCourtName from '@/components/FormCourtName';
-import { date } from 'zod';
 import { mutate } from 'swr';
 
 const memberList = [
@@ -292,8 +291,9 @@ export default function CalendarForm() {
           wrapperClass="grid-wrapper"
         />
       )}
+      {error && <p>{error}</p>}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-5">
-        <FormDatePicker form={form} selectedDate={form.watch('date')} />
+        <FormDatePicker form={form} />
         <FormSelectTime
           form={form}
           name="startTime"
