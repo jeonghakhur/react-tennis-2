@@ -3,7 +3,6 @@
 import { ClientSafeProvider, signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import clsx from 'clsx';
 
 type Props = {
   providers: Record<string, ClientSafeProvider>;
