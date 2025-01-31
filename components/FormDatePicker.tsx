@@ -33,7 +33,7 @@ export default function FormDatePicker({ form }: FormProps) {
       render={({ field }) => (
         <FormItem className="flex flex-col">
           <FormLabel>날짜 입력</FormLabel>
-          <Popover open={popoverOpen}>
+          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
             <PopoverTrigger asChild>
               <FormControl>
                 <Button
@@ -52,12 +52,13 @@ export default function FormDatePicker({ form }: FormProps) {
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
-                selected={field.value} // ✅ 기본 선택 날짜 지정
+                selected={selectedDate} // ✅ 기본 선택 날짜 지정
                 onSelect={(date) => {
-                  form.setValue('date', date || new Date()); // ✅ 직접 form 값 업데이트
+                  field.onChange(date);
                   setPopoverOpen(false);
-                  console.log(form.watch('date'));
+                  console.log(date);
                 }}
+                defaultMonth={selectedDate}
               />
             </PopoverContent>
           </Popover>

@@ -21,10 +21,7 @@ export async function createSchedule(
 ) {
   const { date, startTime, endTime, courtName, courtCount, courtNumbers } =
     scheduleData;
-  try {
-    console.log('Creating schedule for user:', userId); // 로그 추가
-    const result = await client.create(
-      {
+    return client.create({
         _type: 'schedule',
         author: { _ref: userId },
         date,
@@ -33,23 +30,9 @@ export async function createSchedule(
         courtName,
         courtCount,
         courtNumbers,
-      },
-      { autoGenerateArrayKeys: true }
-    );
-    console.log('Schedule created successfully:', result); // 로그 추가
-    return {
-      success: true,
-      data: result,
-    };
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Error creating schedule:', error); // 에러 로그
-      return {
-        success: false,
-        error: error.message || 'Unknown error occurred',
-      };
-    }
-  }
+    },
+    { autoGenerateArrayKeys: true }
+  );
 }
 
 export async function updateSchedule(

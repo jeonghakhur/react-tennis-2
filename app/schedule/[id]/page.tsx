@@ -20,6 +20,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 import FormDatePicker from '@/components/FormDatePicker';
+import FormSelectTime from '@/components/FormSelectTime';
 
 type Props = {
   params: Promise<{ id: string }>; // params가 Promise로 감싸져 있음
@@ -34,10 +35,6 @@ export default function Page({ params }: Props) {
 
   const form = useForm<ScheduleFormType>({
     resolver: zodResolver(ScheduleFormSchema),
-    defaultValues: {
-      date: data?.date ? new Date(data.date) : new Date(),
-      courtName: '',
-    },
   });
 
   useEffect(() => {
@@ -47,7 +44,13 @@ export default function Page({ params }: Props) {
         date: data.date ? new Date(data.date) : new Date(),
       });
     }
-  }, [data, form]);
+  }, [data]);
+
+  useEffect(() => {
+    if (Object.keys(form.formState.errors).length > 0) {
+      console.error('⚠️ 실시간 검증 오류:', form.formState.errors);
+    }
+  }, [form.formState.errors]);
 
   const handleDelete = (id: string) => {
     const isConfirmed = confirm('정말 삭제하시겠습니까?');
@@ -108,8 +111,7 @@ export default function Page({ params }: Props) {
     }
   };
 
-  function onSubmit(formData: any) {
-    // console.log(formData);
+  function onSubmit(formData: ScheduleFormType) {
     handleUpdate(formData);
   }
 
@@ -126,11 +128,23 @@ export default function Page({ params }: Props) {
           wrapperClass="grid-wrapper"
         />
       )}
-      {data && (
+      {!isLoading && (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <FormDatePicker form={form} />
-            <FormField
+            <FormSelectTime
+              name="startTime"
+              form={form}
+              label="시작 시간"
+              value={form.watch('startTime')}
+            />
+            {/* <FormSelectTime
+              name="endTime"
+              form={form}
+              label="종료 시간"
+              startTime={parseInt(form.watch('startTime'), 10)}
+            /> */}
+            {/* <FormField
               control={form.control}
               name="courtName"
               render={({ field }) => (
@@ -144,7 +158,7 @@ export default function Page({ params }: Props) {
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
 
             <div className="button-group">
               <Button
@@ -154,7 +168,14 @@ export default function Page({ params }: Props) {
               >
                 삭제
               </Button>
-              <Button type="submit">수정</Button>
+              <Button
+                type="submit"
+                // onClick={() => {
+                //   console.log(form);
+                // }}
+              >
+                수정
+              </Button>
             </div>
           </form>
         </Form>

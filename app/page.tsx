@@ -11,8 +11,6 @@ export default function Home() {
   const { data: scheduleData, isLoading } = useSWR<GetScheduleType[]>(
     cacheKeys.scheduleKey,
     {
-      revalidateOnFocus: true,
-      refreshInterval: 5000,
       onSuccess: (data) => {
         return data.sort(
           (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()

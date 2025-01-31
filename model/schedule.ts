@@ -29,7 +29,7 @@ export const ScheduleFormSchema = z.object({
       endTime: z.string(),
       memberShip: z.boolean(),
     })
-  ),
+  ).optional().default([]),
 });
 
 export type ScheduleFormType = z.infer<typeof ScheduleFormSchema>;
