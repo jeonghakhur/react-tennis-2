@@ -28,6 +28,7 @@ export default function FormSelectTime({
   name,
   startTime = 19,
   label,
+  value,
 }: SelectTimeFormProps) {
   function timeFormat(value: number): string {
     return value.toString().padStart(2, '0'); // ✅ `0`을 앞에 붙여 2자리 문자열로 변환
@@ -38,11 +39,14 @@ export default function FormSelectTime({
       control={form.control}
       name={name}
       render={({ field }) => {
-        console.log(field.value, typeof field.value, name);
         return (
           <FormItem className="flex flex-col">
             <FormLabel>{label}</FormLabel>
-            <Select onValueChange={field.onChange} value={String(field.value)}>
+            <Select
+              onValueChange={field.onChange}
+              // defaultValue={String(field.value)}
+              value={field.value ? String(field.value) : value}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

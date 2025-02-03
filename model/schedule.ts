@@ -13,6 +13,7 @@ export const ScheduleFormSchema = z.object({
   courtName: z.string({
     required_error: '코트장 이름을 입력해주세요.',
   }),
+  otherCourtName: z.string().optional(),
   courtCount: z.string({
     required_error: '코트 수 입력해주세요.',
   }),
@@ -21,15 +22,18 @@ export const ScheduleFormSchema = z.object({
       required_error: '코트 번호를 입력해주세요.',
     })
   ),
-  attendees: z.array(
-    z.object({
-      name: z.string(),
-      gender: z.string(),
-      startTime: z.string(),
-      endTime: z.string(),
-      memberShip: z.boolean(),
-    })
-  ).optional().default([]),
+  attendees: z
+    .array(
+      z.object({
+        name: z.string(),
+        gender: z.string(),
+        startTime: z.string(),
+        endTime: z.string(),
+        memberShip: z.boolean(),
+      })
+    )
+    .optional()
+    .default([]),
 });
 
 export type ScheduleFormType = z.infer<typeof ScheduleFormSchema>;

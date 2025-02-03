@@ -1,0 +1,38 @@
+import { UseFormReturn } from 'react-hook-form';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from './ui/form';
+import { Input } from './ui/input';
+import { ScheduleFormType } from '@/model/schedule';
+
+type FormProps = {
+  form: UseFormReturn<ScheduleFormType>;
+  idx: number;
+};
+
+export default function FormCourtNumber({ form, idx }: FormProps) {
+  return (
+    <FormField
+      key={idx}
+      control={form.control}
+      name={`courtNumbers.${idx}`}
+      render={({ field }) => (
+        <FormItem className="flex flex-col">
+          <FormLabel>{`코트 번호 ${idx + 1}`}</FormLabel>
+          <FormControl>
+            <Input
+              {...field}
+              value={field.value}
+              placeholder={`코트 번호 ${idx + 1}`}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}

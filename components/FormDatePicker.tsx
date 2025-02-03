@@ -24,7 +24,7 @@ type FormProps = {
 
 export default function FormDatePicker({ form }: FormProps) {
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const selectedDate = form?.watch ? form.watch('date') : new Date();
+  // const selectedDate = form?.watch ? form.watch('date') : new Date();
 
   return (
     <FormField
@@ -42,8 +42,8 @@ export default function FormDatePicker({ form }: FormProps) {
                   className="pl-3 text-left font-normal"
                   onClick={() => setPopoverOpen(true)}
                 >
-                  {selectedDate
-                    ? format(selectedDate, 'yyyy.MM.dd')
+                  {field.value
+                    ? format(field.value, 'yyyy.MM.dd')
                     : format(new Date(), 'yyyy.MM.dd')}
                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                 </Button>
@@ -52,13 +52,13 @@ export default function FormDatePicker({ form }: FormProps) {
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
-                selected={selectedDate} // ✅ 기본 선택 날짜 지정
+                selected={field.value} // ✅ 기본 선택 날짜 지정
                 onSelect={(date) => {
                   field.onChange(date);
                   setPopoverOpen(false);
                   console.log(date);
                 }}
-                defaultMonth={selectedDate}
+                defaultMonth={field.value}
               />
             </PopoverContent>
           </Popover>

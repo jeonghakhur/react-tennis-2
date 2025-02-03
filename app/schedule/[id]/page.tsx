@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 import FormDatePicker from '@/components/FormDatePicker';
 import FormSelectTime from '@/components/FormSelectTime';
+import FormCourtName from '@/components/FormCourtName';
 
 type Props = {
   params: Promise<{ id: string }>; // params가 Promise로 감싸져 있음
@@ -44,7 +45,7 @@ export default function Page({ params }: Props) {
         date: data.date ? new Date(data.date) : new Date(),
       });
     }
-  }, [data]);
+  }, [data, form]);
 
   useEffect(() => {
     if (Object.keys(form.formState.errors).length > 0) {
@@ -128,37 +129,38 @@ export default function Page({ params }: Props) {
           wrapperClass="grid-wrapper"
         />
       )}
-      {!isLoading && (
+      {data && (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4 pb-[80px]"
+          >
             <FormDatePicker form={form} />
             <FormSelectTime
               name="startTime"
               form={form}
               label="시작 시간"
-              value={form.watch('startTime')}
+              value={data?.startTime}
             />
-            {/* <FormSelectTime
+            <FormSelectTime
               name="endTime"
               form={form}
               label="종료 시간"
-              startTime={parseInt(form.watch('startTime'), 10)}
-            /> */}
-            {/* <FormField
-              control={form.control}
-              name="courtName"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>코트 이름</FormLabel>
-                  <Input
-                    {...field}
-                    value={field.value}
-                    placeholder="코트 이름"
-                  />
-                  <FormMessage />
-                </FormItem>
-              )}
-            /> */}
+              startTime={parseInt(data?.startTime, 10)}
+              value={data?.endTime}
+            />
+            {/* <FormCourtName form={form} value={data.courtName} /> */}
+            <Input type="text" {...form.register('courtName')} />
+            <Input type="text" {...form.register('courtCount')} />
+            {form
+              .watch('courtNumbers')
+              ?.map((_, idx) => (
+                <Input
+                  key={idx}
+                  type="text"
+                  {...form.register(`courtNumbers.${idx}`)}
+                />
+              ))}
 
             <div className="button-group">
               <Button

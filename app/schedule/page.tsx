@@ -184,6 +184,15 @@ export default function CalendarForm() {
   function onSubmit(data: ScheduleFormType) {
     setLoading(true);
 
+    if (data.courtName === '직접입력') {
+      if (!data.otherCourtName) {
+        alert('코트명을 입력해주세요!');
+        setLoading(false);
+        return;
+      }
+      data.courtName = data.otherCourtName;
+    }
+
     // ✅ Optimistic UI: 새 데이터를 먼저 로컬 캐시에 추가 (임시 ID 생성)
     const optimisticSchedule = { ...data, id: Date.now().toString() };
 
