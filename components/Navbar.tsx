@@ -16,7 +16,7 @@ export default function NavBar() {
   const user = session?.user;
 
   return (
-    <div className="mb-3 px-5">
+    <div className="mb-3 px-5 py-3">
       {status !== 'loading' && (
         <div className="flex items-center">
           <ul className="flex gap-x-2">
@@ -39,9 +39,9 @@ export default function NavBar() {
                     로그아웃
                   </Button>
                   <Image
-                    src={user.image ?? '/default_user.png'}
-                    width={48}
-                    height={48}
+                    src={user.image ?? '/default_profile.png'}
+                    width={36}
+                    height={36}
                     alt={`${user.name} profile image`}
                     className="rounded-full"
                   />

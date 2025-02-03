@@ -8,7 +8,6 @@ import {
   SelectValue,
 } from './ui/select';
 import { UseFormReturn } from 'react-hook-form';
-import { useEffect } from 'react';
 
 // type SelectTimeFormProps = {
 //   form: UseFormReturn<ScheduleFormType>;
@@ -19,7 +18,7 @@ type SelectTimeFormProps = {
   form: UseFormReturn<ScheduleFormType>; // ✅ `startTime`만 포함
   name: keyof ScheduleFormType;
   startTime?: number;
-  label: string;
+  label?: string;
   value?: string | undefined;
 };
 
@@ -41,7 +40,7 @@ export default function FormSelectTime({
       render={({ field }) => {
         return (
           <FormItem className="flex flex-col">
-            <FormLabel>{label}</FormLabel>
+            {label && <FormLabel>{label}</FormLabel>}
             <Select
               onValueChange={field.onChange}
               // defaultValue={String(field.value)}

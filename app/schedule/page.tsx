@@ -120,14 +120,14 @@ export default function CalendarForm() {
   const attendeeAppend = (
     name: string,
     gender: string,
-    memberShip: boolean
+    membership: boolean
   ) => {
     append({
       name,
       gender,
       startTime: `${attendanceTime.startHour}:${attendanceTime.startMinute}`,
       endTime: `${attendanceTime.endHour}:${attendanceTime.endMinute}`,
-      memberShip,
+      membership,
     });
   };
 
@@ -242,10 +242,9 @@ export default function CalendarForm() {
   const handleCourtCountChange = (count: string) => {
     form.setValue('courtCount', count);
     const countNumber = parseInt(count, 10);
-    const updatedCourtNumbers = Array.from(
-      { length: countNumber },
-      (_, i) => `${i + 1}`
-    );
+    const updatedCourtNumbers = Array.from({ length: countNumber }, (_, i) => ({
+      number: `${i + 1}`,
+    }));
     form.setValue('courtNumbers', updatedCourtNumbers);
   };
 
@@ -260,8 +259,8 @@ export default function CalendarForm() {
   };
 
   const handleAttendeeRemove = (idx: number) => {
-    const { name, gender, startTime, endTime, memberShip } = fields[idx];
-    if (memberShip) {
+    const { name, gender, startTime, endTime, membership } = fields[idx];
+    if (membership) {
       memberList.push({
         name,
         gender,
@@ -351,7 +350,7 @@ export default function CalendarForm() {
           <FormField
             key={idx}
             control={form.control}
-            name={`courtNumbers.${idx}`}
+            name={`courtNumbers.${idx}.number`}
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>{`코트 번호 ${idx + 1}`}</FormLabel>

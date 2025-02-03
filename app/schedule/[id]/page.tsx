@@ -22,6 +22,13 @@ import { useRouter } from 'next/navigation';
 import FormDatePicker from '@/components/FormDatePicker';
 import FormSelectTime from '@/components/FormSelectTime';
 import FormCourtName from '@/components/FormCourtName';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type Props = {
   params: Promise<{ id: string }>; // params가 Promise로 감싸져 있음
@@ -45,6 +52,7 @@ export default function Page({ params }: Props) {
         date: data.date ? new Date(data.date) : new Date(),
       });
     }
+    console.log('attendees', data?.attendees);
   }, [data, form]);
 
   useEffect(() => {
@@ -129,13 +137,29 @@ export default function Page({ params }: Props) {
           wrapperClass="grid-wrapper"
         />
       )}
+      <FormItem></FormItem>
       {data && (
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 pb-[80px]"
           >
+            <div className="flex gap-x-2 items-center">
+              <input type="text" name="attendees[0].startTime" />
+              <Select defaultValue={data?.startTime}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="19">19</SelectItem>
+                  <SelectItem value="00">00</SelectItem>
+                  <SelectItem value="30">30</SelectItem>
+                </SelectContent>
+              </Select>
+              <span>~</span>
+            </div>
             <FormDatePicker form={form} />
+
             <FormSelectTime
               name="startTime"
               form={form}
@@ -149,6 +173,7 @@ export default function Page({ params }: Props) {
               startTime={parseInt(data?.startTime, 10)}
               value={data?.endTime}
             />
+
             {/* <FormCourtName form={form} value={data.courtName} /> */}
             <Input type="text" {...form.register('courtName')} />
             <Input type="text" {...form.register('courtCount')} />
@@ -158,7 +183,7 @@ export default function Page({ params }: Props) {
                 <Input
                   key={idx}
                   type="text"
-                  {...form.register(`courtNumbers.${idx}`)}
+                  {...form.register(`courtNumbers.${idx}.number`)}
                 />
               ))}
 

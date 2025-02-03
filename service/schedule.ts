@@ -29,7 +29,9 @@ export async function createSchedule(
         endTime,
         courtName,
         courtCount,
-        courtNumbers,
+        courtNumbers: courtNumbers.map((number) => ({
+          number,
+        }))
     },
     { autoGenerateArrayKeys: true }
   );

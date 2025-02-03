@@ -18,8 +18,10 @@ export const ScheduleFormSchema = z.object({
     required_error: '코트 수 입력해주세요.',
   }),
   courtNumbers: z.array(
-    z.string({
-      required_error: '코트 번호를 입력해주세요.',
+    z.object({
+      number: z.string({
+        required_error: '코트 번호를 입력해주세요.', 
+      })
     })
   ),
   attendees: z
@@ -29,7 +31,7 @@ export const ScheduleFormSchema = z.object({
         gender: z.string(),
         startTime: z.string(),
         endTime: z.string(),
-        memberShip: z.boolean(),
+        membership: z.boolean(),
       })
     )
     .optional()

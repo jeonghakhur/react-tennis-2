@@ -1,3 +1,5 @@
+import React from "react";
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const courtSchedule = {
   name: 'schedule',
@@ -13,26 +15,63 @@ export const courtSchedule = {
     {
       name: 'courtNumbers',
       type: 'array',
-      of: [
-        {
-          type: 'string',
-        },
-      ],
-      title: 'CourtNumber',
+      of: [{
+        type: "object",
+        name: "courtNumber",
+        fields: [
+          { name: "number", type: "string", title: "Court Number" },
+        ],
+      }],
     },
-    // 필요한 필드 추가
+    {
+      name: 'attendees',
+      type: 'array',
+      of: [{
+        name: 'attendee',
+        type: 'document',
+        fields: [
+          { name: 'name', type: 'string', },
+          { name: 'startTime', type: 'string', },
+          { name: 'endTime', type: 'string', },
+          { name: 'gender', type: 'string', },
+          { name: 'membership', type: 'boolean', },
+        ],
+      }],
+    },
+    { 
+      name: 'comments',
+      type: 'array', 
+      of: [{
+        name: 'comment',
+        type: 'document',
+        fields: [
+          {
+            name: 'author',
+            type: 'reference',
+            to: [{type: 'user'}],
+          },
+          {
+            name: 'text',
+            type: 'string',
+          },
+        ]
+      }]
+    }
   ],
   preview: {
     select: {
+      courtName: 'courtName',
+      date: 'date',
       authorName: 'author.name',
       authorUsername: 'author.username',
+      media: 'author.image',
+      // attendees: 'attendees',
     },
-    prepare(selection: any) {
-      const { authorName, authorUsername, media } = selection;
+    prepare({courtName, date, authorName, authorUsername, media}: any) {
       return {
-        title: authorName,
+        title: `${courtName} ${new Date(date).toLocaleDateString('ko-KR')}`,
         subtitle: `by ${authorName} (${authorUsername})`,
-        media,
+        media: media ? React.createElement('img', {src: media, alt: ''}) : null,
       };
     },
   },
