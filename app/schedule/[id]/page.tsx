@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import { useCacheKeys } from '@/context/CacheKeysContext';
 import { Container } from '@/components/Layout';
@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 type Props = {
   params: Promise<{ id: string }>; // params가 Promise로 감싸져 있음
@@ -109,7 +110,7 @@ export default function Page({ params }: Props) {
       // ✅ API 요청 없이 로컬 데이터를 업데이트
       mutate(`/api/schedule/${id}`);
 
-      alert('일정이 성공적으로 업데이트되었습니다.');
+      alert(result.message);
     } catch (error) {
       if (error instanceof Error) {
         console.error('❌ 업데이트 실패:', error);
@@ -124,6 +125,82 @@ export default function Page({ params }: Props) {
     handleUpdate(formData);
   }
 
+  const handleAttendees = async () => {
+    const startHour = startHourRef.current?.textContent || '00';
+    const startMinute = startMinuteRef.current?.textContent || '00';
+    const endHour = endHourRef.current?.textContent || '00';
+    const endMinute = endMinuteRef.current?.textContent || '00';
+
+    // ✅ 현재 날짜를 기준으로 시작시간과 종료시간을 `Date` 객체로 변환
+    const now = new Date(); // 오늘 날짜 사용
+    const startTime = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      parseInt(startHour, 10),
+      parseInt(startMinute, 10)
+    );
+    const endTime = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      parseInt(endHour, 10),
+      parseInt(endMinute, 10)
+    );
+
+    // ✅ 1. 시작시간과 종료시간이 같은지 확인
+    const isSameTime = startTime.getTime() === endTime.getTime();
+
+    // ✅ 2. 시작시간이 종료시간보다 큰지 확인 (잘못된 경우)
+    const isStartTimeAfterEndTime = startTime.getTime() > endTime.getTime();
+
+    // ✅ 3. 시작시간과 종료시간의 차이 (밀리초 → 분 변환)
+    const timeDifferenceMs = endTime.getTime() - startTime.getTime();
+    const timeDifferenceMinutes = timeDifferenceMs / (1000 * 60); // 밀리초 → 분 변환
+
+    if (isSameTime) {
+      alert('시작시간과 종료시간이 동일합니다.');
+      return;
+    }
+
+    if (isStartTimeAfterEndTime) {
+      alert('시작시간이 종료시간보다 늦습니다.');
+      return;
+    }
+
+    if (timeDifferenceMinutes <= 30) {
+      alert('운동시간이 너무 짧습니다. 확인해주세요.');
+      return;
+    }
+
+    const newAttendees = {
+      startHour,
+      startMinute,
+      endHour,
+      endMinute,
+      membership: true,
+    };
+
+    const res = await fetch(`/api/attendees/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ id, newAttendees }),
+    }).then((res) => res.json());
+
+    console.log(res);
+
+    // // ✅ 결과 출력
+    // console.log('Start Time:', startTime);
+    // console.log('End Time:', endTime);
+    // console.log('같은 시간인가?', isSameTime);
+    // console.log('시작시간이 종료시간보다 늦나?', isStartTimeAfterEndTime);
+    // console.log('시간 차이 (분):', timeDifferenceMinutes);
+  };
+
+  const startHourRef = useRef<HTMLButtonElement>(null);
+  const startMinuteRef = useRef<HTMLButtonElement>(null);
+  const endHourRef = useRef<HTMLButtonElement>(null);
+  const endMinuteRef = useRef<HTMLButtonElement>(null);
+
   return (
     <Container>
       {(loading || isLoading) && (
@@ -137,26 +214,88 @@ export default function Page({ params }: Props) {
           wrapperClass="grid-wrapper"
         />
       )}
-      <FormItem></FormItem>
       {data && (
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 pb-[80px]"
           >
-            <div className="flex gap-x-2 items-center">
-              <input type="text" name="attendees[0].startTime" />
-              <Select defaultValue={data?.startTime}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="19">19</SelectItem>
-                  <SelectItem value="00">00</SelectItem>
-                  <SelectItem value="30">30</SelectItem>
-                </SelectContent>
-              </Select>
-              <span>~</span>
+            <div>
+              <Label className="w-full">참석 시간</Label>
+              <div className="flex gap-x-2 items-center">
+                <Select defaultValue={data.startTime}>
+                  <SelectTrigger ref={startHourRef}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from(
+                      {
+                        length:
+                          parseInt(data.endTime, 10) -
+                          parseInt(data.startTime, 10),
+                      },
+                      (_, idx) => (
+                        <SelectItem
+                          value={String(parseInt(data.startTime, 10) + idx)}
+                          key={idx}
+                        >
+                          {String(parseInt(data.startTime, 10) + idx)}
+                        </SelectItem>
+                      )
+                    )}
+                  </SelectContent>
+                </Select>
+
+                <Select defaultValue="00" name="">
+                  <SelectTrigger ref={startMinuteRef}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="00">00</SelectItem>
+                    <SelectItem value="30">30</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span>~</span>
+                <Select defaultValue={data.endTime}>
+                  <SelectTrigger ref={endHourRef}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from(
+                      {
+                        length:
+                          parseInt(data.endTime, 10) -
+                          parseInt(data.startTime, 10),
+                      },
+                      (_, idx) => (
+                        <SelectItem
+                          value={String(parseInt(data.startTime, 10) + idx + 1)}
+                          key={idx}
+                        >
+                          {String(parseInt(data.startTime, 10) + idx + 1)}
+                        </SelectItem>
+                      )
+                    )}
+                  </SelectContent>
+                </Select>
+                <Select defaultValue="00">
+                  <SelectTrigger ref={endMinuteRef}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="00">00</SelectItem>
+                    <SelectItem value="30">30</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full mt-2"
+                onClick={handleAttendees}
+              >
+                참석시간 등록
+              </Button>
             </div>
             <FormDatePicker form={form} />
 
@@ -177,15 +316,15 @@ export default function Page({ params }: Props) {
             {/* <FormCourtName form={form} value={data.courtName} /> */}
             <Input type="text" {...form.register('courtName')} />
             <Input type="text" {...form.register('courtCount')} />
-            {form
-              .watch('courtNumbers')
-              ?.map((_, idx) => (
+            {form.watch('courtNumbers')?.map((_, idx) => {
+              return (
                 <Input
                   key={idx}
                   type="text"
                   {...form.register(`courtNumbers.${idx}.number`)}
                 />
-              ))}
+              );
+            })}
 
             <div className="button-group">
               <Button

@@ -1,5 +1,5 @@
 import { ScheduleFormType } from '@/model/schedule';
-import { ControllerRenderProps, UseFormReturn } from 'react-hook-form';
+import { UseFormReturn } from 'react-hook-form';
 import {
   FormControl,
   FormField,
@@ -31,7 +31,7 @@ export default function FormCourtName({ form }: FormProps) {
         control={form.control}
         name="courtName"
         render={({ field }) => {
-          console.log(field.value);
+          // console.log(field.value);
           return (
             <FormItem className="flex flex-col">
               <FormLabel>코트 이름</FormLabel>

@@ -31,8 +31,10 @@ export const courtSchedule = {
         type: 'document',
         fields: [
           { name: 'name', type: 'string', },
-          { name: 'startTime', type: 'string', },
-          { name: 'endTime', type: 'string', },
+          { name: 'startHour', type: 'string', },
+          { name: 'startMinute', type: 'string', },
+          { name: 'endHour', type: 'string', },
+          { name: 'endMinute', type: 'string', },
           { name: 'gender', type: 'string', },
           { name: 'membership', type: 'boolean', },
         ],

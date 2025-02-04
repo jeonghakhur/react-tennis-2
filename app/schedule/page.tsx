@@ -46,36 +46,246 @@ import FormCourtName from '@/components/FormCourtName';
 import { mutate } from 'swr';
 
 const memberList = [
-  { name: '김성재', gender: '남성', startTime: '19:30', endTime: '21:00' },
-  { name: '김은아', gender: '여성', startTime: '20:00', endTime: '22:00' },
-  { name: '김진환', gender: '남성', startTime: '19:00', endTime: '21:30' },
-  { name: '나리메', gender: '여성', startTime: '19:00', endTime: '22:00' },
-  { name: '목진성', gender: '남성', startTime: '19:00', endTime: '22:00' },
-  { name: '박정선', gender: '여성', startTime: '19:00', endTime: '22:00' },
-  { name: '박정필', gender: '남성', startTime: '19:00', endTime: '22:00' },
-  { name: '박현천', gender: '남성', startTime: '19:00', endTime: '22:00' },
-  { name: '손상미', gender: '여성', startTime: '19:00', endTime: '22:00' },
-  { name: '송호석', gender: '남성', startTime: '19:00', endTime: '22:00' },
-  { name: '양진용', gender: '남성', startTime: '19:00', endTime: '22:00' },
-  { name: '윤슬', gender: '여성', startTime: '19:00', endTime: '22:00' },
-  { name: '이금순', gender: '여성', startTime: '19:00', endTime: '22:00' },
-  { name: '이덕희', gender: '남성', startTime: '19:00', endTime: '22:00' },
-  { name: '이명진', gender: '남성', startTime: '19:00', endTime: '22:00' },
-  { name: '이범영', gender: '남성', startTime: '19:00', endTime: '22:00' },
-  { name: '이원태', gender: '남성', startTime: '19:00', endTime: '22:00' },
-  { name: '이은하', gender: '여성', startTime: '19:00', endTime: '22:00' },
-  { name: '이태호', gender: '남성', startTime: '19:00', endTime: '22:00' },
-  { name: '이현우', gender: '남성', startTime: '19:00', endTime: '22:00' },
-  { name: '이현철', gender: '남성', startTime: '19:00', endTime: '22:00' },
-  { name: '장영숙', gender: '여성', startTime: '19:00', endTime: '22:00' },
-  { name: '장진석', gender: '남성', startTime: '19:00', endTime: '22:00' },
-  { name: '전소빈', gender: '여성', startTime: '19:00', endTime: '22:00' },
-  { name: '정현수', gender: '여성', startTime: '19:00', endTime: '22:00' },
-  { name: '조준형', gender: '남성', startTime: '19:00', endTime: '22:00' },
-  { name: '하지원', gender: '여성', startTime: '19:00', endTime: '22:00' },
-  { name: '한양연', gender: '여성', startTime: '19:00', endTime: '22:00' },
-  { name: '허정학', gender: '남성', startTime: '19:00', endTime: '22:00' },
-  { name: '홍성애', gender: '여성', startTime: '19:00', endTime: '22:00' },
+  {
+    name: '김성재',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '30',
+    endHour: '21',
+    endMinute: '00',
+  },
+  {
+    name: '김은아',
+    gender: '여성',
+    startHour: '20',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '김진환',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '21',
+    endMinute: '30',
+  },
+  {
+    name: '나리메',
+    gender: '여성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '목진성',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '박정선',
+    gender: '여성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '박정필',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '박현천',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '손상미',
+    gender: '여성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '송호석',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '양진용',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '윤슬',
+    gender: '여성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '이금순',
+    gender: '여성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '이덕희',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '이명진',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '이범영',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '이원태',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '이은하',
+    gender: '여성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '이태호',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '이현우',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '이현철',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '장영숙',
+    gender: '여성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '장진석',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '전소빈',
+    gender: '여성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '정현수',
+    gender: '여성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '조준형',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '하지원',
+    gender: '여성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '한양연',
+    gender: '여성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '허정학',
+    gender: '남성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
+  {
+    name: '홍성애',
+    gender: '여성',
+    startHour: '19',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  },
 ];
 
 export default function CalendarForm() {
@@ -125,8 +335,10 @@ export default function CalendarForm() {
     append({
       name,
       gender,
-      startTime: `${attendanceTime.startHour}:${attendanceTime.startMinute}`,
-      endTime: `${attendanceTime.endHour}:${attendanceTime.endMinute}`,
+      startHour: attendanceTime.startHour,
+      startMinute: attendanceTime.startMinute,
+      endHour: attendanceTime.endHour,
+      endMinute: attendanceTime.endMinute,
       membership,
     });
   };
@@ -193,6 +405,8 @@ export default function CalendarForm() {
       data.courtName = data.otherCourtName;
     }
 
+    console.log('attendees', data);
+
     // ✅ Optimistic UI: 새 데이터를 먼저 로컬 캐시에 추가 (임시 ID 생성)
     const optimisticSchedule = { ...data, id: Date.now().toString() };
 
@@ -240,12 +454,10 @@ export default function CalendarForm() {
   }
 
   const handleCourtCountChange = (count: string) => {
-    form.setValue('courtCount', count);
     const countNumber = parseInt(count, 10);
-    const updatedCourtNumbers = Array.from({ length: countNumber }, (_, i) => ({
-      number: `${i + 1}`,
-    }));
-    form.setValue('courtNumbers', updatedCourtNumbers);
+    Array.from({ length: countNumber }, (_, idx) => {
+      form.setValue(`courtNumbers.${idx}.number`, String(idx + 1));
+    });
   };
 
   const handleMemberChange = (member: string) => {
@@ -259,13 +471,23 @@ export default function CalendarForm() {
   };
 
   const handleAttendeeRemove = (idx: number) => {
-    const { name, gender, startTime, endTime, membership } = fields[idx];
+    const {
+      name,
+      gender,
+      startHour,
+      startMinute,
+      endHour,
+      endMinute,
+      membership,
+    } = fields[idx];
     if (membership) {
       memberList.push({
         name,
         gender,
-        startTime,
-        endTime,
+        startHour,
+        startMinute,
+        endHour,
+        endMinute,
       });
       memberList.sort((a, b) => a.name.localeCompare(b.name));
     }
@@ -346,26 +568,27 @@ export default function CalendarForm() {
             )}
           />
         )}
-        {(form.watch('courtNumbers') || []).map((_, idx) => (
-          <FormField
-            key={idx}
-            control={form.control}
-            name={`courtNumbers.${idx}.number`}
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>{`코트 번호 ${idx + 1}`}</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value}
-                    placeholder={`코트 번호 ${idx + 1}`}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        ))}
+        {Array.from(
+          { length: parseInt(form.watch('courtCount'), 10) },
+          (_, idx) => (
+            <FormField
+              key={idx}
+              control={form.control}
+              name={`courtNumbers.${idx}.number`}
+              render={({ field }) => {
+                return (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>{`코트 번호 ${idx + 1}`}</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+          )
+        )}
 
         <FormItem className="flex flex-col">
           <FormLabel>참석자 및 참석 시간 선택</FormLabel>
@@ -564,7 +787,8 @@ export default function CalendarForm() {
                   <td>{field.name}</td>
                   <td>{field.gender}</td>
                   <td>
-                    {field.startTime}~{field.endTime}
+                    {field.startHour}:{field.startMinute}~{field.endHour}:
+                    {field.endMinute}
                   </td>
                   <td>
                     <Button

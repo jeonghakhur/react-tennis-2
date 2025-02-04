@@ -44,6 +44,7 @@ export default function NavBar() {
                     height={36}
                     alt={`${user.name} profile image`}
                     className="rounded-full"
+                    priority
                   />
                 </div>
               ) : (

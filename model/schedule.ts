@@ -19,18 +19,17 @@ export const ScheduleFormSchema = z.object({
   }),
   courtNumbers: z.array(
     z.object({
-      number: z.string({
-        required_error: '코트 번호를 입력해주세요.', 
-      })
-    })
-  ),
+      number: z.string().trim().min(1, "코트 번호를 입력해주세요.")},
+  )),
   attendees: z
     .array(
       z.object({
         name: z.string(),
         gender: z.string(),
-        startTime: z.string(),
-        endTime: z.string(),
+        startHour: z.string(),
+        startMinute: z.string(),
+        endHour: z.string(),
+        endMinute: z.string(),
         membership: z.boolean(),
       })
     )
