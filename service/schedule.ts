@@ -9,7 +9,7 @@ export async function getSchedule(id: string) {
 }
 
 export async function getAllSchedule() {
-  return client.fetch(`*[_type == "schedule"] | order(dateTime(date) desc) {
+  return client.fetch(`*[_type == "schedule"] | order(date desc) {
     ...,
     "id": _id,
   }`);
