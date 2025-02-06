@@ -20,27 +20,16 @@ export async function GET(_: NextRequest, context: Context) {
 }
 
 export async function PATCH(req: NextRequest, context: Context) {
-  try {
-    const { id } = await context.params;
-    const body = await req.json(); // 클라이언트에서 전송된 데이터 받기
-
-    if (!id || !body) {
-      return NextResponse.json(
-        { error: 'ID 또는 데이터가 없습니다.' },
-        { status: 400 }
-      );
-    }
-
-    const updatedSchedule = await updateSchedule(id, body);
-
-    return NextResponse.json({
-      message: '일정이 성공적으로 업데이트되었습니다.',
-      data: updatedSchedule,
-    });
-  } catch (error) {
-    console.error('❌ PATCH /api/schedule/:id Error:', error);
-    return NextResponse.json({ error: '서버 오류 발생' }, { status: 500 });
-  }
+  const { id } = await context.params;
+  const body = await req.json();
+  return withSessionUser(async () =>
+    updateSchedule(id, body).then((data) => {
+      return NextResponse.json({
+        message: '일정이 성공적으로 업데이트되었습니다.',
+        data,
+      });
+    })
+  );
 }
 
 export async function DELETE(_: NextRequest, context: Context) {

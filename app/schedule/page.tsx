@@ -44,6 +44,7 @@ import FormDatePicker from '@/components/FormDatePicker';
 import FormSelectTime from '@/components/FormSelectTime';
 import FormCourtName from '@/components/FormCourtName';
 import { mutate } from 'swr';
+import useSchedule from '@/hooks/schedule';
 
 const memberList = [
   {
@@ -297,6 +298,7 @@ export default function CalendarForm() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const router = useRouter();
+  const { postSchedule } = useSchedule();
 
   const form = useForm<ScheduleFormType>({
     resolver: zodResolver(ScheduleFormSchema),
@@ -406,51 +408,58 @@ export default function CalendarForm() {
     }
 
     console.log('attendees', data);
+    postSchedule(data)
+      .then((data) => console.log(data))
+      .catch((error) => console.error(error))
+      .finally(() => {
+        setLoading(false);
+        router.push('/');
+      });
 
     // ✅ Optimistic UI: 새 데이터를 먼저 로컬 캐시에 추가 (임시 ID 생성)
-    const optimisticSchedule = { ...data, id: Date.now().toString() };
+    // const optimisticSchedule = { ...data, id: Date.now().toString() };
 
-    // ✅ 데이터를 추가하면서 정렬 적용 (등록 후 UI가 정렬됨)
-    mutate(
-      '/api/schedule',
-      (currentData: any) =>
-        [...(currentData || []), optimisticSchedule].sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        ),
-      false
-    );
+    // // ✅ 데이터를 추가하면서 정렬 적용 (등록 후 UI가 정렬됨)
+    // mutate(
+    //   '/api/schedule',
+    //   (currentData: any) =>
+    //     [...(currentData || []), optimisticSchedule].sort(
+    //       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    //     ),
+    //   false
+    // );
 
-    fetch('/api/schedule/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const errorResponse = await res.json(); // JSON 응답을 읽음
-          setError(
-            `${res.status} ${res.statusText}: ${errorResponse.message || 'Unknown error'}`
-          );
-          return;
-        }
+    // fetch('/api/schedule/', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify(data),
+    // })
+    //   .then(async (res) => {
+    //     if (!res.ok) {
+    //       const errorResponse = await res.json(); // JSON 응답을 읽음
+    //       setError(
+    //         `${res.status} ${res.statusText}: ${errorResponse.message || 'Unknown error'}`
+    //       );
+    //       return;
+    //     }
 
-        return res.json(); // 성공 응답 처리
-      })
-      .then((newSchedule) => {
-        console.log('✅ 등록 성공:', newSchedule);
+    //     return res.json(); // 성공 응답 처리
+    //   })
+    //   .then((newSchedule) => {
+    //     console.log('✅ 등록 성공:', newSchedule);
 
-        // ✅ 서버에서 최신 데이터 가져오기 (추가된 데이터 확인)
-        mutate('/api/schedule');
+    //     // ✅ 서버에서 최신 데이터 가져오기 (추가된 데이터 확인)
+    //     mutate('/api/schedule');
 
-        router.push('/'); // ✅ 리다이렉트
-      })
-      .catch((err) => {
-        setError(`Error: ${err.message}`);
-        console.error('Unexpected error:', err); // 네트워크 등 기타 에러
-      })
-      .finally(() => setLoading(false));
+    //     router.push('/'); // ✅ 리다이렉트
+    //   })
+    //   .catch((err) => {
+    //     setError(`Error: ${err.message}`);
+    //     console.error('Unexpected error:', err); // 네트워크 등 기타 에러
+    //   })
+    //   .finally(() => setLoading(false));
   }
 
   const handleCourtCountChange = (count: string) => {

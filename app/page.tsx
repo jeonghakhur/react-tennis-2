@@ -1,23 +1,11 @@
 'use client';
-import useSWR from 'swr';
-import { useCacheKeys } from '@/context/CacheKeysContext';
-import { GetScheduleType } from '@/model/schedule';
+
 import { Container } from '@/components/Layout';
 import Link from 'next/link';
+import useSchedule from '@/hooks/useSchedules';
 
 export default function Home() {
-  const cacheKeys = useCacheKeys();
-
-  const { data: scheduleData, isLoading } = useSWR<GetScheduleType[]>(
-    cacheKeys.scheduleKey,
-    {
-      onSuccess: (data) => {
-        return data.sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-      },
-    }
-  );
+  const { schedules, isLoading } = useSchedule();
 
   const options: Intl.DateTimeFormatOptions = {
     weekday: 'long',
@@ -30,7 +18,7 @@ export default function Home() {
     <Container>
       {isLoading && <div>Loading...</div>}
       <ul>
-        {scheduleData?.map(({ id, date, courtName }, index) => {
+        {schedules?.map(({ id, date, courtName }, index) => {
           const newDate = new Date(date);
           const formattedDate = newDate.toLocaleDateString('ko-KR', options);
           return (

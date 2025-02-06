@@ -19,13 +19,14 @@ export const ScheduleFormSchema = z.object({
   }),
   courtNumbers: z.array(
     z.object({
-      number: z.string().trim().min(1, "코트 번호를 입력해주세요.")},
-  )),
+      number: z.string().trim().min(1, '코트 번호를 입력해주세요.'),
+    })
+  ),
   attendees: z
     .array(
       z.object({
         name: z.string(),
-        gender: z.string(),
+        gender: z.string().optional(),
         startHour: z.string(),
         startMinute: z.string(),
         endHour: z.string(),
@@ -44,3 +45,14 @@ export const GetScheduleSchema = ScheduleFormSchema.extend({
 });
 
 export type GetScheduleType = z.infer<typeof GetScheduleSchema>;
+
+export type AttendanceProps = {
+  _key?: string;
+  name: string;
+  gender?: string;
+  startHour: string;
+  startMinute: string;
+  endHour: string;
+  endMinute: string;
+  membership: boolean;
+};

@@ -10,7 +10,6 @@ import clsx from 'clsx';
 import ConditionalNavBar from '@/components/ConditionalNavBar';
 
 const notoSans = Noto_Sans({
-  variable: '--font-noto-sans',
   subsets: ['latin'],
 });
 
