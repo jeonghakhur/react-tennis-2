@@ -99,14 +99,13 @@ export default function useSchedule(scheduleId?: string) {
     try {
       const result = await createSchedule(newSchedule);
 
-      // ✅ 서버에서 받은 최신 데이터를 SWR에 반영
       // ✅ 서버에서 받은 최신 데이터를 SWR에 반영 + 정렬 적용
-      globalMutate('/api/schedule', async () => {
-        const updatedData = await fetch('/api/schedule').then((res) =>
-          res.json()
-        );
-        return sortByDate(updatedData); // ✅ 서버 데이터도 정렬
-      });
+      // globalMutate('/api/schedule', async () => {
+      //   const updatedData = await fetch('/api/schedule').then((res) =>
+      //     res.json()
+      //   );
+      //   return sortByDate(updatedData); // ✅ 서버 데이터도 정렬
+      // });
 
       console.log('✅ 스케줄 등록 성공!', result);
       return result;
