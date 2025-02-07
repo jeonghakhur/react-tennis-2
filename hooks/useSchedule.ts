@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   AttendanceProps,
+  GetScheduleProps,
   GetScheduleType,
   ScheduleFormType,
 } from '@/model/schedule';
@@ -14,9 +15,28 @@ function sortByDate(schedules: GetScheduleType[]) {
 
 async function addAttendance(scheduleId: string, attendance: AttendanceProps) {
   return fetch('/api/attendance', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scheduleId, attendance }),
+  }).then((res) => res.json());
+}
+
+async function updateAttendance(
+  scheduleId: string,
+  attendance: AttendanceProps
+) {
+  return fetch('/api/attendance', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ scheduleId, attendance }),
+  }).then((res) => res.json());
+}
+
+async function deleteAttendance(scheduleId: string, attendeeKey: string) {
+  return fetch('/api/attendance', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scheduleId, attendeeKey }),
   }).then((res) => res.json());
 }
 
@@ -51,7 +71,7 @@ export default function useSchedule(scheduleId?: string) {
     isLoading,
     error,
     mutate,
-  } = useSWR<GetScheduleType>(
+  } = useSWR<GetScheduleProps>(
     scheduleId ? `/api/schedule/${scheduleId}` : null
   );
   const { mutate: globalMutate } = useSWRConfig();
@@ -68,14 +88,59 @@ export default function useSchedule(scheduleId?: string) {
 
     return mutate(
       async () => {
-        const newData = await addAttendance(scheduleId!, attendance);
-        return newData;
+        const response = await addAttendance(scheduleId!, attendance);
+        return response; // ✅ 백엔드에서 업데이트된 데이터 반환
       },
       {
         optimisticData: newSchedule,
-        populateCache: true,
+        rollbackOnError: false, // ❌ 실패 시 이전 상태로 복구
+        populateCache: false, // ✅ SWR 캐시 최신 상태 유지
+        revalidate: true, // ✅ 불필요한 API 요청 방지
+      }
+    );
+  };
+
+  const patchAttendance = async (attendance: AttendanceProps) => {
+    if (!attendees) return;
+    const newSchedule = {
+      ...schedule,
+      attendees: attendees.map((att) =>
+        att._key === attendance._key ? { ...att, ...attendance } : att
+      ),
+    };
+
+    return mutate(
+      async () => {
+        const response = await updateAttendance(scheduleId!, attendance);
+        return response;
+      },
+      {
+        optimisticData: newSchedule,
+        populateCache: false,
         revalidate: false,
         rollbackOnError: true,
+      }
+    );
+  };
+
+  const removeAttendance = async (attendanceKey: string) => {
+    if (!attendees) return;
+
+    const updatedAttendees = attendees.filter(
+      (att) => att._key !== attendanceKey
+    );
+    const newSchedule = { ...schedule, attendees: updatedAttendees };
+
+    return mutate(
+      async () => {
+        const response = await deleteAttendance(scheduleId!, attendanceKey);
+        return response;
+      },
+      {
+        optimisticData: newSchedule,
+        rollbackOnError: false,
+        populateCache: false,
+        revalidate: true,
       }
     );
   };
@@ -152,8 +217,10 @@ export default function useSchedule(scheduleId?: string) {
     isLoading,
     error,
     postSchedule,
-    postAttendance,
     patchSchedule,
     removeSchedule,
+    postAttendance,
+    patchAttendance,
+    removeAttendance,
   };
 }

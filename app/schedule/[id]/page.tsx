@@ -2,7 +2,6 @@
 'use client';
 
 import { use, useEffect, useState } from 'react';
-import { useCacheKeys } from '@/context/CacheKeysContext';
 import { Container } from '@/components/Layout';
 import {
   AttendanceProps,
@@ -28,19 +27,18 @@ import { Label } from '@/components/ui/label';
 import useAuthRedirect from '@/hooks/useAuthRedirect';
 import { toast } from '@/hooks/use-toast';
 import FormAttendees from '@/components/FormAttendees';
-import useSchedule from '@/hooks/schedule';
+import useSchedule from '@/hooks/useSchedule';
 import { useRouter } from 'next/navigation';
+import useSWR from 'swr';
 
 type Props = {
   params: Promise<{ id: string }>; // params가 Promise로 감싸져 있음
 };
 
-type AttendanceTimeProps = Omit<
-  AttendanceProps,
-  'name' | 'gender' | 'membership'
->;
-
-const defaultGameTime: AttendanceTimeProps = {
+const defaultAttendance: AttendanceProps = {
+  _key: '',
+  name: '',
+  gender: '',
   startHour: '19',
   startMinute: '00',
   endHour: '22',
@@ -53,13 +51,18 @@ export default function Page({ params }: Props) {
   const { id } = use(params); // params를 비동기로 처리
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
-  // const [myAttendance, setMyAttendance] = useState<AttendanceProps>();
-  const [attendanceTime, setAttendanceTime] =
-    useState<AttendanceTimeProps>(defaultGameTime);
-  const { schedule, isLoading, postAttendance, patchSchedule, removeSchedule } =
-    useSchedule(id);
-
-  const [attendees, setAttendees] = useState<AttendanceProps[]>([]);
+  const [myAttendance, setMyAttendance] =
+    useState<AttendanceProps>(defaultAttendance);
+  const {
+    schedule,
+    isLoading,
+    postAttendance,
+    patchAttendance,
+    removeAttendance,
+    patchSchedule,
+    removeSchedule,
+  } = useSchedule(id);
+  const { data: members } = useSWR('/api/members/');
 
   const form = useForm<ScheduleFormType>({
     resolver: zodResolver(ScheduleFormSchema),
@@ -72,30 +75,27 @@ export default function Page({ params }: Props) {
         date: schedule.date ? new Date(schedule.date) : new Date(),
       });
 
-      // const existingIndex = attendees.findIndex(
-      //   (attendee: AttendanceProps) => attendee.name === userName
-      // );
+      const existingIndex = schedule.attendees.findIndex(
+        (attendee: AttendanceProps) => attendee.name === userName
+      );
 
-      // if (existingIndex !== -1) {
-      //   const myAttendance = data.attendees[existingIndex];
-      //   setAttendanceTime({
-      //     startHour: myAttendance.startHour,
-      //     startMinute: myAttendance.startMinute,
-      //     endHour: myAttendance.endHour,
-      //     endMinute: myAttendance.endMinute,
-      //   });
-      // } else {
-      //   setAttendanceTime({
-      //     startHour: data.startTime,
-      //     startMinute: '00',
-      //     endHour: data.endTime,
-      //     endMinute: '00',
-      //   });
-      // }
-
-      setAttendees(schedule.attendees);
+      if (existingIndex !== -1) {
+        setMyAttendance(schedule.attendees[existingIndex]);
+      } else {
+        setMyAttendance({
+          name: userName!,
+          startHour: schedule.startTime,
+          startMinute: '00',
+          endHour: schedule.endTime,
+          endMinute: '00',
+        });
+      }
     }
   }, [schedule, form, userName]);
+
+  useEffect(() => {
+    console.log(members);
+  }, [members]);
 
   useEffect(() => {
     if (Object.keys(form.formState.errors).length > 0) {
@@ -114,53 +114,7 @@ export default function Page({ params }: Props) {
           setLoading(false);
           router.push('/');
         });
-      // fetch(`/api/schedule/${id}`, {
-      //   method: 'DELETE',
-      // })
-      //   .then((response) => response.json())
-      //   .then((data) => {
-      //     console.log('삭제 완료:', data);
-      //     mutate(
-      //       cacheKeys.scheduleKey,
-      //       (currentData: any) => {
-      //         return currentData?.filter((item: any) => item.id !== id);
-      //       },
-      //       false
-      //     );
-      //   })
-      //   .catch((error) => console.error('삭제 중 오류 발생:', error))
-      //   .finally(() => {
-
-      //   });
     }
-  };
-
-  const handleUpdate = async (formData: ScheduleFormType) => {
-    // setLoading(true);
-    // try {
-    //   const response = await fetch(`/api/schedule/${id}`, {
-    //     method: 'PATCH',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify(formData),
-    //   });
-    //   const result = await response.json();
-    //   if (!response.ok) {
-    //     throw new Error(result.error || '업데이트 실패');
-    //   }
-    //   console.log('✅ 업데이트 성공:', result);
-    //   // ✅ API 요청 없이 로컬 데이터를 업데이트
-    //   mutate(`/api/schedule/${id}`);
-    //   alert(result.message);
-    // } catch (error) {
-    //   if (error instanceof Error) {
-    //     console.error('❌ 업데이트 실패:', error);
-    //     alert(`업데이트 중 오류 발생: ${error.message}`);
-    //   }
-    // } finally {
-    //   setLoading(false);
-    // }
   };
 
   function onSubmit(formData: ScheduleFormType) {
@@ -180,7 +134,7 @@ export default function Page({ params }: Props) {
   }
 
   const handleAttendance = async () => {
-    const { startHour, startMinute, endHour, endMinute } = attendanceTime;
+    const { startHour, startMinute, endHour, endMinute } = myAttendance;
     // ✅ 현재 날짜를 기준으로 시작시간과 종료시간을 `Date` 객체로 변환
     const now = new Date(); // 오늘 날짜 사용
     const startTime = new Date(
@@ -197,49 +151,37 @@ export default function Page({ params }: Props) {
       parseInt(endHour, 10),
       parseInt(endMinute, 10)
     );
-    // ✅ 1. 시작시간과 종료시간이 같은지 확인
-    const isSameTime = startTime.getTime() === endTime.getTime();
-    // ✅ 2. 시작시간이 종료시간보다 큰지 확인 (잘못된 경우)
-    const isStartTimeAfterEndTime = startTime.getTime() > endTime.getTime();
-    // ✅ 3. 시작시간과 종료시간의 차이 (밀리초 → 분 변환)
-    const timeDifferenceMs = endTime.getTime() - startTime.getTime();
-    const timeDifferenceMinutes = timeDifferenceMs / (1000 * 60); // 밀리초 → 분 변환
-    if (isSameTime) {
+
+    if (startTime.getTime() === endTime.getTime()) {
       alert('시작시간과 종료시간이 동일합니다.');
       return;
     }
-    if (isStartTimeAfterEndTime) {
+    if (startTime.getTime() > endTime.getTime()) {
       alert('시작시간이 종료시간보다 늦습니다.');
       return;
     }
-    if (timeDifferenceMinutes <= 30) {
+    if ((endTime.getTime() - startTime.getTime()) / (1000 * 60) <= 30) {
       alert('운동시간이 너무 짧습니다. 확인해주세요.');
       return;
     }
 
-    const newAttendees = {
-      name: session?.user?.name || '',
-      gender: '남성',
-      startHour,
-      startMinute,
-      endHour,
-      endMinute,
-      membership: true,
-    };
+    const request = myAttendance._key ? patchAttendance : postAttendance;
 
-    postAttendance(newAttendees);
+    setLoading(true);
+    request(myAttendance)
+      .then((data) => console.log(data))
+      .catch((error) => console.error(error))
+      .finally(() => {
+        setLoading(false);
+        toast({
+          title: '참석시간이 등록되었습니다.',
+          duration: 1500,
+        });
+      });
   };
 
   async function handleAttendeeRemove(attendeeKey: string) {
-    // await fetch(`/api/attendance`, {
-    //   method: 'DELETE',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ scheduleId: id, attendeeKey }),
-    // });
-    // mutate(`/api/schedule/`, async () => {
-    //   const response = await fetch(`/api/schedule/${id}`);
-    //   return response.json();
-    // });
+    removeAttendance(attendeeKey);
   }
 
   return (
@@ -265,10 +207,10 @@ export default function Page({ params }: Props) {
               <Label className="w-full">참석 시간</Label>
               <div className="flex gap-x-2 items-center">
                 <Select
-                  value={attendanceTime.startHour}
+                  value={myAttendance.startHour}
                   onValueChange={(value) => {
                     if (!value) return;
-                    setAttendanceTime((pre) => ({ ...pre, startHour: value }));
+                    setMyAttendance((pre) => ({ ...pre, startHour: value }));
                   }}
                 >
                   <SelectTrigger>
@@ -294,10 +236,10 @@ export default function Page({ params }: Props) {
                 </Select>
 
                 <Select
-                  value={attendanceTime.startMinute}
+                  value={myAttendance.startMinute}
                   onValueChange={(value) => {
                     if (!value) return;
-                    setAttendanceTime((pre) => ({
+                    setMyAttendance((pre) => ({
                       ...pre,
                       startMinute: value,
                     }));
@@ -313,10 +255,10 @@ export default function Page({ params }: Props) {
                 </Select>
                 <span>~</span>
                 <Select
-                  value={attendanceTime.endHour}
+                  value={myAttendance.endHour}
                   onValueChange={(value) => {
                     if (!value) return;
-                    setAttendanceTime((pre) => ({ ...pre, endHour: value }));
+                    setMyAttendance((pre) => ({ ...pre, endHour: value }));
                   }}
                 >
                   <SelectTrigger>
@@ -343,10 +285,10 @@ export default function Page({ params }: Props) {
                   </SelectContent>
                 </Select>
                 <Select
-                  value={attendanceTime.endMinute}
+                  value={myAttendance.endMinute}
                   onValueChange={(value) => {
                     if (!value) return;
-                    setAttendanceTime((pre) => ({ ...pre, endMinute: value }));
+                    setMyAttendance((pre) => ({ ...pre, endMinute: value }));
                   }}
                 >
                   <SelectTrigger>
@@ -396,7 +338,7 @@ export default function Page({ params }: Props) {
               );
             })}
             <FormAttendees
-              attendees={attendees}
+              attendees={schedule.attendees}
               onRemoveAttendee={handleAttendeeRemove}
             />
 

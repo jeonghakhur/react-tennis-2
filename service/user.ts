@@ -50,6 +50,14 @@ export async function addUser({
   });
 }
 
+export async function getAllMembers() {
+  return client.fetch(
+    `*[_type == "user"]{
+      ...,
+    }`
+  );
+}
+
 export async function getUserByUser(id: string) {
   return client.fetch(
     `*[_type == "user" && _id == "${id}"]{
@@ -73,8 +81,6 @@ export async function searchUsers(keyword?: string) {
     "id": _id,
     image,
     "userName": username,
-    "following": count(following),
-    "followers": count(followers),
     }
     `
     )

@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const courtSchedule = {
@@ -15,50 +15,54 @@ export const courtSchedule = {
     {
       name: 'courtNumbers',
       type: 'array',
-      of: [{
-        type: "object",
-        name: "courtNumber",
-        fields: [
-          { name: "number", type: "string", title: "Court Number" },
-        ],
-      }],
+      of: [
+        {
+          type: 'object',
+          name: 'courtNumber',
+          fields: [{ name: 'number', type: 'string', title: 'Court Number' }],
+        },
+      ],
     },
     {
       name: 'attendees',
       type: 'array',
-      of: [{
-        name: 'attendee',
-        type: 'document',
-        fields: [
-          { name: 'name', type: 'string', },
-          { name: 'startHour', type: 'string', },
-          { name: 'startMinute', type: 'string', },
-          { name: 'endHour', type: 'string', },
-          { name: 'endMinute', type: 'string', },
-          { name: 'gender', type: 'string', },
-          { name: 'membership', type: 'boolean', },
-        ],
-      }],
+      of: [
+        {
+          name: 'attendee',
+          type: 'document',
+          fields: [
+            { name: 'name', type: 'string' },
+            { name: 'startHour', type: 'string' },
+            { name: 'startMinute', type: 'string' },
+            { name: 'endHour', type: 'string' },
+            { name: 'endMinute', type: 'string' },
+            { name: 'gender', type: 'string' },
+            // { name: 'membership', type: 'boolean', },
+          ],
+        },
+      ],
     },
-    { 
+    {
       name: 'comments',
-      type: 'array', 
-      of: [{
-        name: 'comment',
-        type: 'document',
-        fields: [
-          {
-            name: 'author',
-            type: 'reference',
-            to: [{type: 'user'}],
-          },
-          {
-            name: 'text',
-            type: 'string',
-          },
-        ]
-      }]
-    }
+      type: 'array',
+      of: [
+        {
+          name: 'comment',
+          type: 'document',
+          fields: [
+            {
+              name: 'author',
+              type: 'reference',
+              to: [{ type: 'user' }],
+            },
+            {
+              name: 'text',
+              type: 'string',
+            },
+          ],
+        },
+      ],
+    },
   ],
   preview: {
     select: {
@@ -69,11 +73,13 @@ export const courtSchedule = {
       media: 'author.image',
       // attendees: 'attendees',
     },
-    prepare({courtName, date, authorName, authorUsername, media}: any) {
+    prepare({ courtName, date, authorName, authorUsername, media }: any) {
       return {
         title: `${courtName} ${new Date(date).toLocaleDateString('ko-KR')}`,
         subtitle: `by ${authorName} (${authorUsername})`,
-        media: media ? React.createElement('img', {src: media, alt: ''}) : null,
+        media: media
+          ? React.createElement('img', { src: media, alt: '' })
+          : null,
       };
     },
   },

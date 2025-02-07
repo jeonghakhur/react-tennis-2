@@ -78,50 +78,22 @@ export async function deleteSchedule(id: string) {
 }
 
 export async function addAttendance(scheduleId: string, data: AttendanceProps) {
+  console.log('addAttendance');
   return client
     .patch(scheduleId)
     .setIfMissing({ attendees: [] }) // attendees 배열이 없으면 생성
     .append('attendees', [data])
     .commit({ autoGenerateArrayKeys: true });
-  // const schedule = await client.getDocument(scheduleId);
-  // const attendees = schedule?.attendees || [];
+}
 
-  // ✅ 동일한 name이 존재하는지 확인
-  // const existingIndex = attendees.findIndex((attendee: AttendanceProps) => attendee.name === user.name);
-
-  // if (existingIndex !== -1) {
-  //   // ✅ 동일한 참석자가 있을 경우 → 수정 (`.set()`)
-  //   const existingAttendee = attendees[existingIndex];
-  //   return client
-  //     .patch(scheduleId)
-  //     .set({
-  //       [`attendees[${existingIndex}]`]: {
-  //         ...existingAttendee,
-  //         startHour: data.startHour,
-  //         startMinute: data.startMinute,
-  //         endHour: data.endHour,
-  //         endMinute: data.endMinute,
-  //       },
-  //     })
-  //     .commit();
-  // } else {
-  //   // ✅ 동일한 참석자가 없을 경우 → 추가 (`.append()`)
-  //   return client
-  //     .patch(scheduleId)
-  //     .setIfMissing({ attendees: [] }) // attendees 배열이 없으면 생성
-  //     .append('attendees', [
-  //       {
-  //         name: data.name,
-  //         gender: data.gender || '남성',
-  //         startHour: data.startHour,
-  //         startMinute: data.startMinute,
-  //         endHour: data.endHour,
-  //         endMinute: data.endMinute,
-  //         membership: data.membership,
-  //       },
-  //     ])
-  //     .commit({ autoGenerateArrayKeys: true });
-  // }
+export async function updateAttendance(
+  scheduleId: string,
+  data: AttendanceProps
+) {
+  return client
+    .patch(scheduleId)
+    .set({ [`attendees[_key=="${data._key}"]`]: data })
+    .commit();
 }
 
 export async function removeAttendance(

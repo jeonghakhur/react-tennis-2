@@ -31,7 +31,6 @@ export const ScheduleFormSchema = z.object({
         startMinute: z.string(),
         endHour: z.string(),
         endMinute: z.string(),
-        membership: z.boolean(),
       })
     )
     .optional()
@@ -46,6 +45,17 @@ export const GetScheduleSchema = ScheduleFormSchema.extend({
 
 export type GetScheduleType = z.infer<typeof GetScheduleSchema>;
 
+export type ScheduleProps = {
+  date: Date;
+  startTime: string;
+  endTime: string;
+  courtName: string;
+  otherCourtName?: string;
+  courtCount: string;
+  courtNumbers: { number: string }[];
+  attendees: AttendanceProps[];
+};
+
 export type AttendanceProps = {
   _key?: string;
   name: string;
@@ -54,5 +64,12 @@ export type AttendanceProps = {
   startMinute: string;
   endHour: string;
   endMinute: string;
-  membership: boolean;
 };
+
+// export type AttendanceWithKeyProps = AttendanceProps & {
+//   _key: string;
+// };
+
+export type GetScheduleProps = {
+  id: string;
+} & ScheduleProps;

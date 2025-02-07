@@ -43,8 +43,7 @@ import { ScheduleFormSchema, ScheduleFormType } from '@/model/schedule';
 import FormDatePicker from '@/components/FormDatePicker';
 import FormSelectTime from '@/components/FormSelectTime';
 import FormCourtName from '@/components/FormCourtName';
-import { mutate } from 'swr';
-import useSchedule from '@/hooks/schedule';
+import useSchedule from '@/hooks/useSchedule';
 
 const memberList = [
   {
