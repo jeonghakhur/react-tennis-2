@@ -30,6 +30,7 @@ import FormAttendees from '@/components/FormAttendees';
 import useSchedule from '@/hooks/useSchedule';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
+import FormMembers from '@/components/FormMembers';
 
 type Props = {
   params: Promise<{ id: string }>; // params가 Promise로 감싸져 있음
@@ -62,7 +63,6 @@ export default function Page({ params }: Props) {
     patchSchedule,
     removeSchedule,
   } = useSchedule(id);
-  const { data: members } = useSWR('/api/members/');
 
   const form = useForm<ScheduleFormType>({
     resolver: zodResolver(ScheduleFormSchema),
@@ -92,10 +92,6 @@ export default function Page({ params }: Props) {
       }
     }
   }, [schedule, form, userName]);
-
-  useEffect(() => {
-    console.log(members);
-  }, [members]);
 
   useEffect(() => {
     if (Object.keys(form.formState.errors).length > 0) {
@@ -342,11 +338,13 @@ export default function Page({ params }: Props) {
               onRemoveAttendee={handleAttendeeRemove}
             />
 
+            <FormMembers />
+
             <div className="button-group">
               <Button
                 type="button"
                 variant="destructive"
-                onClick={() => handleDelete(id)}
+                onClick={() => handleDelete()}
               >
                 삭제
               </Button>

@@ -295,7 +295,6 @@ export default function CalendarForm() {
   const [guestName, setGuestName] = useState<string>('');
   const [gender, setGender] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
   const router = useRouter();
   const { postSchedule } = useSchedule();
 
@@ -328,11 +327,7 @@ export default function CalendarForm() {
     return fields.some((attendee) => attendee.name === name);
   };
 
-  const attendeeAppend = (
-    name: string,
-    gender: string,
-    membership: boolean
-  ) => {
+  const attendeeAppend = (name: string, gender: string) => {
     append({
       name,
       gender,
@@ -340,7 +335,6 @@ export default function CalendarForm() {
       startMinute: attendanceTime.startMinute,
       endHour: attendanceTime.endHour,
       endMinute: attendanceTime.endMinute,
-      membership,
     });
   };
 
@@ -529,7 +523,6 @@ export default function CalendarForm() {
           wrapperClass="grid-wrapper"
         />
       )}
-      {error && <p>{error}</p>}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-5">
         <FormDatePicker form={form} />
         <FormSelectTime
