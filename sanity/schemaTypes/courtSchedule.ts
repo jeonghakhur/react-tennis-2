@@ -31,6 +31,11 @@ export const courtSchedule = {
           name: 'attendee',
           type: 'document',
           fields: [
+            {
+              name: 'author',
+              type: 'reference',
+              to: [{ type: 'user' }],
+            },
             { name: 'name', type: 'string' },
             { name: 'startHour', type: 'string' },
             { name: 'startMinute', type: 'string' },

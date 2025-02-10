@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { UserProps } from '@/model/user';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import useSWR from 'swr';
@@ -10,7 +11,7 @@ import {
   CommandItem,
   CommandList,
 } from './ui/command';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { FormItem } from './ui/form';
 import { Input } from './ui/input';
@@ -22,14 +23,48 @@ import {
   SelectValue,
 } from './ui/select';
 import { Button } from './ui/button';
+import { AttendanceProps, ScheduleFormType } from '@/model/schedule';
+import { useFieldArray, UseFormReturn } from 'react-hook-form';
 
-export default function FormMembers() {
+type Props = {
+  form: UseFormReturn<ScheduleFormType>;
+  attendees: AttendanceProps[];
+};
+
+export default function FormMembers({ form, attendees }: Props) {
   const { data: members, isLoading } = useSWR<UserProps[]>('/api/members');
   const [popoverOpen, setPopoverOpen] = useState<boolean>(false);
   const [guestField, setGuestField] = useState<boolean>(false);
   const [memberValue, setMemberValue] = useState<string>('');
   const guestNameRef = useRef<HTMLInputElement>(null);
   const genderRef = useRef<HTMLButtonElement>(null);
+  const startTime = parseInt(form.watch('startTime'), 10);
+  const endTime = parseInt(form.watch('endTime'), 10);
+
+  const [attendanceTime, setAttendanceTime] = useState({
+    startHour: '06',
+    startMinute: '00',
+    endHour: '22',
+    endMinute: '00',
+  });
+
+  useEffect(() => {
+    setAttendanceTime({
+      startHour: form.watch('startTime'),
+      startMinute: '00',
+      endHour: form.watch('endTime'),
+      endMinute: '00',
+    });
+  }, [form]);
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'attendees',
+  });
+
+  const isAttendee = (name: string) => {
+    return fields.some((attendee: any) => attendee.name === name);
+  };
 
   const handleMemberChange = (member: string) => {
     if (member === '직접입력') {
@@ -37,20 +72,46 @@ export default function FormMembers() {
     } else {
       setGuestField(false);
     }
+
     setMemberValue(member);
     setPopoverOpen(false);
   };
 
   function handleAddMember() {
-    console.log(guestNameRef.current?.value, genderRef.current?.textContent);
+    let name = memberValue;
+    if (guestField) {
+      name = guestNameRef.current?.value || '';
+    }
+
+    if (!name) return;
+
+    if (isAttendee(name)) {
+      alert('이미 추가된 참석자입니다.');
+      return;
+    }
+
+    const gender = genderRef.current?.textContent || '남성';
+    append({
+      _key: crypto.randomUUID(),
+      name,
+      gender,
+      startHour: attendanceTime.startHour,
+      startMinute: attendanceTime.startMinute,
+      endHour: attendanceTime.endHour,
+      endMinute: attendanceTime.endMinute,
+    });
+  }
+
+  function handleRemoveMember(index: number) {
+    remove(index);
   }
 
   return (
     <div>
       {!isLoading && (
-        <>
+        <div className="space-y-4">
           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-            <PopoverTrigger asChild>
+            <PopoverTrigger asChild className="w-full">
               <Button
                 variant="outline"
                 role="combobox"
@@ -65,7 +126,7 @@ export default function FormMembers() {
               </Button>
             </PopoverTrigger>
             <PopoverContent align="start" className="h-[300px]">
-              <Command>
+              <Command className="w-full">
                 <CommandInput placeholder="Search member" />
                 <CommandList>
                   <CommandEmpty>No member found.</CommandEmpty>
@@ -125,16 +186,134 @@ export default function FormMembers() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="남성">남성</SelectItem>
-                    xx <SelectItem value="여성">여성</SelectItem>
+                    <SelectItem value="여성">여성</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </FormItem>
           )}
-          <Button variant="outline" onClick={handleAddMember} type="button">
+          <FormItem>
+            <div className="flex gap-x-2 items-center">
+              <Select
+                value={attendanceTime.startHour}
+                onValueChange={(value) => {
+                  if (!value) return;
+                  setAttendanceTime((pre) => ({ ...pre, startHour: value }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from(
+                    {
+                      length: endTime - startTime,
+                    },
+                    (_, idx) => (
+                      <SelectItem value={String(startTime + idx)} key={idx}>
+                        {String(startTime + idx)}
+                      </SelectItem>
+                    )
+                  )}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={attendanceTime.startMinute}
+                onValueChange={(value) => {
+                  setAttendanceTime((pre) => ({ ...pre, startMinute: value }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="00">00</SelectItem>
+                  <SelectItem value="30">30</SelectItem>
+                </SelectContent>
+              </Select>
+              <span>~</span>
+              <Select
+                value={attendanceTime.endHour}
+                onValueChange={(value) => {
+                  setAttendanceTime((pre) => ({ ...pre, endHour: value }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: endTime - startTime }, (_, idx) => (
+                    <SelectItem value={`${startTime + idx + 1}`} key={idx}>
+                      {startTime + idx + 1}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={attendanceTime.endMinute}
+                onValueChange={(value) => {
+                  setAttendanceTime((pre) => ({ ...pre, endMinute: value }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="00">00</SelectItem>
+                  <SelectItem value="30">30</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </FormItem>
+          <Button
+            variant="secondary"
+            onClick={handleAddMember}
+            type="button"
+            className="w-full"
+          >
             참석자 등록
           </Button>
-        </>
+
+          <div>
+            {attendees && attendees.length > 0 && (
+              <table className="table w-full text-center text-xs">
+                <thead>
+                  <tr>
+                    <th>번호</th>
+                    <th>참석자명</th>
+                    <th>성별</th>
+                    <th>참석시간</th>
+                    <th>삭제</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attendees.map((field, idx) => (
+                    <tr key={idx}>
+                      <td>{idx + 1}</td>
+                      <td>{field.name}</td>
+                      <td>{field.gender}</td>
+                      <td>
+                        {field.startHour}:{field.startMinute}~{field.endHour}:
+                        {field.endMinute}
+                      </td>
+                      <td>
+                        <Button
+                          type="button"
+                          size="xs"
+                          variant="destructive"
+                          onClick={() => handleRemoveMember(idx)}
+                        >
+                          삭제
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

@@ -21,7 +21,7 @@ type FormProps = {
   value?: string;
 };
 
-export default function FormCourtName({ form }: FormProps) {
+export default function FormCourtName({ form, value }: FormProps) {
   const selectedCourtName = form.watch('courtName'); // 현재 선택된 값 감지
   const isCustomInput = selectedCourtName === '직접입력';
 
@@ -43,7 +43,7 @@ export default function FormCourtName({ form }: FormProps) {
                       form.setValue('otherCourtName', ''); // 직접 입력이 아닐 경우 초기화
                     }
                   }}
-                  value={field.value}
+                  value={value || field.value}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="코트를 선택해주세요" />

@@ -77,12 +77,20 @@ export async function deleteSchedule(id: string) {
   }
 }
 
-export async function addAttendance(scheduleId: string, data: AttendanceProps) {
-  console.log('addAttendance');
+export async function addAttendance(
+  scheduleId: string,
+  data: AttendanceProps,
+  userId: string
+) {
   return client
     .patch(scheduleId)
     .setIfMissing({ attendees: [] }) // attendees 배열이 없으면 생성
-    .append('attendees', [data])
+    .append('attendees', [
+      {
+        author: { _ref: userId, _type: 'reference' },
+        ...data,
+      },
+    ])
     .commit({ autoGenerateArrayKeys: true });
 }
 

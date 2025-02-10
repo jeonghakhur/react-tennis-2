@@ -26,11 +26,10 @@ import {
 import { Label } from '@/components/ui/label';
 import useAuthRedirect from '@/hooks/useAuthRedirect';
 import { toast } from '@/hooks/use-toast';
-import FormAttendees from '@/components/FormAttendees';
 import useSchedule from '@/hooks/useSchedule';
 import { useRouter } from 'next/navigation';
-import useSWR from 'swr';
 import FormMembers from '@/components/FormMembers';
+import FormCourtName from '@/components/FormCourtName';
 
 type Props = {
   params: Promise<{ id: string }>; // params가 Promise로 감싸져 있음
@@ -59,7 +58,6 @@ export default function Page({ params }: Props) {
     isLoading,
     postAttendance,
     patchAttendance,
-    removeAttendance,
     patchSchedule,
     removeSchedule,
   } = useSchedule(id);
@@ -113,9 +111,9 @@ export default function Page({ params }: Props) {
     }
   };
 
-  function onSubmit(formData: ScheduleFormType) {
+  function onSubmit(data: ScheduleFormType) {
     setLoading(true);
-    patchSchedule(formData)
+    patchSchedule(data)
       .then((data) => {
         console.log(data);
       })
@@ -175,10 +173,6 @@ export default function Page({ params }: Props) {
         });
       });
   };
-
-  async function handleAttendeeRemove(attendeeKey: string) {
-    removeAttendance(attendeeKey);
-  }
 
   return (
     <Container>
@@ -306,39 +300,44 @@ export default function Page({ params }: Props) {
               </Button>
             </div>
             <FormDatePicker form={form} />
+            <div className="grid grid-cols-2 gap-4">
+              <FormSelectTime
+                name="startTime"
+                form={form}
+                label="시작 시간"
+                value={schedule?.startTime}
+              />
+              <FormSelectTime
+                name="endTime"
+                form={form}
+                label="종료 시간"
+                startTime={parseInt(schedule?.startTime, 10)}
+                value={schedule?.endTime}
+              />
+            </div>
 
-            <FormSelectTime
-              name="startTime"
-              form={form}
-              label="시작 시간"
-              value={schedule?.startTime}
-            />
-            <FormSelectTime
-              name="endTime"
-              form={form}
-              label="종료 시간"
-              startTime={parseInt(schedule?.startTime, 10)}
-              value={schedule?.endTime}
-            />
+            <div>
+              <Label>코트이름</Label>
+              <Input type="text" {...form.register('courtName')} />
+            </div>
 
-            {/* <FormCourtName form={form} value={data.courtName} /> */}
-            <Input type="text" {...form.register('courtName')} />
-            <Input type="text" {...form.register('courtCount')} />
+            <div>
+              <Label>코트 수</Label>
+              <Input type="text" {...form.register('courtCount')} />
+            </div>
+
             {form.watch('courtNumbers')?.map((_, idx) => {
               return (
-                <Input
-                  key={idx}
-                  type="text"
-                  {...form.register(`courtNumbers.${idx}.number`)}
-                />
+                <div key={idx}>
+                  <Input
+                    type="text"
+                    {...form.register(`courtNumbers.${idx}.number`)}
+                  />
+                </div>
               );
             })}
-            <FormAttendees
-              attendees={schedule.attendees}
-              onRemoveAttendee={handleAttendeeRemove}
-            />
 
-            <FormMembers />
+            <FormMembers form={form} attendees={form.watch('attendees')} />
 
             <div className="button-group">
               <Button
@@ -348,14 +347,7 @@ export default function Page({ params }: Props) {
               >
                 삭제
               </Button>
-              <Button
-                type="submit"
-                // onClick={() => {
-                //   console.log(form);
-                // }}
-              >
-                수정
-              </Button>
+              <Button type="submit">수정</Button>
             </div>
           </form>
         </Form>

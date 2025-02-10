@@ -19,12 +19,14 @@ export const ScheduleFormSchema = z.object({
   }),
   courtNumbers: z.array(
     z.object({
+      _key: z.string().optional(),
       number: z.string().trim().min(1, '코트 번호를 입력해주세요.'),
     })
   ),
   attendees: z
     .array(
       z.object({
+        _key: z.string().optional(),
         name: z.string(),
         gender: z.string().optional(),
         startHour: z.string(),

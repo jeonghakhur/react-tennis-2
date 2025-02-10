@@ -7,10 +7,10 @@ import { withSessionUser } from '@/util/session';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  return withSessionUser(async () => {
+  return withSessionUser(async (user) => {
     const { scheduleId, attendance } = await req.json();
 
-    return addAttendance(scheduleId, attendance).then((data) =>
+    return addAttendance(scheduleId, attendance, user.id).then((data) =>
       NextResponse.json(data)
     );
   });

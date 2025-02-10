@@ -44,6 +44,7 @@ import FormDatePicker from '@/components/FormDatePicker';
 import FormSelectTime from '@/components/FormSelectTime';
 import FormCourtName from '@/components/FormCourtName';
 import useSchedule from '@/hooks/useSchedule';
+import FormMembers from '@/components/FormMembers';
 
 const memberList = [
   {
@@ -353,7 +354,7 @@ export default function CalendarForm() {
     if (member) {
       const idx = memberList.findIndex((item) => item.name === member.name);
       const { name, gender } = member;
-      attendeeAppend(name, gender, true);
+      attendeeAppend(name, gender);
       setMembersValue('');
       memberList.splice(idx, 1);
     } else {
@@ -376,7 +377,7 @@ export default function CalendarForm() {
       return;
     }
 
-    attendeeAppend(guestName, gender, false);
+    attendeeAppend(guestName, gender);
 
     setGuestName('');
     setGender('');
@@ -473,26 +474,25 @@ export default function CalendarForm() {
   };
 
   const handleAttendeeRemove = (idx: number) => {
-    const {
-      name,
-      gender,
-      startHour,
-      startMinute,
-      endHour,
-      endMinute,
-      membership,
-    } = fields[idx];
-    if (membership) {
-      memberList.push({
-        name,
-        gender,
-        startHour,
-        startMinute,
-        endHour,
-        endMinute,
-      });
-      memberList.sort((a, b) => a.name.localeCompare(b.name));
-    }
+    // const {
+    //   name,
+    //   gender,
+    //   startHour,
+    //   startMinute,
+    //   endHour,
+    //   endMinute,
+    // } = fields[idx];
+    // if (membership) {
+    //   memberList.push({
+    //     name,
+    //     gender,
+    //     startHour,
+    //     startMinute,
+    //     endHour,
+    //     endMinute,
+    //   });
+    //   memberList.sort((a, b) => a.name.localeCompare(b.name));
+    // }
     remove(idx);
   };
 
@@ -591,221 +591,7 @@ export default function CalendarForm() {
           )
         )}
 
-        <FormItem className="flex flex-col">
-          <FormLabel>참석자 및 참석 시간 선택</FormLabel>
-          <FormControl>
-            <div className="flex">
-              <Popover
-                open={popoverMembersOpen}
-                onOpenChange={setPopoverMembersOpen}
-              >
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={popoverMembersOpen}
-                    className="flex-1 mr-2 justify-between"
-                  >
-                    {membersValue === '직접입력'
-                      ? '직접입력'
-                      : memberList.find((item) => item.name === membersValue)
-                          ?.name || '참석자를 선택해주세요.'}
-                    <ChevronsUpDown className="opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-
-                <PopoverContent align="start" className="h-[300px]">
-                  <Command>
-                    <CommandInput placeholder="Search member" />
-                    <CommandList>
-                      <CommandEmpty>No member found.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem
-                          value="직접입력"
-                          onSelect={(currentValue) => {
-                            handleMemberChange(currentValue);
-                          }}
-                        >
-                          직접입력
-                          <Check
-                            className={cn(
-                              'ml-auto',
-                              membersValue === '직접입력'
-                                ? 'opacity-100'
-                                : 'opacity-0'
-                            )}
-                          />
-                        </CommandItem>
-                        {memberList.map((member) => (
-                          <CommandItem
-                            key={member.name}
-                            value={member.name}
-                            onSelect={(currentValue) => {
-                              handleMemberChange(currentValue);
-                            }}
-                          >
-                            {member.name}
-                            <Check
-                              className={cn(
-                                'ml-auto',
-                                membersValue === member.name
-                                  ? 'opacity-100'
-                                  : 'opacity-0'
-                              )}
-                            />
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-          </FormControl>
-        </FormItem>
-        {guestField && (
-          <FormItem>
-            <div className="flex gap-x-2">
-              <Input
-                type="text"
-                value={guestName}
-                onChange={(e) => {
-                  setGuestName(e.target.value);
-                }}
-                placeholder="참석자 이름을 입력해주세요."
-                className="flex-1 text-sm"
-              />
-              <Select value={gender} onValueChange={setGender}>
-                <SelectTrigger className="basis-[100px]">
-                  <SelectValue placeholder="성별" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="남성">남성</SelectItem>
-                  <SelectItem value="여성">여성</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </FormItem>
-        )}
-
-        <FormItem>
-          <div className="flex gap-x-2 items-center">
-            <Select
-              value={attendanceTime.startHour}
-              onValueChange={(value) => {
-                setAttendanceTime((pre) => ({ ...pre, startHour: value }));
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: endTime - startTime + 1 }, (_, idx) => (
-                  <SelectItem value={`${startTime + idx}`} key={idx}>
-                    {startTime + idx}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={attendanceTime.startMinute}
-              onValueChange={(value) => {
-                setAttendanceTime((pre) => ({ ...pre, startMinute: value }));
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="00">00</SelectItem>
-                <SelectItem value="30">30</SelectItem>
-              </SelectContent>
-            </Select>
-            <span>~</span>
-            <Select
-              value={attendanceTime.endHour}
-              onValueChange={(value) => {
-                setAttendanceTime((pre) => ({ ...pre, endHour: value }));
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: endTime - startTime + 1 }, (_, idx) => (
-                  <SelectItem value={`${startTime + idx}`} key={idx}>
-                    {startTime + idx}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={attendanceTime.endMinute}
-              onValueChange={(value) => {
-                setAttendanceTime((pre) => ({ ...pre, endMinute: value }));
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="00">00</SelectItem>
-                <SelectItem value="30">30</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </FormItem>
-
-        <Button
-          className="w-full"
-          type="button"
-          variant="secondary"
-          onClick={() => {
-            if (guestField) {
-              handleAddGuestAttendee();
-            } else {
-              handleAddMemberAttendee();
-            }
-          }}
-        >
-          참석자 추가
-        </Button>
-        {fields.length > 0 && (
-          <table className="table w-full text-center text-xs">
-            <thead>
-              <tr>
-                <th>번호</th>
-                <th>참석자명</th>
-                <th>성별</th>
-                <th>참석시간</th>
-                <th>삭제</th>
-              </tr>
-            </thead>
-            <tbody>
-              {fields.map((field, idx) => (
-                <tr key={idx}>
-                  <td>{idx + 1}</td>
-                  <td>{field.name}</td>
-                  <td>{field.gender}</td>
-                  <td>
-                    {field.startHour}:{field.startMinute}~{field.endHour}:
-                    {field.endMinute}
-                  </td>
-                  <td>
-                    <Button
-                      type="button"
-                      size="xs"
-                      variant="destructive"
-                      onClick={() => handleAttendeeRemove(idx)}
-                    >
-                      삭제
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <FormMembers form={form} attendees={form.watch('attendees')} />
 
         <Button type="submit" className="w-full bg-blue-600">
           일정 등록
