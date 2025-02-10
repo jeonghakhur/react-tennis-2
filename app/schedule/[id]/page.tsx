@@ -29,7 +29,6 @@ import { toast } from '@/hooks/use-toast';
 import useSchedule from '@/hooks/useSchedule';
 import { useRouter } from 'next/navigation';
 import FormMembers from '@/components/FormMembers';
-import FormCourtName from '@/components/FormCourtName';
 
 type Props = {
   params: Promise<{ id: string }>; // params가 Promise로 감싸져 있음

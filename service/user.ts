@@ -54,6 +54,7 @@ export async function getAllMembers() {
   return client.fetch(
     `*[_type == "user"]{
       ...,
+      "id": _id,
     }`
   );
 }
@@ -63,9 +64,6 @@ export async function getUserByUser(id: string) {
     `*[_type == "user" && _id == "${id}"]{
       ...,
       "id": _id,
-      following[]->{"id": _id, "userName": username, image},
-      followers[]->{"userName": username, image},
-      "bookmarks": bookmarks[]->_id
     }[0]`
   );
 }
