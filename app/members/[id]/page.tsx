@@ -95,8 +95,8 @@ export default function Members({ params }: Props) {
                       <SelectValue placeholder="성별을 선택해주세요." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="male">남성</SelectItem>
-                      <SelectItem value="female">여성</SelectItem>
+                      <SelectItem value="남성">남성</SelectItem>
+                      <SelectItem value="여성">여성</SelectItem>
                     </SelectContent>
                   </Select>
                 )}

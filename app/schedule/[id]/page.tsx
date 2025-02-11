@@ -47,6 +47,7 @@ const defaultAttendance: AttendanceProps = {
 export default function Page({ params }: Props) {
   const { session } = useAuthRedirect();
   const userName = session?.user?.name;
+  const gender = session?.user?.gender;
   const { id } = use(params); // params를 비동기로 처리
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
@@ -81,6 +82,7 @@ export default function Page({ params }: Props) {
       } else {
         setMyAttendance({
           name: userName!,
+          gender: gender,
           startHour: schedule.startTime,
           startMinute: '00',
           endHour: schedule.endTime,
@@ -88,7 +90,7 @@ export default function Page({ params }: Props) {
         });
       }
     }
-  }, [schedule, form, userName]);
+  }, [schedule, form, userName, gender]);
 
   useEffect(() => {
     if (Object.keys(form.formState.errors).length > 0) {

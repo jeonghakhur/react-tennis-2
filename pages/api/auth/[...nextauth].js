@@ -92,6 +92,7 @@ export const authOptions = {
 
       if (dbUser) {
         newToken.level = dbUser.level;
+        newToken.gender = dbUser.gender;
       }
 
       return newToken;
@@ -105,6 +106,7 @@ export const authOptions = {
           ...user,
           id: token.id,
           level: token.level,
+          gender: token.gender,
           userName: user.email?.split('@')[0] || '',
         };
       }

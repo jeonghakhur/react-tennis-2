@@ -15,10 +15,6 @@ export default function Page() {
     }
   }, [members]);
 
-  function formatGender(gender: string) {
-    return gender === 'male' ? '남성' : '여성';
-  }
-
   return (
     <div className="px-5">
       <LoadingGrid loading={loading} />
@@ -41,7 +37,7 @@ export default function Page() {
                 <td>
                   <Link href={`/members/${member.id}`}>{member.name}</Link>
                 </td>
-                <td>{formatGender(member.gender)}</td>
+                <td>{member.gender}</td>
                 <td>{member.address}</td>
                 <td>{member.birthyear}</td>
                 <td>{member.level}</td>
