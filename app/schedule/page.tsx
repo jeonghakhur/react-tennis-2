@@ -30,6 +30,7 @@ import FormSelectTime from '@/components/FormSelectTime';
 import FormCourtName from '@/components/FormCourtName';
 import useSchedule from '@/hooks/useSchedule';
 import FormMembers from '@/components/FormMembers';
+import FormCourtNumber from '@/components/FormCourtNumber';
 
 export default function CalendarForm() {
   const [loading, setLoading] = useState<boolean>(false);
@@ -139,22 +140,7 @@ export default function CalendarForm() {
         {Array.from(
           { length: parseInt(form.watch('courtCount'), 10) },
           (_, idx) => (
-            <FormField
-              key={idx}
-              control={form.control}
-              name={`courtNumbers.${idx}.number`}
-              render={({ field }) => {
-                return (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>{`코트 번호 ${idx + 1}`}</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
+            <FormCourtNumber key={idx} form={form} idx={idx} />
           )
         )}
 
