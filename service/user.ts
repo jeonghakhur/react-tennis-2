@@ -1,19 +1,5 @@
-import { SearchUser } from '@/model/user';
+import { SearchUser, UserProps } from '@/model/user';
 import { client } from '@/sanity/lib/client';
-
-type OauthUser = {
-  email: string;
-  id: string;
-  image?: string | null;
-  name: string;
-  username: string;
-  provider: string | null;
-  level: number;
-  gender: string | null;
-  phone_number: string | null;
-  birthday: string | null;
-  birthyear: string | null;
-};
 
 export async function existingUser(email: string) {
   return client.fetch(`*[_type == "user" && email == "${email}"][0]`);
@@ -31,7 +17,7 @@ export async function addUser({
   phone_number,
   birthday,
   birthyear,
-}: OauthUser) {
+}: UserProps) {
   return client.createIfNotExists({
     _id: id,
     _type: 'user',
@@ -45,8 +31,6 @@ export async function addUser({
     phone_number,
     birthyear,
     birthday,
-    following: [],
-    followers: [],
   });
 }
 
@@ -66,6 +50,22 @@ export async function getUserByUser(id: string) {
       "id": _id,
     }[0]`
   );
+}
+
+export async function getUserByEmail(email: string) {
+  return client.fetch(
+    `*[_type == "user" && email == "${email}"]{
+      ...,
+      "id": _id,
+    }[0]`
+  );
+}
+
+export async function updateUserById(id: string, updatedData: UserProps) {
+  return client
+    .patch(id) // 수정할 유저의 `_id`
+    .set(updatedData) // 변경할 데이터
+    .commit(); // 변경 사항 저장
 }
 
 export async function searchUsers(keyword?: string) {

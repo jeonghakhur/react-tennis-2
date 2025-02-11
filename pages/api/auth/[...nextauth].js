@@ -1,4 +1,4 @@
-import { addUser, existingUser } from '@/service/user';
+import { addUser, existingUser, getUserByEmail } from '@/service/user';
 import NextAuth from 'next-auth';
 // import GoogleProvider from 'next-auth/providers/google';
 import KakaoProvider from 'next-auth/providers/kakao';
@@ -87,6 +87,13 @@ export const authOptions = {
       if (user) {
         newToken.id = user.id;
       }
+
+      const dbUser = await getUserByEmail(token.email);
+
+      if (dbUser) {
+        newToken.level = dbUser.level;
+      }
+
       return newToken;
     },
     async session({ session, token }) {
@@ -97,6 +104,7 @@ export const authOptions = {
         newSession.user = {
           ...user,
           id: token.id,
+          level: token.level,
           userName: user.email?.split('@')[0] || '',
         };
       }

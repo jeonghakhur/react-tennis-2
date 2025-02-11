@@ -14,6 +14,7 @@ export default function NavBar() {
     pathname?.includes('/studio/structure');
 
   const user = session?.user;
+  const level = user?.level;
 
   return (
     <div className="mb-3 px-5 py-3">
@@ -23,9 +24,16 @@ export default function NavBar() {
             <li>
               <Link href="/">홈</Link>
             </li>
-            <li>
-              <Link href="/schedule">일정등록</Link>
-            </li>
+            {parseInt(level!, 10) > 0 && (
+              <li>
+                <Link href="/schedule">일정등록</Link>
+              </li>
+            )}
+            {parseInt(level!, 10) > 2 && (
+              <li>
+                <Link href="/members">회원</Link>
+              </li>
+            )}
           </ul>
           {!isSignin && (
             <div className="ml-auto">
@@ -38,14 +46,16 @@ export default function NavBar() {
                   >
                     로그아웃
                   </Button>
-                  <Image
-                    src={user.image ?? '/default_profile.png'}
-                    width={36}
-                    height={36}
-                    alt={`${user.name} profile image`}
-                    className="rounded-full"
-                    priority
-                  />
+                  <Link href="/user">
+                    <Image
+                      src={user.image ?? '/default_profile.png'}
+                      width={36}
+                      height={36}
+                      alt={`${user.name} profile image`}
+                      className="rounded-full"
+                      priority
+                    />
+                  </Link>
                 </div>
               ) : (
                 <Button type="button" variant="link" onClick={() => signIn()}>

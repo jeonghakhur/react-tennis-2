@@ -4,7 +4,7 @@ export type AuthUser = {
   userName: string;
   email: string;
   image?: string;
-  gender?: string;
+  level: string;
 };
 
 export type SimpleUser = Pick<AuthUser, 'id' | 'userName' | 'image'>;
@@ -33,8 +33,11 @@ export type UserProps = {
   username: string;
   provider: string | null;
   level: number;
-  gender: string | null;
+  gender: 'male' | 'famale';
   phone_number: string | null;
   birthday: string | null;
+  address: string | null;
   birthyear: string | null;
 };
+
+export type SimpleUserProps = Omit<UserProps, 'id' | 'birthday'>;

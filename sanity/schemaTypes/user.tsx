@@ -28,7 +28,7 @@ export const user = {
     },
     {
       name: 'level',
-      type: 'number',
+      type: 'string',
       initialValue: 0,
     },
     {
@@ -47,6 +47,11 @@ export const user = {
       title: '핸드폰번호',
     },
     {
+      name: 'address',
+      type: 'string',
+      title: '거주지',
+    },
+    {
       name: 'gender',
       type: 'string',
       title: '성별',
@@ -61,28 +66,28 @@ export const user = {
       validation: (Rule: any) =>
         Rule.required().error('성별을 선택해야 합니다.'),
     },
-    {
-      name: 'following',
-      type: 'array',
-      of: [
-        {
-          type: 'reference',
-          to: [{ type: 'user' }],
-        },
-      ],
-      validation: (Rule: any) => Rule.unique(),
-    },
-    {
-      name: 'followers',
-      type: 'array',
-      of: [
-        {
-          type: 'reference',
-          to: [{ type: 'user' }],
-        },
-      ],
-      validation: (Rule: any) => Rule.unique(),
-    },
+    // {
+    //   name: 'following',
+    //   type: 'array',
+    //   of: [
+    //     {
+    //       type: 'reference',
+    //       to: [{ type: 'user' }],
+    //     },
+    //   ],
+    //   validation: (Rule: any) => Rule.unique(),
+    // },
+    // {
+    //   name: 'followers',
+    //   type: 'array',
+    //   of: [
+    //     {
+    //       type: 'reference',
+    //       to: [{ type: 'user' }],
+    //     },
+    //   ],
+    //   validation: (Rule: any) => Rule.unique(),
+    // },
     // {
     //   name: 'bookmarks',
     //   type: 'array',
