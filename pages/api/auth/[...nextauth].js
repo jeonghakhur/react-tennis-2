@@ -44,9 +44,9 @@ export const authOptions = {
         const response = profile.response || {};
         gender =
           response.gender === 'M'
-            ? 'male'
+            ? '남성'
             : response.gender === 'F'
-              ? 'female'
+              ? '여성'
               : null;
         phone_number = response.mobile || null;
         birthday = response.birthday || null;
