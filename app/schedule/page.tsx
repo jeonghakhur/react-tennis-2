@@ -22,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 import { ScheduleFormSchema, ScheduleFormType } from '@/model/schedule';
 import FormDatePicker from '@/components/FormDatePicker';
