@@ -28,7 +28,7 @@ export const user = {
     },
     {
       name: 'level',
-      type: 'string',
+      type: 'number',
       initialValue: 0,
     },
     {

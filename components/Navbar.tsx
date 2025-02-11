@@ -14,7 +14,7 @@ export default function NavBar() {
     pathname?.includes('/studio/structure');
 
   const user = session?.user;
-  const level = user?.level;
+  const level = user?.level || 0;
 
   return (
     <div className="mb-3 px-5 py-3">
@@ -24,12 +24,12 @@ export default function NavBar() {
             <li>
               <Link href="/">홈</Link>
             </li>
-            {parseInt(level!, 10) > 0 && (
+            {level > 0 && (
               <li>
                 <Link href="/schedule">일정등록</Link>
               </li>
             )}
-            {parseInt(level!, 10) > 2 && (
+            {level > 2 && (
               <li>
                 <Link href="/members">회원</Link>
               </li>

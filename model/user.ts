@@ -4,7 +4,7 @@ export type AuthUser = {
   userName: string;
   email: string;
   image?: string;
-  level: string;
+  level: number;
 };
 
 export type SimpleUser = Pick<AuthUser, 'id' | 'userName' | 'image'>;
