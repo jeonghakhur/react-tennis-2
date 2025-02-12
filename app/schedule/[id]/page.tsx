@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import FormCourtCount from '@/components/FormCourtCount';
 import FormCourtNumber from '@/components/FormCourtNumber';
 import FormDatePicker from '@/components/FormDatePicker';
 import FormMembers from '@/components/FormMembers';
@@ -181,7 +182,7 @@ export default function Page({ params }: Props) {
   const handleCourtCountChange = (count: string) => {
     const countNumber = parseInt(count, 10);
     const currentCourtNumbers = form.getValues('courtNumbers') || [];
-    console.log(countNumber, currentCourtNumbers);
+
     if (countNumber > currentCourtNumbers.length) {
       // ✅ 값이 크면 새로운 항목 추가
       const newCourts = Array.from(
@@ -191,15 +192,11 @@ export default function Page({ params }: Props) {
           number: String(currentCourtNumbers.length + idx + 1),
         })
       );
-      console.log(newCourts, currentCourtNumbers.length);
       form.setValue('courtNumbers', [...currentCourtNumbers, ...newCourts]);
     } else if (countNumber < currentCourtNumbers.length) {
       // ✅ 값이 작으면 배열 크기 줄이기 (slice 사용)
       form.setValue('courtNumbers', currentCourtNumbers.slice(0, countNumber));
     }
-    // Array.from({ length: countNumber }, (_, idx) => {
-    //   form.setValue(`courtNumbers.${idx}.number`, String(idx + 1));
-    // });
   };
 
   return (
@@ -357,8 +354,12 @@ export default function Page({ params }: Props) {
             </div>
 
             <div>
-              <Label>코트 수</Label>
-              <Input
+              <FormCourtCount
+                form={form}
+                value={schedule.courtCount}
+                onHandleChange={handleCourtCountChange}
+              />
+              {/* <Input
                 type="text"
                 value={form.watch('courtCount') || ''}
                 onChange={(e) => {
@@ -366,7 +367,7 @@ export default function Page({ params }: Props) {
                   form.setValue('courtCount', value);
                   handleCourtCountChange(value);
                 }}
-              />
+              /> */}
             </div>
 
             <div className="flex gap-3">

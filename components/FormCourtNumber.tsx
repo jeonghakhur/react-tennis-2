@@ -21,15 +21,15 @@ export default function FormCourtNumber({ form, idx }: FormProps) {
       control={form.control}
       name={`courtNumbers.${idx}.number`}
       render={({ field }) => (
-        <FormItem className="flex flex-col">
+        <FormItem className="flex flex-col flex-1">
           <FormLabel>{`코트 번호 ${idx + 1}`}</FormLabel>
-          <FormControl>
-            <Input
-              {...field}
-              value={field.value}
-              placeholder={`코트 번호 ${idx + 1}`}
-            />
-          </FormControl>
+
+          <Input
+            {...field}
+            value={field.value}
+            placeholder={`코트 번호 ${idx + 1}`}
+          />
+
           <FormMessage />
         </FormItem>
       )}

@@ -146,12 +146,14 @@ export default function CalendarForm() {
             )}
           />
         )}
-        {Array.from(
-          { length: parseInt(form.watch('courtCount'), 10) },
-          (_, idx) => (
-            <FormCourtNumber key={idx} form={form} idx={idx} />
-          )
-        )}
+        <div className="flex gap-3">
+          {Array.from(
+            { length: parseInt(form.watch('courtCount'), 10) },
+            (_, idx) => (
+              <FormCourtNumber key={idx} form={form} idx={idx} />
+            )
+          )}
+        </div>
 
         <FormMembers form={form} attendees={form.watch('attendees')} />
 

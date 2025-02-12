@@ -17,10 +17,15 @@ import { ScheduleFormType } from '@/model/schedule';
 
 type FormProps = {
   form: UseFormReturn<ScheduleFormType>;
+  value?: string;
   onHandleChange: (count: string) => void;
 };
 
-export default function FormCourtCount({ form, onHandleChange }: FormProps) {
+export default function FormCourtCount({
+  form,
+  value,
+  onHandleChange,
+}: FormProps) {
   return (
     <FormField
       control={form.control}
@@ -33,7 +38,7 @@ export default function FormCourtCount({ form, onHandleChange }: FormProps) {
               field.onChange(value);
               onHandleChange(value);
             }}
-            defaultValue={field.value}
+            value={field.value || value}
           >
             <FormControl>
               <SelectTrigger>
