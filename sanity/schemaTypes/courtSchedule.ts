@@ -12,6 +12,7 @@ export const courtSchedule = {
     { name: 'endTime', type: 'string', title: 'EndTime' },
     { name: 'courtName', type: 'string', title: 'CourtName' },
     { name: 'courtCount', type: 'string', title: 'CourtCount' },
+    { name: 'voting', type: 'boolean', title: 'Voting' },
     {
       name: 'courtNumbers',
       type: 'array',

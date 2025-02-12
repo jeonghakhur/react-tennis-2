@@ -37,6 +37,7 @@ export const ScheduleFormSchema = z.object({
     )
     .optional()
     .default([]),
+  voting: z.boolean(),
 });
 
 export type ScheduleFormType = z.infer<typeof ScheduleFormSchema>;
@@ -56,6 +57,7 @@ export type ScheduleProps = {
   courtCount: string;
   courtNumbers: { number: string }[];
   attendees: AttendanceProps[];
+  voting: boolean;
 };
 
 export type AttendanceProps = {

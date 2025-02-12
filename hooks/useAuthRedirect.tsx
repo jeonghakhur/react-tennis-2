@@ -1,16 +1,26 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-export default function useAuthRedirect(redirectTo: string = '/auth/signin') {
+export default function useAuthRedirect(
+  redirectTo: string = '/auth/signin',
+  minLevel: number = 0
+) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    if (!session && status !== 'loading') {
-      router.push(redirectTo);
-    }
-  }, [session, status, router, redirectTo]);
+    if (status === 'loading') return;
 
-  return { session, status };
+    if (!session) {
+      router.push(redirectTo);
+    } else if (session.user.level < minLevel) {
+      router.push(redirectTo);
+    } else {
+      setIsChecking(false);
+    }
+  }, [session, status, router, redirectTo, minLevel]);
+
+  return { user: session?.user, isLoading: isChecking };
 }

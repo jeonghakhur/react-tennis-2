@@ -1,21 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { use, useEffect, useState } from 'react';
-import { Container } from '@/components/Layout';
-import {
-  AttendanceProps,
-  ScheduleFormSchema,
-  ScheduleFormType,
-} from '@/model/schedule';
-import { Button } from '@/components/ui/button';
-import { Grid } from 'react-loader-spinner';
-import { Form } from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Input } from '@/components/ui/input';
+import FormCourtNumber from '@/components/FormCourtNumber';
 import FormDatePicker from '@/components/FormDatePicker';
+import FormMembers from '@/components/FormMembers';
 import FormSelectTime from '@/components/FormSelectTime';
+import { Container } from '@/components/Layout';
+import { Button } from '@/components/ui/button';
+import { Form } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -23,12 +17,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import useAuthRedirect from '@/hooks/useAuthRedirect';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
+import useAuthRedirect from '@/hooks/useAuthRedirect';
 import useSchedule from '@/hooks/useSchedule';
+import {
+  AttendanceProps,
+  ScheduleFormSchema,
+  ScheduleFormType,
+} from '@/model/schedule';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import FormMembers from '@/components/FormMembers';
+import { use, useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Grid } from 'react-loader-spinner';
 
 type Props = {
   params: Promise<{ id: string }>; // params가 Promise로 감싸져 있음
@@ -45,9 +47,9 @@ const defaultAttendance: AttendanceProps = {
 };
 
 export default function Page({ params }: Props) {
-  const { session } = useAuthRedirect();
-  const userName = session?.user?.name;
-  const gender = session?.user?.gender;
+  const { user } = useAuthRedirect();
+  const userName = user?.name;
+  const gender = user?.gender;
   const { id } = use(params); // params를 비동기로 처리
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
@@ -90,6 +92,7 @@ export default function Page({ params }: Props) {
         });
       }
     }
+    console.log(schedule);
   }, [schedule, form, userName, gender]);
 
   useEffect(() => {
@@ -175,6 +178,30 @@ export default function Page({ params }: Props) {
       });
   };
 
+  const handleCourtCountChange = (count: string) => {
+    const countNumber = parseInt(count, 10);
+    const currentCourtNumbers = form.getValues('courtNumbers') || [];
+    console.log(countNumber, currentCourtNumbers);
+    if (countNumber > currentCourtNumbers.length) {
+      // ✅ 값이 크면 새로운 항목 추가
+      const newCourts = Array.from(
+        { length: countNumber - currentCourtNumbers.length },
+        (_, idx) => ({
+          _key: crypto.randomUUID(),
+          number: String(currentCourtNumbers.length + idx + 1),
+        })
+      );
+      console.log(newCourts, currentCourtNumbers.length);
+      form.setValue('courtNumbers', [...currentCourtNumbers, ...newCourts]);
+    } else if (countNumber < currentCourtNumbers.length) {
+      // ✅ 값이 작으면 배열 크기 줄이기 (slice 사용)
+      form.setValue('courtNumbers', currentCourtNumbers.slice(0, countNumber));
+    }
+    // Array.from({ length: countNumber }, (_, idx) => {
+    //   form.setValue(`courtNumbers.${idx}.number`, String(idx + 1));
+    // });
+  };
+
   return (
     <Container>
       {(loading || isLoading) && (
@@ -194,6 +221,13 @@ export default function Page({ params }: Props) {
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 pb-[80px]"
           >
+            <div className="flex items-align justify-between">
+              <Label>참석투표시작</Label>
+              <Switch
+                checked={form.watch('voting')}
+                onCheckedChange={(value) => form.setValue('voting', value)}
+              />
+            </div>
             <div>
               <Label className="w-full">참석 시간</Label>
               <div className="flex gap-x-2 items-center">
@@ -324,19 +358,25 @@ export default function Page({ params }: Props) {
 
             <div>
               <Label>코트 수</Label>
-              <Input type="text" {...form.register('courtCount')} />
+              <Input
+                type="text"
+                value={form.watch('courtCount') || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  form.setValue('courtCount', value);
+                  handleCourtCountChange(value);
+                }}
+              />
             </div>
 
-            {form.watch('courtNumbers')?.map((_, idx) => {
-              return (
-                <div key={idx}>
-                  <Input
-                    type="text"
-                    {...form.register(`courtNumbers.${idx}.number`)}
-                  />
-                </div>
-              );
-            })}
+            <div className="flex gap-3">
+              {Array.from(
+                { length: parseInt(form.watch('courtCount'), 10) },
+                (_, idx) => (
+                  <FormCourtNumber key={idx} form={form} idx={idx} />
+                )
+              )}
+            </div>
 
             <FormMembers form={form} attendees={form.watch('attendees')} />
 

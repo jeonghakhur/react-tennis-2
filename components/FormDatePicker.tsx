@@ -1,8 +1,5 @@
-import { useState } from 'react';
-import { UseFormReturn } from 'react-hook-form';
-import { format } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   FormControl,
   FormField,
@@ -15,8 +12,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { ScheduleFormType } from '@/model/schedule';
+import { format } from 'date-fns';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { useState } from 'react';
+import { UseFormReturn } from 'react-hook-form';
 
 type FormProps = {
   form: UseFormReturn<ScheduleFormType>; // ✅ useForm 타입 지정

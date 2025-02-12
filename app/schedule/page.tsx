@@ -30,6 +30,7 @@ import FormCourtName from '@/components/FormCourtName';
 import useSchedule from '@/hooks/useSchedule';
 import FormMembers from '@/components/FormMembers';
 import FormCourtNumber from '@/components/FormCourtNumber';
+import { Switch } from '@/components/ui/switch';
 
 export default function CalendarForm() {
   const [loading, setLoading] = useState<boolean>(false);
@@ -60,7 +61,6 @@ export default function CalendarForm() {
       data.courtName = data.otherCourtName;
     }
 
-    console.log('attendees', data);
     postSchedule(data)
       .then((data) => console.log(data))
       .catch((error) => console.error(error))
@@ -91,19 +91,29 @@ export default function CalendarForm() {
         />
       )}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-5">
+        <div className="flex items-align justify-between">
+          <FormLabel>참석투표시작</FormLabel>
+          <Switch
+            onCheckedChange={(value) => {
+              form.setValue('voting', value);
+            }}
+          />
+        </div>
         <FormDatePicker form={form} />
-        <FormSelectTime
-          form={form}
-          name="startTime"
-          startTime={startTime}
-          label="코트 사용 시작 시간"
-        />
-        <FormSelectTime
-          form={form}
-          name="endTime"
-          startTime={startTime}
-          label="코트 사용 종료 시간"
-        />
+        <div className="grid grid-cols-2 gap-3">
+          <FormSelectTime
+            form={form}
+            name="startTime"
+            startTime={startTime}
+            label="시작시간"
+          />
+          <FormSelectTime
+            form={form}
+            name="endTime"
+            startTime={startTime}
+            label="종료시간"
+          />
+        </div>
         <FormCourtName form={form} />
         {form.watch('courtName') && (
           <FormField

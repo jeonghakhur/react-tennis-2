@@ -1,40 +1,76 @@
 'use client';
 
 import { Container } from '@/components/Layout';
+import LoadingGrid from '@/components/LoadingGrid';
+import { GetScheduleProps } from '@/model/schedule';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import Link from 'next/link';
-import useSchedule from '@/hooks/useSchedules';
+import { useEffect } from 'react';
+import useSWR from 'swr';
 
 export default function Home() {
-  const { schedules, isLoading } = useSchedule();
+  const { data: schedules, isLoading } =
+    useSWR<GetScheduleProps[]>('/api/schedule');
 
-  const options: Intl.DateTimeFormatOptions = {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  };
+  useEffect(() => {
+    console.log(schedules);
+  }, [schedules]);
 
   return (
     <Container>
-      {isLoading && <div>Loading...</div>}
-      <ul>
-        {schedules?.map(({ id, date, courtName }, index) => {
-          const newDate = new Date(date);
-          const formattedDate = newDate.toLocaleDateString('ko-KR', options);
-          return (
-            <li key={index}>
-              <Link
-                href={`/schedule/${id}`}
-                className="flex items-center border my-3 rounded-xl py-3 px-4 gap-2"
-              >
-                <div>{formattedDate}</div>
-                <div className="text-xs text-gray-500">|</div>
-                <div>{courtName}</div>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      {isLoading ? (
+        <LoadingGrid loading={isLoading} />
+      ) : (
+        <ul>
+          {schedules?.map(
+            (
+              {
+                id,
+                date,
+                startTime,
+                endTime,
+                courtNumbers,
+                courtName,
+                attendees,
+                voting,
+              },
+              index
+            ) => {
+              const courtNumber = courtNumbers
+                .map((item) => item.number)
+                .join(', ');
+              return (
+                <li key={index}>
+                  <Link
+                    href={`/schedule/${id}`}
+                    className="flex items-center justify-between border my-3 rounded-xl py-3 px-4 gap-2"
+                  >
+                    <div className="flex flex-col gap-y-1">
+                      <div>
+                        <span>
+                          {format(new Date(date), 'yyyy.MM.dd')}(
+                          {format(new Date(date), 'EEE', { locale: ko })})
+                        </span>
+                        <span className="ml-2">
+                          {startTime} - {endTime}
+                        </span>
+                      </div>
+                      <div>장소: {courtName}</div>
+                      <div className="flex items-center">
+                        <div>코트: {courtNumber}</div>
+                        <div className="text-gray-500 mx-2 text-[14px]">|</div>
+                        <div>참석자: {attendees.length}</div>
+                      </div>
+                    </div>
+                    <div>{`${voting === true ? '진행' : '종료'}`}</div>
+                  </Link>
+                </li>
+              );
+            }
+          )}
+        </ul>
+      )}
     </Container>
   );
 }

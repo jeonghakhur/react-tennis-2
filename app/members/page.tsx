@@ -1,13 +1,17 @@
 'use client';
 
 import LoadingGrid from '@/components/LoadingGrid';
+import useAuthRedirect from '@/hooks/useAuthRedirect';
 import { UserProps } from '@/model/user';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 
 export default function Page() {
-  const { data: members, isLoading } = useSWR<UserProps[]>('/api/members');
+  const { isLoading } = useAuthRedirect('/', 3);
+
+  const { data: members } = useSWR<UserProps[]>('/api/members');
+
   const [loading, setLoading] = useState<boolean>(isLoading);
   useEffect(() => {
     if (members) {
@@ -17,8 +21,9 @@ export default function Page() {
 
   return (
     <div className="px-5">
-      <LoadingGrid loading={loading} />
-      {!isLoading && (
+      {isLoading ? (
+        <LoadingGrid loading={loading} />
+      ) : (
         <table className="w-full table">
           <thead>
             <tr>
