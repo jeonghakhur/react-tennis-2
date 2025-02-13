@@ -37,7 +37,7 @@ type Props = {
 export default function FormMembers({
   attendees,
   form,
-  startTime,
+  startTime
   endTime,
 }: Props) {
   const { data: members, isLoading } = useSWR<UserProps[]>('/api/members');
