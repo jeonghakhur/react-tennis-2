@@ -113,8 +113,8 @@ export default function FormMembers({ form, attendees }: Props) {
       {!isLoading && (
         <div className="space-y-4">
           <div className="flex items-align justify-between">
-            <FormLabel>참석자 등록</FormLabel>
-            <Switch onCheckedChange={setUseAttendance} />
+            <FormLabel htmlFor="attendeesCheck">참석자 등록</FormLabel>
+            <Switch id="attendeesCheck" onCheckedChange={setUseAttendance} />
           </div>
           {useAttendance && (
             <>

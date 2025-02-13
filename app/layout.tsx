@@ -8,6 +8,7 @@ import AuthContext from '@/context/AuthContext';
 import SWRConfigContext from '@/context/SWRConfigContext';
 import clsx from 'clsx';
 import ConditionalNavBar from '@/components/ConditionalNavBar';
+import { ToastDescription } from '@radix-ui/react-toast';
 
 const notoSans = Noto_Sans({
   subsets: ['latin'],
@@ -38,7 +39,9 @@ export default function RootLayout({
               {/* Studio 페이지에서 NavBar 제외 */}
               {children}
               {/* <ThemePanel /> */}
-              <Toaster />
+              <Toaster>
+                <ToastDescription>asdfasdf</ToastDescription>
+              </Toaster>
             </SWRConfigContext>
           </AuthContext>
         </Theme>

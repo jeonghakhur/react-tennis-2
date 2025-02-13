@@ -43,12 +43,14 @@ export default function CalendarForm() {
       startTime: '19',
       endTime: '22',
       attendees: [],
+      voting: false,
     },
   });
 
   const startTime = parseInt(form.watch('startTime'), 10);
 
   function onSubmit(data: ScheduleFormType) {
+    console.log(data);
     setLoading(true);
 
     if (data.courtName === '직접입력') {
