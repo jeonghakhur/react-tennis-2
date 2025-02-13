@@ -5,17 +5,27 @@ import LoadingGrid from '@/components/LoadingGrid';
 import { GetScheduleProps } from '@/model/schedule';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useEffect } from 'react';
 import useSWR from 'swr';
 
 export default function Home() {
+  const { data: session } = useSession();
+  const userLevel = session?.user?.level ?? 0;
   const { data: schedules, isLoading } =
     useSWR<GetScheduleProps[]>('/api/schedule');
 
   useEffect(() => {
     console.log(schedules);
   }, [schedules]);
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (userLevel < 1) {
+      e.preventDefault();
+      alert('접근 권한이 없습니다.');
+    }
+  };
 
   return (
     <Container>
@@ -44,6 +54,7 @@ export default function Home() {
                 <li key={index}>
                   <Link
                     href={`/schedule/${id}`}
+                    onClick={handleClick}
                     className="flex items-center justify-between border my-3 rounded-xl py-3 px-4 gap-2"
                   >
                     <div className="flex flex-col gap-y-1">

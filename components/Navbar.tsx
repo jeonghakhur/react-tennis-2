@@ -42,7 +42,7 @@ export default function NavBar() {
                   <Button
                     type="button"
                     variant="link"
-                    onClick={() => signOut()}
+                    onClick={() => signOut({ callbackUrl: '/' })}
                   >
                     로그아웃
                   </Button>

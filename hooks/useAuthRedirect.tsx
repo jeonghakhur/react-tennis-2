@@ -13,9 +13,7 @@ export default function useAuthRedirect(
   useEffect(() => {
     if (status === 'loading') return;
 
-    if (!session) {
-      router.push(redirectTo);
-    } else if (session.user.level < minLevel) {
+    if (!session || session.user.level < minLevel) {
       router.push(redirectTo);
     } else {
       setIsChecking(false);

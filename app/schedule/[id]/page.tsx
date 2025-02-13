@@ -10,8 +10,10 @@ type Props = {
 };
 
 export default function Page({ params }: Props) {
-  const { user } = useAuthRedirect('/auth/signin/', 1);
+  const { user, isLoading } = useAuthRedirect('/auth/signin/', 1);
   const { id } = use(params); // params를 비동기로 처리
+
+  if (isLoading) return null;
 
   if (user) {
     return user.level >= 2 ? (
