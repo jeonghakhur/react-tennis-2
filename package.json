@@ -11,6 +11,11 @@
     "format:fix": "prettier --write --ignore-path .gitignore .",
     "prepare": "husky intall"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
   "lint-staged": {
     "*.{ts,tsx}": [
       "eslint --fix",

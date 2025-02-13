@@ -35,8 +35,8 @@ type Props = {
 };
 
 export default function FormMembers({
-  form,
   attendees,
+  form,
   startTime,
   endTime,
 }: Props) {
