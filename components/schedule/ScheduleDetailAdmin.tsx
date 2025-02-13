@@ -51,7 +51,7 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
   const {
     schedule,
     isLoading,
-    postAttendance,
+
     patchAttendance,
     patchSchedule,
     removeSchedule,
