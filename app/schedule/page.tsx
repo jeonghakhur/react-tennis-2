@@ -156,7 +156,12 @@ export default function CalendarForm() {
           )}
         </div>
 
-        <FormMembers form={form} attendees={form.watch('attendees')} />
+        <FormMembers
+          form={form}
+          attendees={form.watch('attendees')}
+          startTime={Number(form.watch('startTime'))}
+          endTime={Number(form.watch('endTime'))}
+        />
 
         <Button type="submit" className="w-full bg-blue-600">
           일정 등록
