@@ -232,6 +232,7 @@ export default function FormMembers({ form, attendees }: Props) {
                   <Select
                     value={attendanceTime.startMinute}
                     onValueChange={(value) => {
+                      if (!value) return;
                       setAttendanceTime((pre) => ({
                         ...pre,
                         startMinute: value,
@@ -250,6 +251,7 @@ export default function FormMembers({ form, attendees }: Props) {
                   <Select
                     value={attendanceTime.endHour}
                     onValueChange={(value) => {
+                      if (!value) return;
                       setAttendanceTime((pre) => ({ ...pre, endHour: value }));
                     }}
                   >
@@ -267,6 +269,7 @@ export default function FormMembers({ form, attendees }: Props) {
                   <Select
                     value={attendanceTime.endMinute}
                     onValueChange={(value) => {
+                      if (!value) return;
                       setAttendanceTime((pre) => ({
                         ...pre,
                         endMinute: value,
