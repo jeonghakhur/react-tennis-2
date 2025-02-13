@@ -48,14 +48,8 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
   const [loading, setLoading] = useState<boolean>(false);
   const [myAttendance, setMyAttendance] =
     useState<AttendanceProps>(defaultAttendance);
-  const {
-    schedule,
-    isLoading,
-    postAttendance,
-    patchAttendance,
-    patchSchedule,
-    removeSchedule,
-  } = useSchedule(scheduleId);
+  const { schedule, isLoading, patchSchedule, removeSchedule } =
+    useSchedule(scheduleId);
 
   const form = useForm<ScheduleFormType>({
     resolver: zodResolver(ScheduleFormSchema),
