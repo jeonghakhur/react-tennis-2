@@ -11,7 +11,7 @@ import {
   CommandItem,
   CommandList,
 } from './ui/command';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { FormItem, FormLabel } from './ui/form';
 import { Input } from './ui/input';
@@ -37,7 +37,7 @@ type Props = {
 export default function FormMembers({
   attendees,
   form,
-  endTime
+  endTime,
   startTime,
 }: Props) {
   const { data: members, isLoading } = useSWR<UserProps[]>('/api/members');
