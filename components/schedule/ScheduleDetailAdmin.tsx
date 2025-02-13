@@ -225,7 +225,7 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
 
             <FormMembers
               form={form}
-              attendees={schedule.attendees}
+              attendees={form.watch('attendees')}
               startTime={Number(schedule.startTime)}
               endTime={Number(schedule.endTime)}
             />
@@ -239,6 +239,14 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
                 삭제
               </Button>
               <Button type="submit">수정</Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  router.push(`/games/${scheduleId}`);
+                }}
+              >
+                대진표작성
+              </Button>
             </div>
           </form>
         </Form>
