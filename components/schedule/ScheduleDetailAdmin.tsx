@@ -223,7 +223,12 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
               )}
             </div>
 
-            <FormMembers form={form} attendees={form.watch('attendees')} />
+            <FormMembers
+              form={form}
+              attendees={schedule.attendees}
+              startTime={Number(schedule.startTime)}
+              endTime={Number(schedule.endTime)}
+            />
 
             <div className="button-group">
               <Button

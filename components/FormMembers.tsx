@@ -30,9 +30,16 @@ import { Switch } from './ui/switch';
 type Props = {
   form: UseFormReturn<ScheduleFormType>;
   attendees: AttendanceProps[];
+  startTime: number;
+  endTime: number;
 };
 
-export default function FormMembers({ form, attendees }: Props) {
+export default function FormMembers({
+  form,
+  attendees,
+  startTime,
+  endTime,
+}: Props) {
   const { data: members, isLoading } = useSWR<UserProps[]>('/api/members');
   const [useAttendance, setUseAttendance] = useState<boolean>(false);
   const [popoverOpen, setPopoverOpen] = useState<boolean>(false);
@@ -40,24 +47,13 @@ export default function FormMembers({ form, attendees }: Props) {
   const [memberValue, setMemberValue] = useState<string>('');
   const guestNameRef = useRef<HTMLInputElement>(null);
   const genderRef = useRef<HTMLButtonElement>(null);
-  const startTime = parseInt(form.watch('startTime'), 10);
-  const endTime = parseInt(form.watch('endTime'), 10);
 
   const [attendanceTime, setAttendanceTime] = useState({
-    startHour: '06',
+    startHour: String(startTime),
     startMinute: '00',
-    endHour: '22',
+    endHour: String(endTime),
     endMinute: '00',
   });
-
-  useEffect(() => {
-    setAttendanceTime({
-      startHour: form.watch('startTime'),
-      startMinute: '00',
-      endHour: form.watch('endTime'),
-      endMinute: '00',
-    });
-  }, [form]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
