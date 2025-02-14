@@ -7,9 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "prepare": "husky install" ,
     "format": "prettier --check --ignore-path .gitignore .",
-    "format:fix": "prettier --write --ignore-path .gitignore .",
-    "prepare": "husky intall"
+    "format:fix": "prettier --write --ignore-path .gitignore ."
   },
   "husky": {
     "hooks": {
