@@ -1,11 +1,29 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, use } from 'react';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 interface Attendee {
@@ -22,11 +40,12 @@ interface Match {
   score: string[];
 }
 
-interface Props {
+interface MatchSchedulerProps {
   attendees: Attendee[];
   startTime: string; // Format: "HH:mm"
   endTime: string; // Format: "HH:mm"
   courts: number;
+  scheduleId: string;
 }
 
 const data = {
@@ -50,7 +69,21 @@ const data = {
   ],
 };
 
-const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, courts }) => {
+function shuffleArray(array: any[]) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1)); // 0부터 i까지 랜덤한 인덱스 선택
+    [array[i], array[j]] = [array[j], array[i]]; // swap
+  }
+  return array;
+}
+
+const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
+  attendees,
+  startTime,
+  endTime,
+  courts,
+  scheduleId,
+}) => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [idleSummary, setIdleSummary] = useState<Record<string, string[]>>({});
   const [gamesPlayed, setGamesPlayed] = useState<Record<string, number>>({});
@@ -58,6 +91,7 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
   const womenFirst = false;
 
   const generateSchedule = useCallback(() => {
+    shuffleArray(attendees);
     const timeSlots: string[] = [];
     let currentTime = new Date(`2023-01-01T${startTime}:00`);
     const end = new Date(`2023-01-01T${endTime}:00`);
@@ -76,8 +110,10 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
     timeSlots.forEach((slot) => {
       const available = attendees.filter(
         (attendee) =>
-          new Date(`2023-01-01T${attendee.startTime}:00`) <= new Date(`2023-01-01T${slot}:00`) &&
-          new Date(`2023-01-01T${slot}:00`) < new Date(`2023-01-01T${attendee.endTime}:00`),
+          new Date(`2023-01-01T${attendee.startTime}:00`) <=
+            new Date(`2023-01-01T${slot}:00`) &&
+          new Date(`2023-01-01T${slot}:00`) <
+            new Date(`2023-01-01T${attendee.endTime}:00`)
       );
 
       const playing: Attendee[] = [];
@@ -109,8 +145,8 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
           // 일반 복식 게임 생성
           const players = available
             .sort((a, b) => gamesCount[a.name] - gamesCount[b.name])
-            .slice(0, 4)
-            .sort(() => Math.random() - 0.5);
+            .slice(0, 4);
+
           players.forEach((player) => {
             gamesCount[player.name] += 1;
             playing.push(player);
@@ -144,7 +180,9 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
     (player: string, matchIndex: number, playerIndex: number) => {
       const updateMatches = [...matches];
       const prevName = updateMatches[matchIndex].players[playerIndex];
-      const prevIndex = updateMatches[matchIndex].players.findIndex((item) => item === player);
+      const prevIndex = updateMatches[matchIndex].players.findIndex(
+        (item) => item === player
+      );
 
       // 교체 작업
       updateMatches[matchIndex].players[playerIndex] = player;
@@ -160,7 +198,9 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
       const matchTime = updateMatches[matchIndex].time;
       const updateIdleSummary = { ...idleSummary };
 
-      const idleIndex = updateIdleSummary[matchTime]?.findIndex((item) => item === player);
+      const idleIndex = updateIdleSummary[matchTime]?.findIndex(
+        (item) => item === player
+      );
       if (idleIndex !== -1) {
         const updateGamesCount = { ...gamesPlayed };
         updateGamesCount[player] += 1;
@@ -183,7 +223,7 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
       setIdleSummary(updateIdleSummary);
       setActivePopoverId(null);
     },
-    [gamesPlayed, idleSummary, matches],
+    [gamesPlayed, idleSummary, matches]
   );
 
   const handleScoreChange = useCallback(
@@ -192,7 +232,7 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
       updateMatches[matchIndex].score[scoreIndex] = value;
       setMatches(updateMatches);
     },
-    [matches],
+    [matches]
   );
 
   const handleRegenerate = () => {
@@ -213,10 +253,13 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
       });
     });
     updateMatches.map((item) => (item.players = []));
-    const resetState = Object.keys(gamesPlayed).reduce<Record<string, number>>((acc, key) => {
-      acc[key] = 0;
-      return acc;
-    }, {});
+    const resetState = Object.keys(gamesPlayed).reduce<Record<string, number>>(
+      (acc, key) => {
+        acc[key] = 0;
+        return acc;
+      },
+      {}
+    );
 
     setIdleSummary(updateIdleSummary);
     setMatches(updateMatches);
@@ -224,7 +267,17 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
   };
 
   const handleSubmit = () => {
-    console.log(matches);
+    fetch(`/api/games/${scheduleId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scheduleId, matches }),
+    })
+      .then((res) => res.json())
+      .then((data) => console.log(data))
+      .catch((error) => {
+        console.error(error);
+      })
+      .finally(() => console.log('succes'));
   };
 
   const attendessAtTime = (time: string, name: string) => {
@@ -242,14 +295,26 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
     playerIndex: number;
   };
 
-  const AttendeePopover: React.FC<AttendeePopoverProp> = ({ matchIndex, match, playerIndex }) => {
+  const AttendeePopover: React.FC<AttendeePopoverProp> = ({
+    matchIndex,
+    match,
+    playerIndex,
+  }) => {
     return (
       <Popover
         open={activePopoverId === `popover${matchIndex}${playerIndex}`}
-        onOpenChange={(isOpen) => setActivePopoverId(isOpen ? `popover${matchIndex}${playerIndex}` : null)}
+        onOpenChange={(isOpen) =>
+          setActivePopoverId(
+            isOpen ? `popover${matchIndex}${playerIndex}` : null
+          )
+        }
       >
         <PopoverTrigger asChild>
-          <Button variant="outline" role="combobox" className="my-1 w-[80px] text-xs py-1 px-2">
+          <Button
+            variant="outline"
+            role="combobox"
+            className="my-1 w-[80px] text-xs py-1 px-2"
+          >
             {match.players[playerIndex] || '선택'}
             <ChevronsUpDown className="opacity-50" />
           </Button>
@@ -260,20 +325,31 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
             <CommandList>
               <CommandEmpty>No member found.</CommandEmpty>
               <CommandGroup>
-                {attendessAtTime(match.time, match.players[playerIndex]).map((player, idx) => (
-                  <CommandItem
-                    key={`${player}-${idx}`}
-                    value={player}
-                    onSelect={(currentValue) => {
-                      handlePlayersChange(currentValue, matchIndex, playerIndex);
-                    }}
-                  >
-                    {player}
-                    <Check
-                      className={cn('ml-auto', player === match.players[playerIndex] ? 'opacity-100' : 'opacity-0')}
-                    />
-                  </CommandItem>
-                ))}
+                {attendessAtTime(match.time, match.players[playerIndex]).map(
+                  (player, idx) => (
+                    <CommandItem
+                      key={`${player}-${idx}`}
+                      value={player}
+                      onSelect={(currentValue) => {
+                        handlePlayersChange(
+                          currentValue,
+                          matchIndex,
+                          playerIndex
+                        );
+                      }}
+                    >
+                      {player}
+                      <Check
+                        className={cn(
+                          'ml-auto',
+                          player === match.players[playerIndex]
+                            ? 'opacity-100'
+                            : 'opacity-0'
+                        )}
+                      />
+                    </CommandItem>
+                  )
+                )}
               </CommandGroup>
             </CommandList>
           </Command>
@@ -287,67 +363,105 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
     isFirstMatch: boolean;
   } & Omit<AttendeePopoverProp, 'playerIndex'>;
 
-  const MatchRow = React.memo(({ match, matchIndex, rowspan, isFirstMatch }: MatchRowProps) => {
-    return (
-      <tr>
-        {isFirstMatch && (
-          <td rowSpan={rowspan} className="text-xxs">
-            {match.time}
-          </td>
-        )}
-        <td className="text-xxs">{match.court}</td>
-        <td className="p-0">
-          <div className="flex flex-col">
-            <div className="flex gap-x-1 justify-center border-b-[1px]">
-              <AttendeePopover matchIndex={matchIndex} match={match} playerIndex={0} />
-              <AttendeePopover matchIndex={matchIndex} match={match} playerIndex={1} />
+  const MatchRow = React.memo(
+    ({ match, matchIndex, rowspan, isFirstMatch }: MatchRowProps) => {
+      return (
+        <tr>
+          {isFirstMatch && (
+            <td rowSpan={rowspan} className="text-xxs">
+              {match.time}
+            </td>
+          )}
+          <td className="text-xxs">{match.court}</td>
+          <td className="p-0">
+            <div className="flex flex-col">
+              <div className="flex gap-x-1 justify-center border-b-[1px]">
+                <AttendeePopover
+                  matchIndex={matchIndex}
+                  match={match}
+                  playerIndex={0}
+                />
+                <AttendeePopover
+                  matchIndex={matchIndex}
+                  match={match}
+                  playerIndex={1}
+                />
+              </div>
+              <div className="flex gap-x-1 justify-center">
+                <AttendeePopover
+                  matchIndex={matchIndex}
+                  match={match}
+                  playerIndex={2}
+                />
+                <AttendeePopover
+                  matchIndex={matchIndex}
+                  match={match}
+                  playerIndex={3}
+                />
+              </div>
             </div>
-            <div className="flex gap-x-1 justify-center">
-              <AttendeePopover matchIndex={matchIndex} match={match} playerIndex={2} />
-              <AttendeePopover matchIndex={matchIndex} match={match} playerIndex={3} />
-            </div>
-          </div>
-        </td>
-        <td className="p-0">
-          <div className="px-1 border-b-[1px]">
-            <Select defaultValue={match.score[0]} onValueChange={(value) => handleScoreChange(value, matchIndex, 0)}>
-              <SelectTrigger className="text-xs my-1 pr-1" value="0">
-                <SelectValue>{match.score[0]}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 7 }, (_, i) => (
-                  <SelectItem value={i.toString()} key={i} className="text-xs">
-                    {i}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="px-1">
-            <Select defaultValue={match.score[1]} onValueChange={(value) => handleScoreChange(value, matchIndex, 1)}>
-              <SelectTrigger className="text-xs my-1 pr-1">
-                <SelectValue>{match.score[1]}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 7 }, (_, i) => (
-                  <SelectItem value={i.toString()} key={i} className="text-xs">
-                    {i}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </td>
-        {isFirstMatch && (
-          <td rowSpan={rowspan} className="text-xs">
-            {idleSummary[match.time] && idleSummary[match.time].length > 0
-              ? idleSummary[match.time].map((item, idx) => <div key={idx}>{item}</div>)
-              : ''}
           </td>
-        )}
-      </tr>
-    );
-  });
+          <td className="p-0">
+            <div className="px-1 border-b-[1px]">
+              <Select
+                defaultValue={match.score[0]}
+                onValueChange={(value) =>
+                  handleScoreChange(value, matchIndex, 0)
+                }
+              >
+                <SelectTrigger className="text-xs my-1 pr-1" value="0">
+                  <SelectValue>{match.score[0]}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 7 }, (_, i) => (
+                    <SelectItem
+                      value={i.toString()}
+                      key={i}
+                      className="text-xs"
+                    >
+                      {i}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="px-1">
+              <Select
+                defaultValue={match.score[1]}
+                onValueChange={(value) =>
+                  handleScoreChange(value, matchIndex, 1)
+                }
+              >
+                <SelectTrigger className="text-xs my-1 pr-1">
+                  <SelectValue>{match.score[1]}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 7 }, (_, i) => (
+                    <SelectItem
+                      value={i.toString()}
+                      key={i}
+                      className="text-xs"
+                    >
+                      {i}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </td>
+          {isFirstMatch && (
+            <td rowSpan={rowspan} className="text-xs">
+              {idleSummary[match.time] && idleSummary[match.time].length > 0
+                ? idleSummary[match.time].map((item, idx) => (
+                    <div key={idx}>{item}</div>
+                  ))
+                : ''}
+            </td>
+          )}
+        </tr>
+      );
+    }
+  );
 
   MatchRow.displayName = 'MatchRow';
 
@@ -370,11 +484,18 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
         <tbody>
           {matches.map((match, index) => {
             // 현재 시간의 첫 번째 경기인지 확인
-            const isFirstMatch = index === 0 || matches[index - 1].time !== match.time;
+            const isFirstMatch =
+              index === 0 || matches[index - 1].time !== match.time;
             // 해당 시간대의 경기 수 계산
             const rowspan = matches.filter((m) => m.time === match.time).length;
             return (
-              <MatchRow key={index} match={match} matchIndex={index} rowspan={rowspan} isFirstMatch={isFirstMatch} />
+              <MatchRow
+                key={index}
+                match={match}
+                matchIndex={index}
+                rowspan={rowspan}
+                isFirstMatch={isFirstMatch}
+              />
             );
           })}
         </tbody>
@@ -404,7 +525,11 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
         <Button onClick={handleMatchesReset} size="lg" variant="default">
           대진 직접작성
         </Button>
-        <Button onClick={() => handleSubmit()} size="lg" className="bg-blue-600">
+        <Button
+          onClick={() => handleSubmit()}
+          size="lg"
+          className="bg-blue-600"
+        >
           저장
         </Button>
         <Button onClick={() => handleSubmit()} size="lg" variant="destructive">
@@ -415,7 +540,13 @@ const TennisMatchScheduler: React.FC<Props> = ({ attendees, startTime, endTime, 
   );
 };
 
-export default function Home() {
+type Props = {
+  params: Promise<{ id: string }>; // params가 Promise로 감싸져 있음
+};
+
+export default function Page({ params }: Props) {
+  const { id } = use(params);
+
   return (
     <div className="pb-20">
       <TennisMatchScheduler
@@ -423,8 +554,8 @@ export default function Home() {
         startTime={data.startTime}
         endTime={data.endTime}
         courts={parseInt(data.courtCount, 10)}
+        scheduleId={id}
       />
     </div>
   );
 }
-
