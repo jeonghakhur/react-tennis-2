@@ -19,7 +19,7 @@ export const gameResult = {
             {
               name: 'court',
               title: 'Court Number',
-              type: 'number',
+              type: 'string',
               description: '코트 번호',
             },
             {

@@ -39,9 +39,7 @@ export async function createSchedule(
       endTime,
       courtName,
       courtCount,
-      courtNumbers: courtNumbers.map((item) => ({
-        number: item.number,
-      })),
+      courtNumbers,
       attendees,
       voting,
     },

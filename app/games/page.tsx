@@ -10,6 +10,7 @@ import useSWR from 'swr';
 
 type GameProps = {
   _id: string;
+  scheduleId: string;
   date: Date;
   courtName: string;
 };
@@ -37,7 +38,7 @@ export default function Home() {
             console.log(date);
             return (
               <Link
-                href={`/games/${game._id}`}
+                href={`/games/${game.scheduleId}`}
                 key={game._id}
                 className="block border rounded-[16px] px-5 py-4"
               >

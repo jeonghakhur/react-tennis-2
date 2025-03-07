@@ -42,7 +42,7 @@ interface Attendee {
 interface Match {
   id?: string;
   time: string;
-  court: number;
+  court: string;
   players: string[];
   score: string[];
 }
@@ -141,7 +141,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
           schedule.push({
             time: slot,
-            court,
+            court: court.toString(),
             players: players.map((p) => p.name),
             score: ['0', '0'],
           });

@@ -47,9 +47,7 @@ export default function Home() {
               },
               index
             ) => {
-              const courtNumber = courtNumbers
-                .map((item) => item.number)
-                .join(', ');
+              const courtNumber = courtNumbers.map((item) => item).join(', ');
               return (
                 <li key={index}>
                   <Link

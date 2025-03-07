@@ -151,7 +151,7 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
           <TextSplitter text="코트번호" width={70} />
           <span className="mx-2">:</span>
           {courtNumbers.map((item, idx) => (
-            <span key={idx}>{item.number}</span>
+            <span key={idx}>{item}</span>
           ))}
         </li>
         <li className="flex">

@@ -74,7 +74,7 @@ export default function CalendarForm() {
   const handleCourtCountChange = (count: string) => {
     const countNumber = parseInt(count, 10);
     Array.from({ length: countNumber }, (_, idx) => {
-      form.setValue(`courtNumbers.${idx}.number`, String(idx + 1));
+      form.setValue(`courtNumbers.${idx}`, String(idx + 1));
     });
   };
 

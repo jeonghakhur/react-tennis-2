@@ -16,13 +16,7 @@ export const courtSchedule = {
     {
       name: 'courtNumbers',
       type: 'array',
-      of: [
-        {
-          type: 'object',
-          name: 'courtNumber',
-          fields: [{ name: 'number', type: 'string', title: 'Court Number' }],
-        },
-      ],
+      of: [{ type: 'string' }],
     },
     {
       name: 'attendees',
