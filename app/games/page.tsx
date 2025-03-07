@@ -1,46 +1,56 @@
 'use client';
-
-import { Button } from '@/components/ui/button';
+import { Container } from '@/components/Layout';
+import LoadingGrid from '@/components/LoadingGrid';
+import useAuthRedirect from '@/hooks/useAuthRedirect';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import Link from 'next/link';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import useSWR from 'swr';
+
+type GameProps = {
+  _id: string;
+  date: Date;
+  courtName: string;
+};
 
 export default function Home() {
+  const { isLoading } = useAuthRedirect('/', 0);
+  const { data: games } = useSWR<GameProps[]>('/api/games');
+  const [loading, setLoading] = useState<boolean>(isLoading);
+
+  useEffect(() => {
+    if (games) {
+      console.log(games);
+      setLoading(false);
+    }
+  }, [games]);
+
   return (
-    <div className="p-5">
-      <ul className="flex flex-col gap-y-2 ">
-        <li>
-          <div className="card">
-            <p>
-              <Link href="/games/1">2021.01.11(수요일)</Link>망원한강코트
-            </p>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="ml-auto"
-            >
-              참석투표
-            </Button>
-            {/* <ChevronRight size={18} color="grey" className="arrow" /> */}
-          </div>
-        </li>
-        <li>
-          <div className="card">
-            <p>
-              <Link href="/games/1">2021.01.11(수요일)</Link>망원한강코트
-            </p>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="ml-auto"
-            >
-              결과보기
-            </Button>
-            {/* <ChevronRight size={18} color="grey" className="arrow" /> */}
-          </div>
-        </li>
-      </ul>
-    </div>
+    <Container className="p-5">
+      {isLoading ? (
+        <LoadingGrid loading={loading} />
+      ) : (
+        <div>
+          {games?.map((game) => {
+            const date = new Date(game.date);
+            console.log(date);
+            return (
+              <Link
+                href={`/games/${game._id}`}
+                key={game._id}
+                className="block border rounded-[16px] px-5 py-4"
+              >
+                <div>{game.courtName}</div>
+                <div>
+                  {format(new Date(date), 'yyyy.MM.dd')}(
+                  {format(new Date(date), 'EEE', { locale: ko })})
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </Container>
   );
 }

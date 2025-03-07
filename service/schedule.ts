@@ -68,7 +68,7 @@ export async function updateSchedule(
 
 export async function deleteSchedule(id: string) {
   try {
-    await client.delete(id);
+    client.transaction().delete(id).commit({ visibility: 'async' });
     console.log(`✅ Schedule ${id} deleted successfully`);
     return { success: true };
   } catch (error) {

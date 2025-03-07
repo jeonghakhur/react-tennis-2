@@ -28,7 +28,7 @@ export const ScheduleFormSchema = z.object({
       z.object({
         _key: z.string().optional(),
         name: z.string(),
-        gender: z.string().optional(),
+        gender: z.string(),
         startHour: z.string(),
         startMinute: z.string(),
         endHour: z.string(),
@@ -63,7 +63,7 @@ export type ScheduleProps = {
 export type AttendanceProps = {
   _key?: string;
   name: string;
-  gender?: string;
+  gender: string;
   startHour: string;
   startMinute: string;
   endHour: string;

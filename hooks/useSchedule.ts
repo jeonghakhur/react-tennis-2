@@ -72,7 +72,11 @@ export default function useSchedule(scheduleId?: string) {
     error,
     mutate,
   } = useSWR<GetScheduleProps>(
-    scheduleId ? `/api/schedule/${scheduleId}` : null
+    scheduleId ? `/api/schedule/${scheduleId}` : null,
+    {
+      revalidateOnFocus: false, // 🔹 포커스 시 다시 요청 방지
+      revalidateOnReconnect: false, // 🔹 네트워크 변경 시 다시 요청 방지
+    }
   );
   const { mutate: globalMutate } = useSWRConfig();
   // ✅ 전체 스케줄 목록 가져오기

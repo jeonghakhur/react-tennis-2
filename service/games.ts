@@ -17,3 +17,26 @@ export async function createGameResult(
     { autoGenerateArrayKeys: true }
   );
 }
+
+export async function updateGameResult(id: string, games: any[]) {
+  return client
+    .patch(id)
+    .set({ games })
+    .commit({ autoGenerateArrayKeys: true });
+}
+
+export async function getAllGames() {
+  return client.fetch(`*[_type == "gameResult"] {
+    ...,
+    "date": schedule->date,
+    "courtName": schedule->courtName,
+    "startTime": schedule->startTime,
+    "endTime": schedule->endTime,
+    }`);
+}
+
+export async function getGame(scheduleId: string) {
+  return client.fetch(
+    `*[_type == "gameResult" && schedule._ref == "${scheduleId}"][0]`
+  );
+}

@@ -46,40 +46,6 @@ export const gameResult = {
         },
       ],
     },
-
-    // {
-    //   name: 'following',
-    //   type: 'array',
-    //   of: [
-    //     {
-    //       type: 'reference',
-    //       to: [{ type: 'user' }],
-    //     },
-    //   ],
-    //   validation: (Rule: any) => Rule.unique(),
-    // },
-    // {
-    //   name: 'followers',
-    //   type: 'array',
-    //   of: [
-    //     {
-    //       type: 'reference',
-    //       to: [{ type: 'user' }],
-    //     },
-    //   ],
-    //   validation: (Rule: any) => Rule.unique(),
-    // },
-    // {
-    //   name: 'bookmarks',
-    //   type: 'array',
-    //   of: [
-    //     {
-    //       type: 'reference',
-    //       to: [{ type: 'post' }],
-    //     },
-    //   ],
-    //   validation: (Rule: any) => Rule.unique(),
-    // },
   ],
   preview: {
     select: {

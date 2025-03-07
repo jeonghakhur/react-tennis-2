@@ -44,7 +44,9 @@ export default function Members({ params }: Props) {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updateData),
-    }).then((res) => res.json());
+    })
+      .then((res) => res.json())
+      .catch((error) => console.error(error));
   }
 
   function onSubmit(formData: UserProps) {

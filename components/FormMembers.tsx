@@ -184,7 +184,7 @@ export default function FormMembers({
                       placeholder="참석자 이름을 입력해주세요."
                       className="flex-1 text-sm"
                     />
-                    <Select>
+                    <Select defaultValue="남성">
                       <SelectTrigger className="basis-[100px]" ref={genderRef}>
                         <SelectValue placeholder="성별" />
                       </SelectTrigger>

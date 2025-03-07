@@ -242,7 +242,7 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
               <Button
                 type="button"
                 onClick={() => {
-                  router.push(`/games/${scheduleId}`);
+                  router.push(`/match/${scheduleId}`);
                 }}
               >
                 대진표작성
