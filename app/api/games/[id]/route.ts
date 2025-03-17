@@ -1,4 +1,9 @@
-import { createGameResult, getGame, updateGameResult } from '@/service/games';
+import {
+  createGameResult,
+  deleteGame,
+  getGame,
+  updateGameResult,
+} from '@/service/games';
 import { withSessionUser } from '@/util/session';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -30,5 +35,13 @@ export async function GET(_: NextRequest, context: Context) {
   return withSessionUser(async () =>
     getGame(id) //
       .then((data) => NextResponse.json(data))
+  );
+}
+
+export async function DELETE(_: NextRequest, context: Context) {
+  const { id } = await context.params;
+
+  return withSessionUser(async () =>
+    deleteGame(id).then((data) => NextResponse.json(data))
   );
 }

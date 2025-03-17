@@ -6,7 +6,7 @@ export interface Game {
 }
 
 export interface GameResult {
-  id?: string; // 문서 ID (선택적)
+  _id?: string; // 문서 ID (선택적)
   scheduleID: string;
   courtName: string;
   date: string;

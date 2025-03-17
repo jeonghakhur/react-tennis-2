@@ -41,10 +41,24 @@ export async function getGame(scheduleId: string) {
   return client.fetch(
     `*[_type == "gameResult" && schedule._ref == "${scheduleId}"][0] {
       ...,
+      "scheduleId": schedule->_id,
       "date": schedule->date,
       "courtName": schedule->courtName,
       "startTime": schedule->startTime,
       "endTime": schedule->endTime,
     }`
   );
+}
+
+export async function deleteGame(id: string) {
+  try {
+    client.transaction().delete(id).commit({ visibility: 'async' });
+    console.log('게임 데이터가 삭제되었습니다');
+    return { success: true };
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(`❌ Error deleting schedule ${id}:`, error);
+      return { success: false, error: error.message };
+    }
+  }
 }

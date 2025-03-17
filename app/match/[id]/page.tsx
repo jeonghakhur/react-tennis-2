@@ -52,6 +52,7 @@ interface MatchSchedulerProps {
   startTime: string; // Format: "HH:mm"
   endTime: string; // Format: "HH:mm"
   courts: number;
+  courtNumbers: string[];
   scheduleId: string;
 }
 
@@ -539,6 +540,7 @@ export default function Page({ params }: Props) {
           startTime={schedule.startTime}
           endTime={schedule.endTime}
           courts={parseInt(schedule.courtCount, 10)}
+          courtNumbers={schedule.courtNumbers}
           scheduleId={id}
         />
       )}
