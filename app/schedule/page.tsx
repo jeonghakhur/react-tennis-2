@@ -1,172 +1,196 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { Grid } from 'react-loader-spinner';
+import { Container } from '@/components/Layout';
+import LoadingGrid from '@/components/LoadingGrid';
+import useAuthRedirect from '@/hooks/useAuthRedirect';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import React, { useEffect, useState } from 'react';
+import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-
-import { useState } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
-import { ScheduleFormSchema, ScheduleFormType } from '@/model/schedule';
-import FormDatePicker from '@/components/FormDatePicker';
-import FormSelectTime from '@/components/FormSelectTime';
-import FormCourtName from '@/components/FormCourtName';
-import useSchedule from '@/hooks/useSchedule';
-import FormMembers from '@/components/FormMembers';
-import FormCourtNumber from '@/components/FormCourtNumber';
-import { Switch } from '@/components/ui/switch';
+import { GetScheduleProps } from '@/model/schedule';
 
-export default function CalendarForm() {
-  const [loading, setLoading] = useState<boolean>(false);
+export default function ScheduleList() {
+  const { isLoading } = useAuthRedirect('/', 0);
+  const { data: schedules, error } = useSWR<GetScheduleProps[]>(isLoading ? null : '/api/schedule');
+  const [loading, setLoading] = useState<boolean>(isLoading);
   const router = useRouter();
-  const { postSchedule } = useSchedule();
 
-  const form = useForm<ScheduleFormType>({
-    resolver: zodResolver(ScheduleFormSchema),
-    defaultValues: {
-      date: new Date(),
-      startTime: '19',
-      endTime: '22',
-      attendees: [],
-      voting: false,
-    },
-  });
-
-  const startTime = parseInt(form.watch('startTime'), 10);
-
-  function onSubmit(data: ScheduleFormType) {
-    console.log(data);
-    setLoading(true);
-
-    if (data.courtName === '직접입력') {
-      if (!data.otherCourtName) {
-        alert('코트명을 입력해주세요!');
-        setLoading(false);
-        return;
-      }
-      data.courtName = data.otherCourtName;
+  useEffect(() => {
+    if (schedules || error) {
+      setLoading(false);
     }
+  }, [schedules, error]);
 
-    postSchedule(data)
-      .then((data) => console.log(data))
-      .catch((error) => console.error(error))
-      .finally(() => {
-        setLoading(false);
-        router.push('/');
-      });
-  }
+  const getWorkoutInfo = (schedule: GetScheduleProps) => {
+    const uniquePlayers = new Set(schedule.attendees?.map(attendee => attendee.name) || []);
+    console.log('Unique players:', Array.from(uniquePlayers));
 
-  const handleCourtCountChange = (count: string) => {
-    const countNumber = parseInt(count, 10);
-    Array.from({ length: countNumber }, (_, idx) => {
-      form.setValue(`courtNumbers.${idx}`, String(idx + 1));
-    });
+    return {
+      startTime: schedule.startTime,
+      endTime: schedule.endTime,
+      totalPlayers: uniquePlayers.size,
+      courtCount: schedule.courtCount
+    };
   };
 
-  return (
-    <Form {...form}>
-      {loading && (
-        <Grid
-          visible={true}
-          height="80"
-          width="80"
-          color="#b91c1c"
-          ariaLabel="grid-loading"
-          radius="12.5"
-          wrapperClass="grid-wrapper"
-        />
-      )}
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-5">
-        <div className="flex items-align justify-between">
-          <FormLabel>참석투표시작</FormLabel>
-          <Switch
-            onCheckedChange={(value) => {
-              form.setValue('voting', value);
-            }}
-          />
-        </div>
-        <FormDatePicker form={form} />
-        <div className="grid grid-cols-2 gap-3">
-          <FormSelectTime
-            form={form}
-            name="startTime"
-            startTime={startTime}
-            label="시작시간"
-          />
-          <FormSelectTime
-            form={form}
-            name="endTime"
-            startTime={startTime}
-            label="종료시간"
-          />
-        </div>
-        <FormCourtName form={form} />
-        {form.watch('courtName') && (
-          <FormField
-            control={form.control}
-            name="courtCount"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>코트 수</FormLabel>
-                <Select
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    handleCourtCountChange(value);
-                  }}
-                  defaultValue={field.value}
+  if (loading) {
+    return (
+      <Container>
+        <LoadingGrid loading={loading} />
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex flex-col items-center text-center">
+            <div className="bg-gray-50 rounded-lg p-8 w-full max-w-md">
+              <div className="text-gray-500 mb-4">
+                <svg
+                  className="mx-auto h-12 w-12 text-red-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  aria-hidden="true"
                 >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="코트 수를 선택하세요." />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-        <div className="flex gap-3">
-          {Array.from(
-            { length: parseInt(form.watch('courtCount'), 10) },
-            (_, idx) => (
-              <FormCourtNumber key={idx} form={form} idx={idx} />
-            )
-          )}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">데이터를 불러오는데 실패했습니다</h3>
+              <p className="text-gray-500 mb-6">잠시 후 다시 시도해주세요.</p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => window.location.reload()}
+                className="w-full max-w-xs"
+              >
+                다시 시도
+              </Button>
+            </div>
+          </div>
         </div>
+      </Container>
+    );
+  }
 
-        <FormMembers
-          form={form}
-          attendees={form.watch('attendees')}
-          startTime={Number(form.watch('startTime'))}
-          endTime={Number(form.watch('endTime'))}
-        />
+  if (!schedules || schedules.length === 0) {
+    return (
+      <Container>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex flex-col items-center text-center">
+            <div className="bg-gray-50 rounded-lg p-8 w-full max-w-md">
+              <div className="text-gray-500 mb-4">
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">등록된 스케줄이 없습니다</h3>
+              <p className="text-gray-500 mb-6">아직 등록된 스케줄이 없습니다.</p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push('/schedule/new')}
+                className="w-full max-w-xs"
+              >
+                새 스케줄 등록하기
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Container>
+    );
+  }
 
-        <Button type="submit" className="w-full bg-blue-600">
-          일정 등록
+  return (
+    <Container className="p-5">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">게임 일정</h1>
+        <Button
+          type="button"
+          onClick={() => router.push('/schedule/new')}
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          새 일정 등록
         </Button>
-      </form>
-    </Form>
+      </div>
+
+      <div className="grid gap-4">
+        {schedules.map((schedule) => {
+          const workoutInfo = getWorkoutInfo(schedule);
+          return (
+            <div
+              key={schedule.id}
+              className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => router.push(`/schedule/${schedule.id}`)}
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">{schedule.courtName}</h2>
+                  <p className="text-gray-600">
+                    {format(new Date(schedule.date), 'yyyy년 MM월 dd일 (EEE)', { locale: ko })}
+                  </p>
+                </div>
+                <div className="text-sm text-gray-500">
+                  {schedule.courtNumbers?.join(', ') || '0'} 코트
+                </div>
+              </div>
+
+              {workoutInfo && (
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <p className="text-sm text-gray-600">시작 시간</p>
+                    <p className="text-lg font-bold text-blue-600">{workoutInfo.startTime}</p>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <p className="text-sm text-gray-600">종료 시간</p>
+                    <p className="text-lg font-bold text-green-600">{workoutInfo.endTime}</p>
+                  </div>
+                  <div className="bg-orange-50 p-3 rounded-lg">
+                    <p className="text-sm text-gray-600">총 참석자</p>
+                    <p className="text-lg font-bold text-orange-600">{workoutInfo.totalPlayers}명</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {schedule.attendees?.map((attendee, index) => (
+                  <div key={attendee._key ?? index} className="bg-gray-100 rounded-lg p-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-gray-700">참가자 {index + 1}</span>
+                      <div className="text-sm">
+                        {attendee.name} ({attendee.gender})
+                      </div>
+                      <span className="text-sm text-gray-500">
+                        {attendee.startHour}:{attendee.startMinute} - {attendee.endHour}:{attendee.endMinute}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Container>
   );
 }
