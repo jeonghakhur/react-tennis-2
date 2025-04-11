@@ -67,9 +67,13 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
       );
 
       if (existingIndex !== -1) {
-        setMyAttendance(schedule.attendees[existingIndex]);
+        const existingAttendee = schedule.attendees[existingIndex];
+        if (existingAttendee) {
+          setMyAttendance(existingAttendee);
+        }
       } else {
         setMyAttendance({
+          _key: crypto.randomUUID(),
           name: userName,
           gender: gender,
           startHour: schedule.startTime,
@@ -83,7 +87,12 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
 
   useEffect(() => {
     if (Object.keys(form.formState.errors).length > 0) {
-      console.error('⚠️ 실시간 검증 오류:', form.formState.errors);
+      console.log(form.formState.errors);
+      toast({
+        title: '입력 오류',
+        description: '모든 필수 항목을 입력해주세요.',
+        variant: 'destructive',
+      });
     }
   }, [form.formState.errors]);
 
@@ -133,7 +142,13 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
       form.setValue('courtNumbers', [...currentCourtNumbers, ...newCourts]);
     } else if (countNumber < currentCourtNumbers.length) {
       // ✅ 값이 작으면 배열 크기 줄이기 (slice 사용)
-      form.setValue('courtNumbers', currentCourtNumbers.slice(0, countNumber));
+      const updatedCourts = currentCourtNumbers
+        .slice(0, countNumber)
+        .map((court) => ({
+          _key: court._key || crypto.randomUUID(),
+          number: court.number,
+        }));
+      form.setValue('courtNumbers', updatedCourts);
     }
   };
 
@@ -157,7 +172,7 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
             className="space-y-4 pb-[80px]"
           >
             <div className="flex items-align justify-between">
-              <Label htmlFor="votinCheck">참석투표시작</Label>
+              <Label htmlFor="votinCheck">참석투표종료</Label>
               <Switch
                 id="votinCheck"
                 name="votinCheck"

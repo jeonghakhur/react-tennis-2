@@ -13,14 +13,14 @@ export default function FormCourtNumber({ form, idx }: FormProps) {
     <FormField
       key={idx}
       control={form.control}
-      name={`courtNumbers.${idx}`}
+      name={`courtNumbers.${idx}.number`}
       render={({ field }) => (
         <FormItem className="flex flex-col flex-1">
           <FormLabel>{`코트 번호 ${idx + 1}`}</FormLabel>
 
           <Input
             {...field}
-            value={field.value}
+            value={field.value || ''}
             placeholder={`코트 번호 ${idx + 1}`}
           />
 

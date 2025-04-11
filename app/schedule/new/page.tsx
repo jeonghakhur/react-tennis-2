@@ -1,8 +1,8 @@
 'use client';
 
+import { Container } from '@/components/Layout';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Container } from '@/components/Layout';
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -94,9 +94,14 @@ export default function ScheduleForm() {
             />
           </div>
         )}
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-6 bg-white rounded-lg shadow-md">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-6 p-6 bg-white rounded-lg shadow-md"
+        >
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <FormLabel className="text-lg font-medium">참석 투표 시작</FormLabel>
+            <FormLabel className="text-lg font-medium">
+              참석 투표 시작
+            </FormLabel>
             <Switch
               onCheckedChange={(value) => {
                 form.setValue('voting', value);
@@ -106,7 +111,7 @@ export default function ScheduleForm() {
 
           <div className="grid gap-6">
             <FormDatePicker form={form} />
-            
+
             <div className="grid grid-cols-2 gap-4">
               <FormSelectTime
                 form={form}
@@ -181,7 +186,10 @@ export default function ScheduleForm() {
               >
                 취소
               </Button>
-              <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
+              <Button
+                type="submit"
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
                 일정 등록
               </Button>
             </div>
@@ -190,4 +198,4 @@ export default function ScheduleForm() {
       </Form>
     </Container>
   );
-} 
+}

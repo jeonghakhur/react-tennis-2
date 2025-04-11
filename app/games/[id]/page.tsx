@@ -54,16 +54,28 @@ export default function Page({ params }: Props) {
     console.log('update', id);
   };
 
-  const handlePlayerChange = (gameIndex: number, playerIndex: number, value: string) => {
+  const handlePlayerChange = (
+    gameIndex: number,
+    playerIndex: number,
+    value: string
+  ) => {
     const updatedGames = [...editableGames];
-    updatedGames[gameIndex].players[playerIndex] = value;
-    setEditableGames(updatedGames);
+    if (updatedGames[gameIndex]?.players) {
+      updatedGames[gameIndex].players[playerIndex] = value;
+      setEditableGames(updatedGames);
+    }
   };
 
-  const handleScoreChange = (gameIndex: number, scoreIndex: number, value: string) => {
+  const handleScoreChange = (
+    gameIndex: number,
+    scoreIndex: number,
+    value: string
+  ) => {
     const updatedGames = [...editableGames];
-    updatedGames[gameIndex].score[scoreIndex] = value;
-    setEditableGames(updatedGames);
+    if (updatedGames[gameIndex]?.score) {
+      updatedGames[gameIndex].score[scoreIndex] = value;
+      setEditableGames(updatedGames);
+    }
   };
 
   if (loading) {
@@ -87,9 +99,13 @@ export default function Page({ params }: Props) {
       <div>
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex flex-col items-center text-center">
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">{game.courtName}</h1>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">
+              {game.courtName}
+            </h1>
             <div className="text-lg text-gray-600">
-              {format(new Date(game.date), 'yyyy년 MM월 dd일 (EEE)', { locale: ko })}
+              {format(new Date(game.date), 'yyyy년 MM월 dd일 (EEE)', {
+                locale: ko,
+              })}
             </div>
           </div>
         </div>
@@ -112,12 +128,16 @@ export default function Page({ params }: Props) {
                       <div className="grid grid-cols-2 gap-2">
                         <Input
                           value={result.players[0]}
-                          onChange={(e) => handlePlayerChange(index, 0, e.target.value)}
+                          onChange={(e) =>
+                            handlePlayerChange(index, 0, e.target.value)
+                          }
                           className="w-full"
                         />
                         <Input
                           value={result.players[1]}
-                          onChange={(e) => handlePlayerChange(index, 1, e.target.value)}
+                          onChange={(e) =>
+                            handlePlayerChange(index, 1, e.target.value)
+                          }
                           className="w-full"
                         />
                       </div>
@@ -125,7 +145,9 @@ export default function Page({ params }: Props) {
                     <div className="w-20">
                       <Input
                         value={result.score[0]}
-                        onChange={(e) => handleScoreChange(index, 0, e.target.value)}
+                        onChange={(e) =>
+                          handleScoreChange(index, 0, e.target.value)
+                        }
                         className="w-full text-center"
                       />
                     </div>
@@ -137,12 +159,16 @@ export default function Page({ params }: Props) {
                       <div className="grid grid-cols-2 gap-2">
                         <Input
                           value={result.players[2]}
-                          onChange={(e) => handlePlayerChange(index, 2, e.target.value)}
+                          onChange={(e) =>
+                            handlePlayerChange(index, 2, e.target.value)
+                          }
                           className="w-full"
                         />
                         <Input
                           value={result.players[3]}
-                          onChange={(e) => handlePlayerChange(index, 3, e.target.value)}
+                          onChange={(e) =>
+                            handlePlayerChange(index, 3, e.target.value)
+                          }
                           className="w-full"
                         />
                       </div>
@@ -150,7 +176,9 @@ export default function Page({ params }: Props) {
                     <div className="w-20">
                       <Input
                         value={result.score[1]}
-                        onChange={(e) => handleScoreChange(index, 1, e.target.value)}
+                        onChange={(e) =>
+                          handleScoreChange(index, 1, e.target.value)
+                        }
                         className="w-full text-center"
                       />
                     </div>

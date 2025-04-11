@@ -17,11 +17,16 @@ export const ScheduleFormSchema = z.object({
   courtCount: z.string({
     required_error: '코트 수 입력해주세요.',
   }),
-  courtNumbers: z.array(z.string()),
+  courtNumbers: z.array(
+    z.object({
+      _key: z.string(),
+      number: z.string(),
+    })
+  ),
   attendees: z
     .array(
       z.object({
-        _key: z.string().optional(),
+        _key: z.string(),
         name: z.string(),
         gender: z.string(),
         startHour: z.string(),
@@ -50,12 +55,13 @@ export type ScheduleProps = {
   courtName: string;
   otherCourtName?: string;
   courtCount: string;
-  courtNumbers: string[];
+  courtNumbers: { _key: string; number: string }[];
   attendees: AttendanceProps[];
   voting: boolean;
 };
 
 export interface AttendanceProps {
+  _key: string;
   name: string;
   gender: string;
   startHour: string;

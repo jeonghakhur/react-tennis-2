@@ -52,7 +52,7 @@ interface MatchSchedulerProps {
   startTime: string; // Format: "HH:mm"
   endTime: string; // Format: "HH:mm"
   courts: number;
-  courtNumbers: string[];
+  courtNumbers: { _key: string; number: string }[];
   scheduleId: string;
 }
 
@@ -85,14 +85,22 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
     while (currentTime < end) {
       timeSlots.push(currentTime.toTimeString().slice(0, 5));
-      currentTime = new Date(currentTime.getTime() + 30 * 60 * 1000); // Increment by 30 minutes
+      currentTime = new Date(currentTime.getTime() + 30 * 60 * 1000);
     }
+
+    const initial: Record<string, string[]> = {};
+    timeSlots.forEach((slot) => {
+      initial[slot] = [];
+    });
+    setIdleSummary(initial);
 
     const schedule: Match[] = [];
     const idleByTime: Record<string, string[]> = {};
     const gamesCount: Record<string, number> = {};
 
-    attendees.forEach((attendee) => (gamesCount[attendee.name] = 0));
+    attendees.forEach((attendee) => {
+      gamesCount[attendee.name] = 0;
+    });
 
     timeSlots.forEach((slot) => {
       const available = attendees.filter(
@@ -108,35 +116,20 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
       for (let court = 1; court <= courts; court++) {
         if (available.length >= 4) {
-          // console.log(available);
           shuffleArray(available);
-          // 일반 복식 게임 생성
           const players = available
             .sort((a, b) => {
-              if (gamesCount[a.name] !== gamesCount[b.name]) {
-                return gamesCount[a.name] - gamesCount[b.name];
+              const countA = gamesCount[a.name] || 0;
+              const countB = gamesCount[b.name] || 0;
+              if (countA !== countB) {
+                return countA - countB;
               }
               return a.gender.localeCompare(b.gender);
             })
             .slice(0, 4);
 
-          // const men = players.filter((p) => p.gender === '남성');
-          // const women = players.filter((p) => p.gender === '여성');
-
-          // const orderedPlayers = [];
-
-          // while (orderedPlayers.length < 4) {
-          //   if (men.length > 0) orderedPlayers.push(men.shift());
-          //   if (women.length > 0) orderedPlayers.push(women.shift());
-          // }
-
-          // orderedPlayers.forEach((player) => {
-          //   gamesCount[player.name] += 1;
-          //   playing.push(player);
-          // });
-
           players.forEach((player) => {
-            gamesCount[player.name] += 1;
+            gamesCount[player.name] = (gamesCount[player.name] || 0) + 1;
             playing.push(player);
           });
 
@@ -164,40 +157,47 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   const handlePlayersChange = useCallback(
     (player: string, matchIndex: number, playerIndex: number) => {
       const updateMatches = [...matches];
-      const prevName = updateMatches[matchIndex].players[playerIndex];
-      const prevIndex = updateMatches[matchIndex].players.findIndex(
-        (item) => item === player
-      );
+      const match = updateMatches[matchIndex];
+      if (!match) return;
+
+      const prevName = match.players[playerIndex];
+      const prevIndex = match.players.findIndex((item) => item === player);
 
       // 교체 작업
-      updateMatches[matchIndex].players[playerIndex] = player;
-      if (prevName) {
-        updateMatches[matchIndex].players[prevIndex] = prevName;
-      }
-
       if (prevIndex !== -1) {
-        updateMatches[matchIndex].players[prevIndex] = '';
+        // 이미 선택된 선수와 교체
+        match.players[playerIndex] = player;
+        if (prevName) {
+          match.players[prevIndex] = prevName;
+        }
+      } else {
+        // 새로운 선수 선택
+        match.players[playerIndex] = player;
       }
 
       // 대기자 업데이트
-      const matchTime = updateMatches[matchIndex].time;
+      const matchTime = match.time;
       const updateIdleSummary = { ...idleSummary };
 
       const idleIndex = updateIdleSummary[matchTime]?.findIndex(
         (item) => item === player
       );
-      if (idleIndex !== -1) {
+
+      if (idleIndex !== -1 && typeof idleIndex === 'number') {
         const updateGamesCount = { ...gamesPlayed };
-        updateGamesCount[player] += 1;
+        updateGamesCount[player] = (updateGamesCount[player] || 0) + 1;
 
         if (prevName) {
+          if (!updateIdleSummary[matchTime]) {
+            updateIdleSummary[matchTime] = [];
+          }
           updateIdleSummary[matchTime] = [
             ...updateIdleSummary[matchTime].slice(0, idleIndex),
             prevName,
             ...updateIdleSummary[matchTime].slice(idleIndex + 1),
           ];
-          updateGamesCount[prevName] -= 1;
-        } else {
+          updateGamesCount[prevName] = (updateGamesCount[prevName] || 0) - 1;
+        } else if (updateIdleSummary[matchTime]) {
           updateIdleSummary[matchTime].splice(idleIndex, 1);
         }
 
@@ -214,7 +214,10 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   const handleScoreChange = useCallback(
     (value: string, matchIndex: number, scoreIndex: number) => {
       const updateMatches = [...matches];
-      updateMatches[matchIndex].score[scoreIndex] = value;
+      const match = updateMatches[matchIndex];
+      if (!match) return;
+
+      match.score[scoreIndex] = value;
       setMatches(updateMatches);
     },
     [matches]
@@ -226,15 +229,21 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
   const handleMatchesReset = () => {
     const updateMatches = [...matches];
-    if (updateMatches[0].players.length === 0) {
+    const firstMatch = updateMatches[0];
+    if (!firstMatch || firstMatch.players.length === 0) {
       alert('초기화 상태입니다.');
       return;
     }
-    const updateIdleSummary = { ...idleSummary };
 
+    const updateIdleSummary = { ...idleSummary };
     updateMatches.forEach((item) => {
+      if (!item || !item.time) return;
+      const time = item.time;
       item.players.forEach((player) => {
-        updateIdleSummary[item.time].push(player);
+        if (!updateIdleSummary[time]) {
+          updateIdleSummary[time] = [];
+        }
+        updateIdleSummary[time].push(player);
       });
     });
     updateMatches.map((item) => (item.players = []));
@@ -248,6 +257,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
     setIdleSummary(updateIdleSummary);
     setMatches(updateMatches);
+    console.log(updateMatches);
     setGamesPlayed(resetState);
   };
 
@@ -272,7 +282,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
       .filter((match) => match.time === time)
       .flatMap((match) => match.players)
       .filter((player) => player !== name && player !== '');
-    const idleplayers = idleSummary[time];
+    const idleplayers = idleSummary[time] || [];
     return [...attendessPlayers, ...idleplayers];
   };
 
@@ -312,8 +322,11 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
             <CommandList>
               <CommandEmpty>No member found.</CommandEmpty>
               <CommandGroup>
-                {attendessAtTime(match.time, match.players[playerIndex]).map(
-                  (player, idx) => (
+                {match?.time &&
+                  (match?.players?.[playerIndex]
+                    ? attendessAtTime(match.time, match.players[playerIndex])
+                    : idleSummary[match.time] || []
+                  ).map((player, idx) => (
                     <CommandItem
                       key={`${player}-${idx}`}
                       value={player}
@@ -335,8 +348,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
                         )}
                       />
                     </CommandItem>
-                  )
-                )}
+                  ))}
               </CommandGroup>
             </CommandList>
           </Command>
@@ -391,7 +403,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
           <td className="p-0">
             <div className="px-1 border-b-[1px]">
               <Select
-                defaultValue={match.score[0]}
+                defaultValue={match.score[0] || '0'}
                 onValueChange={(value) =>
                   handleScoreChange(value, matchIndex, 0)
                 }
@@ -414,7 +426,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
             </div>
             <div className="px-1">
               <Select
-                defaultValue={match.score[1]}
+                defaultValue={match.score[1] || '0'}
                 onValueChange={(value) =>
                   handleScoreChange(value, matchIndex, 1)
                 }
@@ -438,8 +450,8 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
           </td>
           {isFirstMatch && (
             <td rowSpan={rowspan} className="text-xs">
-              {idleSummary[match.time] && idleSummary[match.time].length > 0
-                ? idleSummary[match.time].map((item, idx) => (
+              {match?.time && (idleSummary[match.time] || []).length > 0
+                ? (idleSummary[match.time] || []).map((item, idx) => (
                     <div key={idx}>{item}</div>
                   ))
                 : ''}
@@ -453,7 +465,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   MatchRow.displayName = 'MatchRow';
 
   return (
-    <div className="p-5">
+    <div className="pb-20">
       <table className="table">
         <thead>
           <tr>
@@ -469,9 +481,11 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
           {matches.map((match, index) => {
             // 현재 시간의 첫 번째 경기인지 확인
             const isFirstMatch =
-              index === 0 || matches[index - 1].time !== match.time;
+              index === 0 || matches[index - 1]?.time !== match.time;
             // 해당 시간대의 경기 수 계산
-            const rowspan = matches.filter((m) => m.time === match.time).length;
+            const rowspan = matches.filter(
+              (m) => m?.time === match.time
+            ).length;
             return (
               <MatchRow
                 key={index}
@@ -485,7 +499,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
         </tbody>
       </table>
 
-      <h2>Games Played</h2>
+      <h2 className="text-lg font-bold my-4">Games Played</h2>
       <table className="table">
         <thead>
           <tr>
@@ -494,12 +508,19 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
           </tr>
         </thead>
         <tbody>
-          {Object.entries(gamesPlayed).map(([player, count], index) => (
-            <tr key={index}>
-              <td>{player}</td>
-              <td>{count}</td>
-            </tr>
-          ))}
+          {Object.entries(gamesPlayed)
+            .sort(([playerA, countA], [playerB, countB]) => {
+              if (countA !== countB) {
+                return countA - countB;
+              }
+              return playerA.localeCompare(playerB);
+            })
+            .map(([player, count], index) => (
+              <tr key={index}>
+                <td>{player}</td>
+                <td>{count}</td>
+              </tr>
+            ))}
         </tbody>
       </table>
       <div className="button-group">
@@ -531,8 +552,9 @@ export default function Page({ params }: Props) {
 
   return (
     <Container>
-      {isLoading && <LoadingGrid loading={isLoading} />}
-      {!schedule ? (
+      {isLoading ? (
+        <LoadingGrid loading={isLoading} />
+      ) : !schedule ? (
         <div>등록된 데이터가 없습니다.</div>
       ) : (
         <TennisMatchScheduler
