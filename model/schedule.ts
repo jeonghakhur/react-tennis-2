@@ -55,19 +55,18 @@ export type ScheduleProps = {
   voting: boolean;
 };
 
-export type AttendanceProps = {
-  _key?: string;
+export interface AttendanceProps {
   name: string;
   gender: string;
   startHour: string;
   startMinute: string;
   endHour: string;
   endMinute: string;
-};
+}
 
-// export type AttendanceWithKeyProps = AttendanceProps & {
-//   _key: string;
-// };
+export type AttendanceWithKeyProps = AttendanceProps & {
+  _key: string;
+};
 
 export type GetScheduleProps = {
   id: string;
