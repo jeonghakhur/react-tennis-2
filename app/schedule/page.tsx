@@ -13,7 +13,9 @@ import { GetScheduleProps } from '@/model/schedule';
 
 export default function ScheduleList() {
   const { isLoading } = useAuthRedirect('/', 0);
-  const { data: schedules, error } = useSWR<GetScheduleProps[]>(isLoading ? null : '/api/schedule');
+  const { data: schedules, error } = useSWR<GetScheduleProps[]>(
+    isLoading ? null : '/api/schedule'
+  );
   const [loading, setLoading] = useState<boolean>(isLoading);
   const router = useRouter();
 
@@ -24,14 +26,16 @@ export default function ScheduleList() {
   }, [schedules, error]);
 
   const getWorkoutInfo = (schedule: GetScheduleProps) => {
-    const uniquePlayers = new Set(schedule.attendees?.map(attendee => attendee.name) || []);
+    const uniquePlayers = new Set(
+      schedule.attendees?.map((attendee) => attendee.name) || []
+    );
     console.log('Unique players:', Array.from(uniquePlayers));
 
     return {
       startTime: schedule.startTime,
       endTime: schedule.endTime,
       totalPlayers: uniquePlayers.size,
-      courtCount: schedule.courtCount
+      courtCount: schedule.courtCount,
     };
   };
 
@@ -65,7 +69,9 @@ export default function ScheduleList() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">데이터를 불러오는데 실패했습니다</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                데이터를 불러오는데 실패했습니다
+              </h3>
               <p className="text-gray-500 mb-6">잠시 후 다시 시도해주세요.</p>
               <Button
                 type="button"
@@ -104,8 +110,12 @@ export default function ScheduleList() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">등록된 스케줄이 없습니다</h3>
-              <p className="text-gray-500 mb-6">아직 등록된 스케줄이 없습니다.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                등록된 스케줄이 없습니다
+              </h3>
+              <p className="text-gray-500 mb-6">
+                아직 등록된 스케줄이 없습니다.
+              </p>
               <Button
                 type="button"
                 variant="outline"
@@ -145,9 +155,13 @@ export default function ScheduleList() {
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">{schedule.courtName}</h2>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    {schedule.courtName}
+                  </h2>
                   <p className="text-gray-600">
-                    {format(new Date(schedule.date), 'yyyy년 MM월 dd일 (EEE)', { locale: ko })}
+                    {format(new Date(schedule.date), 'yyyy년 MM월 dd일 (EEE)', {
+                      locale: ko,
+                    })}
                   </p>
                 </div>
                 <div className="text-sm text-gray-500">
@@ -159,29 +173,41 @@ export default function ScheduleList() {
                 <div className="grid grid-cols-3 gap-4 mb-6">
                   <div className="bg-blue-50 p-3 rounded-lg">
                     <p className="text-sm text-gray-600">시작 시간</p>
-                    <p className="text-lg font-bold text-blue-600">{workoutInfo.startTime}</p>
+                    <p className="text-lg font-bold text-blue-600">
+                      {workoutInfo.startTime}
+                    </p>
                   </div>
                   <div className="bg-green-50 p-3 rounded-lg">
                     <p className="text-sm text-gray-600">종료 시간</p>
-                    <p className="text-lg font-bold text-green-600">{workoutInfo.endTime}</p>
+                    <p className="text-lg font-bold text-green-600">
+                      {workoutInfo.endTime}
+                    </p>
                   </div>
                   <div className="bg-orange-50 p-3 rounded-lg">
                     <p className="text-sm text-gray-600">총 참석자</p>
-                    <p className="text-lg font-bold text-orange-600">{workoutInfo.totalPlayers}명</p>
+                    <p className="text-lg font-bold text-orange-600">
+                      {workoutInfo.totalPlayers}명
+                    </p>
                   </div>
                 </div>
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {schedule.attendees?.map((attendee, index) => (
-                  <div key={attendee._key ?? index} className="bg-gray-100 rounded-lg p-2">
+                  <div
+                    key={attendee._key ?? index}
+                    className="bg-gray-100 rounded-lg p-2"
+                  >
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700">참가자 {index + 1}</span>
+                      <span className="text-sm font-medium text-gray-700">
+                        참가자 {index + 1}
+                      </span>
                       <div className="text-sm">
                         {attendee.name} ({attendee.gender})
                       </div>
                       <span className="text-sm text-gray-500">
-                        {attendee.startHour}:{attendee.startMinute} - {attendee.endHour}:{attendee.endMinute}
+                        {attendee.startHour}:{attendee.startMinute} -{' '}
+                        {attendee.endHour}:{attendee.endMinute}
                       </span>
                     </div>
                   </div>

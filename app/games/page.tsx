@@ -65,8 +65,12 @@ export default function Home() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">등록된 게임이 없습니다</h3>
-              <p className="text-gray-500 mb-6">아직 등록된 게임 데이터가 없습니다.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                등록된 게임이 없습니다
+              </h3>
+              <p className="text-gray-500 mb-6">
+                아직 등록된 게임 데이터가 없습니다.
+              </p>
               <Button
                 type="button"
                 variant="outline"
@@ -96,9 +100,13 @@ export default function Home() {
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">{game.courtName}</h2>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    {game.courtName}
+                  </h2>
                   <p className="text-gray-600">
-                    {format(new Date(date), 'yyyy년 MM월 dd일 (EEE)', { locale: ko })}
+                    {format(new Date(date), 'yyyy년 MM월 dd일 (EEE)', {
+                      locale: ko,
+                    })}
                   </p>
                 </div>
                 <div className="text-sm text-gray-500">
@@ -109,7 +117,9 @@ export default function Home() {
                 {game.games.slice(0, 2).map((g, index) => (
                   <div key={index} className="bg-gray-50 rounded-lg p-4">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-gray-700">게임 {index + 1}</span>
+                      <span className="text-sm font-medium text-gray-700">
+                        게임 {index + 1}
+                      </span>
                       <span className="text-sm text-gray-500">{g.time}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
