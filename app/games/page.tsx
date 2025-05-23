@@ -91,7 +91,6 @@ export default function Home() {
       <div className="grid gap-4">
         {games?.map((game) => {
           const date = new Date(game.date);
-          console.log(date);
           return (
             <div
               key={game._id}

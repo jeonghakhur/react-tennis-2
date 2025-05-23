@@ -27,7 +27,7 @@ export async function updateGameResult(id: string, games: any[]) {
 
 export async function getAllGames() {
   return client.fetch(
-    `*[_type == "gameResult"] {
+    `*[_type == "gameResult"] | order(schedule->date desc) {
       ...,
       "scheduleId": schedule->_id,
       "date": schedule->date,
