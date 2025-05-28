@@ -43,6 +43,19 @@ export const gameResult = {
               description: "경기 시작 시간 (예: '19:00')",
             },
           ],
+          preview: {
+            select: {
+              court: 'court',
+              time: 'time',
+              players: 'players',
+            },
+            prepare({ court, time, players }: any) {
+              return {
+                title: `Court ${court || '-'}`,
+                subtitle: `${time || ''} | ${players?.join(', ') || ''}`,
+              };
+            },
+          },
         },
       ],
     },

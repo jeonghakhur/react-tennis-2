@@ -27,7 +27,6 @@ export async function createSchedule(
     courtCount,
     courtNumbers,
     attendees,
-    voting,
   } = scheduleData;
   console.log('attendees', attendees);
   return client.create(
@@ -41,7 +40,6 @@ export async function createSchedule(
       courtCount,
       courtNumbers,
       attendees,
-      voting,
     },
     { autoGenerateArrayKeys: true }
   );

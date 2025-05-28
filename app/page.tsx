@@ -43,7 +43,6 @@ export default function Home() {
                 courtNumbers,
                 courtName,
                 attendees,
-                voting,
               },
               index
             ) => {
@@ -72,7 +71,6 @@ export default function Home() {
                         <div>참석자: {attendees.length}</div>
                       </div>
                     </div>
-                    <div>{`${voting === true ? '진행' : '종료'}`}</div>
                   </Link>
                 </li>
               );

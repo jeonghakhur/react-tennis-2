@@ -17,12 +17,12 @@ export const ScheduleFormSchema = z.object({
   courtCount: z.string({
     required_error: '코트 수 입력해주세요.',
   }),
-  courtNumbers: z.array(
-    z.object({
-      _key: z.string(),
-      number: z.string(),
-    })
-  ),
+  courtNumbers: z.array(z.string()),
+  gameResult: z.boolean().optional(),
+  status: z
+    .enum(['saved', 'bracket', 'result_done'])
+    .optional()
+    .default('saved'),
   attendees: z
     .array(
       z.object({
@@ -37,7 +37,6 @@ export const ScheduleFormSchema = z.object({
     )
     .optional()
     .default([]),
-  voting: z.boolean(),
 });
 
 export type ScheduleFormType = z.infer<typeof ScheduleFormSchema>;
@@ -57,7 +56,6 @@ export type ScheduleProps = {
   courtCount: string;
   courtNumbers: { _key: string; number: string }[];
   attendees: AttendanceProps[];
-  voting: boolean;
 };
 
 export interface AttendanceProps {

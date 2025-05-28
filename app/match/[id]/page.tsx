@@ -4,27 +4,12 @@
 import React, { useState, useEffect, useCallback, use } from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Check, ChevronsUpDown } from 'lucide-react';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 import { Container } from '@/components/Layout';
 import LoadingGrid from '@/components/LoadingGrid';
 import useSchedule from '@/hooks/useSchedule';
@@ -74,7 +59,6 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   const [matches, setMatches] = useState<Match[]>([]);
   const [idleSummary, setIdleSummary] = useState<Record<string, string[]>>({});
   const [gamesPlayed, setGamesPlayed] = useState<Record<string, number>>({});
-  const [activePopoverId, setActivePopoverId] = useState<string | null>(null);
   const router = useRouter();
 
   const generateSchedule = useCallback(() => {
@@ -206,7 +190,6 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
       setMatches(updateMatches);
       setIdleSummary(updateIdleSummary);
-      setActivePopoverId(null);
     },
     [gamesPlayed, idleSummary, matches]
   );
@@ -286,81 +269,48 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
     return [...attendessPlayers, ...idleplayers];
   };
 
-  type AttendeePopoverProp = {
+  type AttendeeSelectProp = {
     matchIndex: number;
     match: Match;
     playerIndex: number;
   };
 
-  const AttendeePopover: React.FC<AttendeePopoverProp> = ({
+  const AttendeeSelect: React.FC<AttendeeSelectProp> = ({
     matchIndex,
     match,
     playerIndex,
   }) => {
     return (
-      <Popover
-        open={activePopoverId === `popover${matchIndex}${playerIndex}`}
-        onOpenChange={(isOpen) =>
-          setActivePopoverId(
-            isOpen ? `popover${matchIndex}${playerIndex}` : null
-          )
-        }
-      >
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            className="my-1 w-[80px] text-xs py-1 px-2"
-          >
-            {match.players[playerIndex] || '선택'}
-            <ChevronsUpDown className="opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="start" className="w-[180px]">
-          <Command>
-            <CommandInput placeholder="Search member" />
-            <CommandList>
-              <CommandEmpty>No member found.</CommandEmpty>
-              <CommandGroup>
-                {match?.time &&
-                  (match?.players?.[playerIndex]
-                    ? attendessAtTime(match.time, match.players[playerIndex])
-                    : idleSummary[match.time] || []
-                  ).map((player, idx) => (
-                    <CommandItem
-                      key={`${player}-${idx}`}
-                      value={player}
-                      onSelect={(currentValue) => {
-                        handlePlayersChange(
-                          currentValue,
-                          matchIndex,
-                          playerIndex
-                        );
-                      }}
-                    >
-                      {player}
-                      <Check
-                        className={cn(
-                          'ml-auto',
-                          player === match.players[playerIndex]
-                            ? 'opacity-100'
-                            : 'opacity-0'
-                        )}
-                      />
-                    </CommandItem>
-                  ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+      <div className="px-1 border-b-[1px]">
+        <Select
+          defaultValue={match.players[playerIndex] || '선택'}
+          onValueChange={(value) =>
+            handlePlayersChange(value, matchIndex, playerIndex)
+          }
+        >
+          <SelectTrigger className="text-xs my-1 pr-1">
+            <SelectValue>{match.players[playerIndex]}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {match?.time &&
+              (match?.players?.[playerIndex]
+                ? attendessAtTime(match.time, match.players[playerIndex])
+                : idleSummary[match.time] || []
+              ).map((player, idx) => (
+                <SelectItem value={player} key={idx} className="text-xs">
+                  {player}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+      </div>
     );
   };
 
   type MatchRowProps = {
     rowspan: number;
     isFirstMatch: boolean;
-  } & Omit<AttendeePopoverProp, 'playerIndex'>;
+  } & Omit<AttendeeSelectProp, 'playerIndex'>;
 
   const MatchRow = React.memo(
     ({ match, matchIndex, rowspan, isFirstMatch }: MatchRowProps) => {
@@ -375,24 +325,24 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
           <td className="p-0">
             <div className="flex flex-col">
               <div className="flex gap-x-1 justify-center border-b-[1px]">
-                <AttendeePopover
+                <AttendeeSelect
                   matchIndex={matchIndex}
                   match={match}
                   playerIndex={0}
                 />
-                <AttendeePopover
+                <AttendeeSelect
                   matchIndex={matchIndex}
                   match={match}
                   playerIndex={1}
                 />
               </div>
               <div className="flex gap-x-1 justify-center">
-                <AttendeePopover
+                <AttendeeSelect
                   matchIndex={matchIndex}
                   match={match}
                   playerIndex={2}
                 />
-                <AttendeePopover
+                <AttendeeSelect
                   matchIndex={matchIndex}
                   match={match}
                   playerIndex={3}
@@ -473,7 +423,6 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
             <th>코트</th>
             <th>페어</th>
             <th>스코어</th>
-
             <th>대기자</th>
           </tr>
         </thead>

@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import useSchedule from '@/hooks/useSchedule';
 import {
@@ -60,6 +59,9 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
       form.reset({
         ...schedule,
         date: schedule.date ? new Date(schedule.date) : new Date(),
+        courtNumbers: schedule.courtNumbers.map((court) =>
+          typeof court === 'string' ? court : court.number
+        ),
       });
 
       const existingIndex = schedule.attendees.findIndex(
@@ -131,24 +133,13 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
     const currentCourtNumbers = form.getValues('courtNumbers') || [];
 
     if (countNumber > currentCourtNumbers.length) {
-      // ✅ 값이 크면 새로운 항목 추가
       const newCourts = Array.from(
         { length: countNumber - currentCourtNumbers.length },
-        (_, idx) => ({
-          _key: crypto.randomUUID(),
-          number: String(currentCourtNumbers.length + idx + 1),
-        })
+        (_, idx) => String(currentCourtNumbers.length + idx + 1)
       );
       form.setValue('courtNumbers', [...currentCourtNumbers, ...newCourts]);
     } else if (countNumber < currentCourtNumbers.length) {
-      // ✅ 값이 작으면 배열 크기 줄이기 (slice 사용)
-      const updatedCourts = currentCourtNumbers
-        .slice(0, countNumber)
-        .map((court) => ({
-          _key: court._key || crypto.randomUUID(),
-          number: court.number,
-        }));
-      form.setValue('courtNumbers', updatedCourts);
+      form.setValue('courtNumbers', currentCourtNumbers.slice(0, countNumber));
     }
   };
 
@@ -171,15 +162,6 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 pb-[80px]"
           >
-            <div className="flex items-align justify-between">
-              <Label htmlFor="votinCheck">참석투표종료</Label>
-              <Switch
-                id="votinCheck"
-                name="votinCheck"
-                checked={form.watch('voting')}
-                onCheckedChange={(value) => form.setValue('voting', value)}
-              />
-            </div>
             {myAttendance && (
               <MyAttendance
                 myAttendance={myAttendance}

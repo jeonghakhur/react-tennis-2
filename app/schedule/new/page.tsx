@@ -13,7 +13,6 @@ import FormCourtName from '@/components/FormCourtName';
 import useSchedule from '@/hooks/useSchedule';
 import FormMembers from '@/components/FormMembers';
 import FormCourtNumber from '@/components/FormCourtNumber';
-import { Switch } from '@/components/ui/switch';
 import {
   Form,
   FormControl,
@@ -43,7 +42,6 @@ export default function ScheduleForm() {
       startTime: '19',
       endTime: '22',
       attendees: [],
-      voting: false,
     },
   });
 
@@ -98,17 +96,6 @@ export default function ScheduleForm() {
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-6 p-6 bg-white rounded-lg shadow-md"
         >
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <FormLabel className="text-lg font-medium">
-              참석 투표 시작
-            </FormLabel>
-            <Switch
-              onCheckedChange={(value) => {
-                form.setValue('voting', value);
-              }}
-            />
-          </div>
-
           <div className="grid gap-6">
             <FormDatePicker form={form} />
 
@@ -161,7 +148,7 @@ export default function ScheduleForm() {
               />
             )}
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex gap-4">
               {Array.from(
                 { length: parseInt(form.watch('courtCount'), 10) },
                 (_, idx) => (

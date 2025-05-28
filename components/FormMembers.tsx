@@ -73,12 +73,20 @@ export default function FormMembers({
   };
 
   function handleAddMember() {
-    let name = memberValue;
+    let name = '';
     if (guestField) {
       name = guestNameRef.current?.value || '';
+      console.log('직접 입력:', name);
+    } else {
+      name = memberValue;
+      console.log('선택된 회원:', name);
     }
 
     if (!name) return;
+
+    console.log('현재 참석자 목록:', fields);
+    console.log('추가하려는 이름:', name);
+    console.log('이미 존재하는가:', isAttendee(name));
 
     if (isAttendee(name)) {
       alert('이미 추가된 참석자입니다.');
@@ -95,6 +103,11 @@ export default function FormMembers({
       endHour: attendanceTime.endHour,
       endMinute: attendanceTime.endMinute,
     });
+
+    // 직접 입력 필드 초기화
+    if (guestField && guestNameRef.current) {
+      guestNameRef.current.value = '';
+    }
   }
 
   function handleRemoveMember(index: number) {
@@ -177,6 +190,20 @@ export default function FormMembers({
                   ref={guestNameRef}
                   placeholder="참석자 이름을 입력해주세요."
                   className="flex-1 text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                    }
+                  }}
+                  onKeyUp={(e) => {
+                    if (e.key === 'Enter' && guestNameRef.current?.value) {
+                      e.preventDefault();
+                      handleAddMember();
+                      if (guestNameRef.current) {
+                        guestNameRef.current.value = '';
+                      }
+                    }
+                  }}
                 />
                 <Select defaultValue="남성">
                   <SelectTrigger className="basis-[100px]" ref={genderRef}>
