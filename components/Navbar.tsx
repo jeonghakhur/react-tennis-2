@@ -27,7 +27,7 @@ export default function NavBar() {
             {level > 0 && (
               <>
                 <li>
-                  <Link href="/schedule">일정등록</Link>
+                  <Link href="/schedule">일정</Link>
                 </li>
                 <li>
                   <Link href="/games">게임결과</Link>

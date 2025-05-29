@@ -12,32 +12,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import useSchedule from '@/hooks/useSchedule';
-import {
-  AttendanceProps,
-  ScheduleFormSchema,
-  ScheduleFormType,
-} from '@/model/schedule';
+import { ScheduleFormSchema, ScheduleFormType } from '@/model/schedule';
 import { AuthUser } from '@/model/user';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Grid } from 'react-loader-spinner';
-import MyAttendance from './MyAttendance';
 
 type Props = {
   scheduleId: string;
   user: AuthUser;
-};
-
-const defaultAttendance: AttendanceProps = {
-  _key: '',
-  name: '',
-  gender: '',
-  startHour: '19',
-  startMinute: '00',
-  endHour: '22',
-  endMinute: '00',
 };
 
 export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
@@ -45,8 +30,6 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
   const gender = user?.gender;
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
-  const [myAttendance, setMyAttendance] =
-    useState<AttendanceProps>(defaultAttendance);
   const { schedule, isLoading, patchSchedule, removeSchedule } =
     useSchedule(scheduleId);
 
@@ -63,27 +46,6 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
           typeof court === 'string' ? court : court.number
         ),
       });
-
-      const existingIndex = schedule.attendees.findIndex(
-        (attendee: AttendanceProps) => attendee.name === userName
-      );
-
-      if (existingIndex !== -1) {
-        const existingAttendee = schedule.attendees[existingIndex];
-        if (existingAttendee) {
-          setMyAttendance(existingAttendee);
-        }
-      } else {
-        setMyAttendance({
-          _key: crypto.randomUUID(),
-          name: userName,
-          gender: gender,
-          startHour: schedule.startTime,
-          startMinute: '00',
-          endHour: schedule.endTime,
-          endMinute: '00',
-        });
-      }
     }
   }, [schedule, form, userName, gender]);
 
@@ -162,16 +124,6 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 pb-[80px]"
           >
-            {myAttendance && (
-              <MyAttendance
-                myAttendance={myAttendance}
-                onAttendanceChange={setMyAttendance}
-                scheduleId={scheduleId}
-                startTime={Number(schedule.startTime)}
-                endTime={Number(schedule.endTime)}
-              />
-            )}
-
             <FormDatePicker form={form} />
             <div className="grid grid-cols-2 gap-4">
               <FormSelectTime

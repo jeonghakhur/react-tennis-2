@@ -39,10 +39,11 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
       const existingIndex = schedule.attendees.findIndex(
         (attendee: AttendanceProps) => attendee.name === userName
       );
-      if (existingIndex !== -1) {
+      if (existingIndex !== -1 && schedule.attendees[existingIndex]) {
         setMyAttendance(schedule.attendees[existingIndex]);
       } else {
         setMyAttendance({
+          _key: '',
           name: userName,
           gender: gender,
           startHour: schedule.startTime,
@@ -150,9 +151,7 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
         <li className="flex">
           <TextSplitter text="코트번호" width={70} />
           <span className="mx-2">:</span>
-          {courtNumbers.map((item, idx) => (
-            <span key={idx}>{item}</span>
-          ))}
+          {courtNumbers?.join(', ') || '0'} 코트
         </li>
         <li className="flex">
           <TextSplitter text="참석인원" width={70} />
