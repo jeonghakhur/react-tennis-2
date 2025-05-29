@@ -15,6 +15,7 @@ import useSchedule from '@/hooks/useSchedule';
 import { ScheduleFormSchema, ScheduleFormType } from '@/model/schedule';
 import { AuthUser } from '@/model/user';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Switch } from '@/components/ui/switch';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -82,11 +83,12 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
       })
       .catch((error) => console.error(error))
       .finally(() => {
-        toast({
-          title: '업데이트 완료',
-          duration: 1500,
-        });
-        setLoading(false);
+        // toast({
+        //   title: '업데이트 완료',
+        //   duration: 1500,
+        // });
+        // setLoading(false);
+        router.push(`/schedule/`);
       });
   }
 
@@ -103,6 +105,16 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
     } else if (countNumber < currentCourtNumbers.length) {
       form.setValue('courtNumbers', currentCourtNumbers.slice(0, countNumber));
     }
+  };
+
+  const handleStatusChange = (value: boolean) => {
+    if (value) {
+      form.setValue('status', 'attendees_done');
+    } else {
+      form.setValue('status', 'pending');
+    }
+
+    console.log(form.getValues('status'));
   };
 
   return (
@@ -179,6 +191,18 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
               endTime={Number(schedule.endTime)}
             />
 
+            <div className="flex items-center gap-2 justify-between">
+              <label htmlFor="status" className="font-bold">
+                참석자 등록 완료
+              </label>
+              <Switch
+                id="status"
+                name="status"
+                checked={form.watch('status') === 'attendees_done'}
+                onCheckedChange={handleStatusChange}
+              />
+            </div>
+
             <div className="button-group">
               <Button
                 type="button"
@@ -187,15 +211,15 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
               >
                 삭제
               </Button>
-              <Button type="submit">수정</Button>
-              <Button
+              <Button type="submit">저장</Button>
+              {/* <Button
                 type="button"
                 onClick={() => {
                   router.push(`/match/${scheduleId}`);
                 }}
               >
                 대진표작성
-              </Button>
+              </Button> */}
             </div>
           </form>
         </Form>

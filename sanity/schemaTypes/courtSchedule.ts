@@ -18,9 +18,10 @@ export const courtSchedule = {
       description: '스케줄의 현재 상태',
       options: {
         list: [
+          { title: '대기중', value: 'pending' },
           { title: '참석자 저장 완료', value: 'attendees_done' },
           { title: '대진표 작성 완료', value: 'match_done' },
-          { title: '게임 결과 등록 완료', value: 'gmae_done' },
+          { title: '게임 결과 등록 완료', value: 'game_done' },
         ],
         layout: 'dropdown',
       },

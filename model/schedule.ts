@@ -18,11 +18,9 @@ export const ScheduleFormSchema = z.object({
     required_error: '코트 수 입력해주세요.',
   }),
   courtNumbers: z.array(z.string()),
-  gameResult: z.boolean().optional(),
   status: z
-    .enum(['saved', 'bracket', 'result_done'])
-    .optional()
-    .default('saved'),
+    .enum(['pending', 'attendees_done', 'match_done', 'game_done'])
+    .default('pending'),
   attendees: z
     .array(
       z.object({
