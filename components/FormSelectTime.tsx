@@ -44,7 +44,7 @@ export default function FormSelectTime({
             <Select
               onValueChange={field.onChange}
               // defaultValue={String(field.value)}
-              value={field.value ? String(field.value) : value}
+              value={field.value ? String(field.value) : value || ''}
             >
               <SelectTrigger>
                 <SelectValue />

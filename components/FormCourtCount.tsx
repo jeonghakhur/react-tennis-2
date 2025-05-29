@@ -38,7 +38,7 @@ export default function FormCourtCount({
               field.onChange(value);
               onHandleChange(value);
             }}
-            value={field.value || value}
+            value={field.value || value || ''}
           >
             <FormControl>
               <SelectTrigger>

@@ -22,4 +22,6 @@ export default function Page({ params }: Props) {
       <ScheduleDetailUser scheduleId={id} user={user!} />
     );
   }
+
+  return null;
 }

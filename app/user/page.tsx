@@ -78,7 +78,7 @@ export default function User() {
                 render={({ field }) => (
                   <Select
                     onValueChange={field.onChange}
-                    value={field.value || data?.gender}
+                    value={field.value || data?.gender || ''}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="성별을 선택해주세요." />

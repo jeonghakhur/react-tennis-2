@@ -52,7 +52,7 @@ export async function getGame(scheduleId: string) {
 
 export async function deleteGame(id: string) {
   try {
-    client.transaction().delete(id).commit({ visibility: 'async' });
+    await client.transaction().delete(id).commit({ visibility: 'async' });
     console.log('게임 데이터가 삭제되었습니다');
     return { success: true };
   } catch (error) {
@@ -60,5 +60,6 @@ export async function deleteGame(id: string) {
       console.error(`❌ Error deleting schedule ${id}:`, error);
       return { success: false, error: error.message };
     }
+    return { success: false, error: 'Unknown error' };
   }
 }

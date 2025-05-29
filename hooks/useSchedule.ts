@@ -194,7 +194,7 @@ export default function useSchedule(scheduleId?: string) {
     const newSchedule = { ...schedule, ...updateData };
 
     return mutate(updateSchedule(scheduleId!, updateData), {
-      optimisticData: newSchedule,
+      optimisticData: newSchedule as unknown as GetScheduleProps,
       populateCache: false,
       revalidate: false,
       rollbackOnError: true,
