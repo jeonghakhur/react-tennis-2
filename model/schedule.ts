@@ -54,6 +54,7 @@ export type ScheduleProps = {
   courtCount: string;
   courtNumbers: { _key: string; number: string }[];
   attendees: AttendanceProps[];
+  status: 'pending' | 'attendees_done' | 'match_done' | 'game_done';
 };
 
 export interface AttendanceProps {

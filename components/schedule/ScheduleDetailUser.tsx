@@ -159,34 +159,65 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
           {attendees.length}
         </li>
       </ul>
-      {attendees.length > 0 && (
-        <>
-          <div>참석자 목록</div>
-          <table className="table w-full text-center text-xs">
-            <thead>
-              <tr>
-                <th>번호</th>
-                <th>참석자명</th>
-                <th>성별</th>
-                <th>참석시간</th>
-              </tr>
-            </thead>
-            <tbody>
-              {attendees.map((field, idx) => (
-                <tr key={idx}>
-                  <td>{idx + 1}</td>
-                  <td>{field.name}</td>
-                  <td>{field.gender}</td>
-                  <td>
-                    {field.startHour}:{field.startMinute}~{field.endHour}:
-                    {field.endMinute}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
+
+      <div className="bg-white border rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800">
+              {schedule.courtName}
+            </h2>
+            <p className="text-gray-600">
+              {format(new Date(date), 'yyyy년 MM월 dd일 (EEE)', {
+                locale: ko,
+              })}
+            </p>
+          </div>
+          <div className="text-sm text-gray-500">
+            {schedule.courtNumbers?.join(', ') || '0'} 코트
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <p className="text-sm text-gray-600">시작 시간</p>
+            <p className="text-lg font-bold text-blue-600">{startTime}</p>
+          </div>
+          <div className="bg-green-50 p-3 rounded-lg">
+            <p className="text-sm text-gray-600">종료 시간</p>
+            <p className="text-lg font-bold text-green-600">{endTime}</p>
+          </div>
+          <div className="bg-orange-50 p-3 rounded-lg">
+            <p className="text-sm text-gray-600">총 참석자</p>
+            <p className="text-lg font-bold text-orange-600">
+              {attendees.length}명
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {attendees?.map((attendee, index) => (
+            <div
+              key={
+                attendee._key && attendee._key.trim()
+                  ? attendee._key
+                  : `attendee-${index}`
+              }
+              className="bg-gray-100 rounded-lg p-2"
+            >
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-700">
+                  참가자 {index + 1}
+                </span>
+                <div className="text-sm">
+                  {attendee.name} ({attendee.gender})
+                </div>
+                <span className="text-sm text-gray-500">
+                  {attendee.startHour}:{attendee.startMinute} -{' '}
+                  {attendee.endHour}:{attendee.endMinute}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </Container>
   );
 }

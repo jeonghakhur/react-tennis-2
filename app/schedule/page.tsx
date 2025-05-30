@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import { GetScheduleProps } from '@/model/schedule';
 
 export default function ScheduleList() {
-  const { isLoading } = useAuthRedirect('/', 0);
+  const { isLoading, user } = useAuthRedirect('/', 0);
   const { data: schedules, error } = useSWR<GetScheduleProps[]>(
     isLoading ? null : '/api/schedule'
   );
@@ -116,14 +116,16 @@ export default function ScheduleList() {
               <p className="text-gray-500 mb-6">
                 아직 등록된 스케줄이 없습니다.
               </p>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push('/schedule/new')}
-                className="w-full max-w-xs"
-              >
-                새 스케줄 등록하기
-              </Button>
+              {user && user.level >= 3 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push('/schedule/new')}
+                  className="w-full max-w-xs"
+                >
+                  새 스케줄 등록하기
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -136,13 +138,15 @@ export default function ScheduleList() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">게임 일정</h1>
 
-        <Button
-          type="button"
-          onClick={() => router.push('/schedule/new')}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          새 일정 등록
-        </Button>
+        {user && user.level >= 3 && (
+          <Button
+            type="button"
+            onClick={() => router.push('/schedule/new')}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            새 일정 등록
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-4">
@@ -151,8 +155,7 @@ export default function ScheduleList() {
           return (
             <div
               key={schedule.id}
-              className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => router.push(`/schedule/${schedule.id}`)}
+              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -213,6 +216,47 @@ export default function ScheduleList() {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              <div className="grid mt-3">
+                {user && user.level >= 3 && (
+                  <>
+                    {schedule.status === 'attendees_done' && (
+                      <Button type="button" variant="default" size="lg">
+                        대진표작성
+                      </Button>
+                    )}
+                    {schedule.status === 'match_done' && (
+                      <Button type="button" variant="outline">
+                        게임결과 등록
+                      </Button>
+                    )}
+                    {schedule.status === 'pending' && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="lg"
+                        onClick={() => router.push(`/schedule/${schedule.id}`)}
+                      >
+                        참석자 등록
+                      </Button>
+                    )}
+                  </>
+                )}
+                {user && user.level < 3 && (
+                  <>
+                    {schedule.status === 'pending' && (
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="lg"
+                        onClick={() => router.push(`/schedule/${schedule.id}`)}
+                      >
+                        참석투표
+                      </Button>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           );
