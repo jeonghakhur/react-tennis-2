@@ -36,17 +36,25 @@ export default function Page({ params }: Props) {
     }
   }, [game]);
 
-  const handleDelete = function (id: string) {
+  const handleDelete = async (id: string) => {
     const isConfirmed = confirm('정말 삭제하시겠습니까?');
-    if (isConfirmed) {
-      setLoading(true);
-      removeGame(id)
-        .then((data) => console.log(data))
-        .catch((error) => console.error(error))
-        .finally(() => {
-          setLoading(false);
-          router.push('/games');
-        });
+    if (!isConfirmed) return;
+
+    setLoading(true);
+    try {
+      const result = await removeGame(id);
+
+      if (!result.success) {
+        // 에러 발생 시 사용자에게 알림
+        alert(result.error || '삭제 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('게임 삭제 중 오류:', error);
+      alert('삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      // setLoading(false);
+      // 성공/실패와 관계없이 목록 페이지로 이동
+      router.push('/games');
     }
   };
 

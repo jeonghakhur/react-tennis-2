@@ -4,12 +4,18 @@ import LoadingGrid from '../LoadingGrid';
 import { Container } from '../Layout';
 import { format } from 'date-fns';
 import { Label } from '../ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 import { AttendanceProps } from '@/model/schedule';
-import { useCallback, useEffect, useState } from 'react';
-import MyAttendance from './MyAttendance';
-import TextSplitter from '../TextSplitter';
+import { useEffect, useState } from 'react';
 import { ko } from 'date-fns/locale';
+import { Button } from '../ui/button';
+import { toast } from '@/hooks/use-toast';
 
 const defaultAttendance: AttendanceProps = {
   _key: '',
@@ -29,21 +35,30 @@ type Props = {
 export default function ScheduleDetailUser({ scheduleId, user }: Props) {
   const userName = user.name;
   const gender = user.gender;
-  const [attendanceStatus, setAttendanceStatus] = useState<string>('attend');
   const [myAttendance, setMyAttendance] =
     useState<AttendanceProps>(defaultAttendance);
-  const { schedule, isLoading, removeAttendance } = useSchedule(scheduleId);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [existingIndex, setExistingIndex] = useState<number>(-1);
+  const {
+    schedule,
+    isLoading,
+    postAttendance,
+    patchAttendance,
+    removeAttendance,
+  } = useSchedule(scheduleId);
 
   useEffect(() => {
     if (schedule) {
-      const existingIndex = schedule.attendees.findIndex(
+      const foundIndex = schedule.attendees.findIndex(
         (attendee: AttendanceProps) => attendee.name === userName
       );
-      if (existingIndex !== -1 && schedule.attendees[existingIndex]) {
-        setMyAttendance(schedule.attendees[existingIndex]);
+      setExistingIndex(foundIndex);
+
+      if (foundIndex !== -1 && schedule.attendees[foundIndex]) {
+        setMyAttendance(schedule.attendees[foundIndex]);
       } else {
         setMyAttendance({
-          _key: '',
+          _key: crypto.randomUUID(),
           name: userName,
           gender: gender,
           startHour: schedule.startTime,
@@ -55,22 +70,111 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
     }
   }, [schedule, userName, gender]);
 
-  const handleAttendanceStatus = useCallback(
-    (value: string) => {
-      if (value === 'absence' && myAttendance._key) {
-        const isConfirmed = confirm(
-          '불참 선택시 기존 입력한 참석 시간이 삭제됩니다.'
-        );
-        if (!isConfirmed) {
-          return;
-        }
+  const handleAttendance = async () => {
+    const { startHour, startMinute, endHour, endMinute } = myAttendance;
+    // ✅ 현재 날짜를 기준으로 시작시간과 종료시간을 `Date` 객체로 변환
+    const now = new Date(); // 오늘 날짜 사용
+    const startTime = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      parseInt(startHour, 10),
+      parseInt(startMinute, 10)
+    );
+    const endTime = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      parseInt(endHour, 10),
+      parseInt(endMinute, 10)
+    );
 
-        removeAttendance(myAttendance._key);
-      }
-      setAttendanceStatus(value);
-    },
-    [myAttendance, removeAttendance]
-  );
+    if (startTime.getTime() === endTime.getTime()) {
+      alert('시작시간과 종료시간이 동일합니다.');
+      return;
+    }
+    if (startTime.getTime() > endTime.getTime()) {
+      alert('시작시간이 종료시간보다 늦습니다.');
+      return;
+    }
+    if ((endTime.getTime() - startTime.getTime()) / (1000 * 60) <= 30) {
+      alert('운동시간이 너무 짧습니다. 확인해주세요.');
+      return;
+    }
+
+    const request = existingIndex !== -1 ? patchAttendance : postAttendance;
+
+    setLoading(true);
+    try {
+      const data = await request(myAttendance);
+      console.log(data);
+      toast({
+        title:
+          existingIndex !== -1
+            ? '참석시간이 수정되었습니다.'
+            : '참석시간이 등록되었습니다.',
+        duration: 500,
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: '오류가 발생했습니다.',
+        description: '잠시 후 다시 시도해주세요.',
+        variant: 'destructive',
+        duration: 2000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveAttendance = async () => {
+    if (existingIndex === -1) {
+      toast({
+        title: '삭제할 참석 정보가 없습니다.',
+        variant: 'destructive',
+        duration: 1500,
+      });
+      return;
+    }
+
+    const isConfirmed = confirm('참석시간을 삭제하시겠습니까?');
+    if (!isConfirmed) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await removeAttendance(myAttendance._key);
+
+      // 삭제 후 상태 초기화
+      setExistingIndex(-1);
+      setMyAttendance({
+        _key: crypto.randomUUID(),
+        name: userName,
+        gender: gender,
+        startHour: schedule?.startTime || '19',
+        startMinute: '00',
+        endHour: schedule?.endTime || '22',
+        endMinute: '00',
+      });
+
+      toast({
+        title: '참석시간이 삭제되었습니다.',
+        duration: 500,
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: '삭제 중 오류가 발생했습니다.',
+        description: '잠시 후 다시 시도해주세요.',
+        variant: 'destructive',
+        duration: 2000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (isLoading) {
     return <LoadingGrid loading={isLoading} />;
@@ -80,92 +184,117 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
     return <p>데이터를 불러 올 수 없습니다.</p>;
   }
 
-  const {
-    date,
-    courtName,
-    courtCount,
-    courtNumbers,
-    startTime,
-    endTime,
-    attendees,
-  } = schedule;
+  const { date, courtName, courtNumbers, startTime, endTime, attendees } =
+    schedule;
+  console.log(startTime, endTime);
 
   return (
     <Container className="space-y-4">
-      <div className="flex items-align justify-between border px-5 py-4 rounded-[16px]">
-        <strong>참석여부</strong>
-        <RadioGroup
-          value={attendanceStatus}
-          className="flex"
-          onValueChange={handleAttendanceStatus}
+      {loading && <LoadingGrid loading={loading} />}
+      <Label className="w-full">참석 시간</Label>
+      <div className="flex gap-x-2 items-center">
+        <Select
+          value={myAttendance.startHour}
+          onValueChange={(value) => {
+            if (!value) return;
+            setMyAttendance({ ...myAttendance, startHour: value });
+          }}
         >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="attend" id="attend" />
-            <Label htmlFor="attend">참석</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="absence" id="absence" />
-            <Label htmlFor="absence">불참</Label>
-          </div>
-        </RadioGroup>
-      </div>
-      {attendanceStatus === 'attend' && (
-        <MyAttendance
-          scheduleId={scheduleId}
-          myAttendance={myAttendance}
-          onAttendanceChange={setMyAttendance}
-          startTime={Number(startTime)}
-          endTime={Number(endTime)}
-        />
-      )}
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.from(
+              { length: Number(endTime) - Number(startTime) },
+              (_, idx) => (
+                <SelectItem value={String(Number(startTime) + idx)} key={idx}>
+                  {String(Number(startTime) + idx)}
+                </SelectItem>
+              )
+            )}
+          </SelectContent>
+        </Select>
 
-      <ul className="border px-5 py-4 rounded-[16px] space-y-1">
-        <li className="flex">
-          <TextSplitter text="날짜" width={70} />
-          <span className="mx-2">:</span>
-          <span>{format(new Date(date), 'yyyy.MM.dd')}</span>
-          <span className="ml-2">
-            {format(new Date(date), 'EEEE', { locale: ko })}
-          </span>
-          <span className="ml-2">
-            {startTime}시 - {endTime}시
-          </span>
-        </li>
-        <li className="flex">
-          <TextSplitter text="운동시간" width={70} />
-          <span className="mx-2">:</span>
-          <span>
-            {startTime}시 - {endTime}시
-          </span>
-        </li>
-        <li className="flex">
-          <TextSplitter text="장소" width={70} />
-          <span className="mx-2">:</span>
-          {courtName}
-        </li>
-        <li className="flex">
-          <TextSplitter text="코트수" width={70} />
-          <span className="mx-2">:</span>
-          {courtCount}
-        </li>
-        <li className="flex">
-          <TextSplitter text="코트번호" width={70} />
-          <span className="mx-2">:</span>
-          {courtNumbers?.join(', ') || '0'} 코트
-        </li>
-        <li className="flex">
-          <TextSplitter text="참석인원" width={70} />
-          <span className="mx-2">:</span>
-          {attendees.length}
-        </li>
-      </ul>
+        <Select
+          value={myAttendance.startMinute}
+          onValueChange={(value) => {
+            if (!value) return;
+            setMyAttendance({ ...myAttendance, startMinute: value });
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="00">00</SelectItem>
+            <SelectItem value="30">30</SelectItem>
+          </SelectContent>
+        </Select>
+        <span>~</span>
+        <Select
+          value={myAttendance.endHour}
+          onValueChange={(value) => {
+            if (!value) return;
+            setMyAttendance({ ...myAttendance, endHour: value });
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.from(
+              { length: Number(endTime) - Number(startTime) },
+              (_, idx) => (
+                <SelectItem
+                  value={String(Number(startTime) + idx + 1)}
+                  key={idx}
+                >
+                  {String(Number(startTime) + idx + 1)}
+                </SelectItem>
+              )
+            )}
+          </SelectContent>
+        </Select>
+        <Select
+          value={myAttendance.endMinute}
+          onValueChange={(value) => {
+            if (!value) return;
+            setMyAttendance({ ...myAttendance, endMinute: value });
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="00">00</SelectItem>
+            <SelectItem value="30">30</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex gap-x-2">
+        {existingIndex !== -1 && (
+          <Button
+            type="button"
+            className="w-full mt-2"
+            variant="destructive"
+            onClick={handleRemoveAttendance}
+          >
+            참석시간 삭제
+          </Button>
+        )}
+        <Button
+          type="button"
+          className="w-full mt-2"
+          onClick={handleAttendance}
+        >
+          {existingIndex !== -1 ? '참석시간 수정' : '참석시간 등록'}
+        </Button>
+      </div>
 
       <div className="bg-white border rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">
-              {schedule.courtName}
-            </h2>
+            <h2 className="text-xl font-bold text-gray-800">{courtName}</h2>
             <p className="text-gray-600">
               {format(new Date(date), 'yyyy년 MM월 dd일 (EEE)', {
                 locale: ko,
@@ -173,7 +302,7 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
             </p>
           </div>
           <div className="text-sm text-gray-500">
-            {schedule.courtNumbers?.join(', ') || '0'} 코트
+            {courtNumbers?.join(', ') || '0'} 코트
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4 mb-6">

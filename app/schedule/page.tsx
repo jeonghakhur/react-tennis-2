@@ -152,6 +152,11 @@ export default function ScheduleList() {
       <div className="grid gap-4">
         {schedules.map((schedule) => {
           const workoutInfo = getWorkoutInfo(schedule);
+          console.log('Debug Info:', {
+            userLevel: user?.level,
+            scheduleStatus: schedule.status,
+            scheduleId: schedule.id,
+          });
           return (
             <div
               key={schedule.id}
@@ -222,9 +227,30 @@ export default function ScheduleList() {
                 {user && user.level >= 3 && (
                   <>
                     {schedule.status === 'attendees_done' && (
-                      <Button type="button" variant="default" size="lg">
-                        대진표작성
-                      </Button>
+                      <div className="flex gap-3">
+                        <Button
+                          type="button"
+                          className="flex-1"
+                          variant="default"
+                          size="lg"
+                          onClick={() => {
+                            router.push(`/match/${schedule.id}`);
+                          }}
+                        >
+                          대진표작성
+                        </Button>
+                        <Button
+                          type="button"
+                          className="flex-1"
+                          variant="outline"
+                          size="lg"
+                          onClick={() =>
+                            router.push(`/schedule/${schedule.id}`)
+                          }
+                        >
+                          참석자 등록
+                        </Button>
+                      </div>
                     )}
                     {schedule.status === 'match_done' && (
                       <Button type="button" variant="outline">
@@ -243,9 +269,10 @@ export default function ScheduleList() {
                     )}
                   </>
                 )}
+
                 {user && user.level < 3 && (
                   <>
-                    {schedule.status === 'pending' && (
+                    {schedule.status !== 'game_done' && (
                       <Button
                         type="button"
                         variant="default"

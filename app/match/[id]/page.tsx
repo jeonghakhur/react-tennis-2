@@ -14,6 +14,7 @@ import { Container } from '@/components/Layout';
 import LoadingGrid from '@/components/LoadingGrid';
 import useSchedule from '@/hooks/useSchedule';
 import { useRouter } from 'next/navigation';
+import { useSWRConfig } from 'swr';
 
 interface Attendee {
   name: string;
@@ -60,6 +61,8 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   const [idleSummary, setIdleSummary] = useState<Record<string, string[]>>({});
   const [gamesPlayed, setGamesPlayed] = useState<Record<string, number>>({});
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const { mutate } = useSWRConfig();
 
   const generateSchedule = useCallback(() => {
     shuffleArray(attendees);
@@ -244,20 +247,39 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
     setGamesPlayed(resetState);
   };
 
-  const handleSubmit = () => {
-    fetch(`/api/match/${scheduleId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scheduleId, matches }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log(data);
-      })
-      .catch((error) => {
-        console.error(error);
-      })
-      .finally(() => router.push('/games'));
+  const handleSubmit = async () => {
+    setLoading(true);
+
+    try {
+      const response = await fetch(`/api/match/${scheduleId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scheduleId, matches }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(data);
+
+      // SWR 캐시 무효화 후 페이지 이동
+      await mutate('/api/games', undefined, { revalidate: true });
+
+      // 잠시 대기하여 데이터 로드 완료 보장
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // 성공 시 페이지 이동
+      router.push('/games');
+    } catch (error) {
+      console.error('대진표 저장 중 오류:', error);
+
+      // 에러 발생 시 사용자에게 알림
+      alert('대진표 저장 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const attendessAtTime = (time: string, name: string) => {
@@ -281,7 +303,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
     playerIndex,
   }) => {
     return (
-      <div className="px-1 border-b-[1px]">
+      <div className="px-1">
         <Select
           defaultValue={match.players[playerIndex] || '선택'}
           onValueChange={(value) =>
@@ -483,8 +505,9 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
           onClick={() => handleSubmit()}
           size="lg"
           className="bg-blue-600"
+          disabled={loading}
         >
-          저장
+          {loading ? '저장 중...' : '저장'}
         </Button>
       </div>
     </div>
