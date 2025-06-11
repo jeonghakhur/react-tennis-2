@@ -2,6 +2,7 @@ import {
   createGameResult,
   deleteGame,
   getGame,
+  getGameById,
   updateGameResult,
 } from '@/service/games';
 import { withSessionUser } from '@/util/session';
@@ -36,6 +37,28 @@ export async function GET(_: NextRequest, context: Context) {
     getGame(id) //
       .then((data) => NextResponse.json(data))
   );
+}
+
+export async function PUT(req: NextRequest, context: Context) {
+  const { id } = await context.params;
+
+  return await withSessionUser(async () => {
+    const { matches } = await req.json();
+
+    // 게임 ID로 직접 게임을 찾아서 업데이트
+    const game = await getGameById(id);
+
+    if (game) {
+      return updateGameResult(id, matches).then((data) =>
+        NextResponse.json(data)
+      );
+    } else {
+      return NextResponse.json(
+        { error: '게임을 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+  });
 }
 
 export async function DELETE(_: NextRequest, context: Context) {

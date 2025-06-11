@@ -29,7 +29,7 @@ export async function getAllGames() {
   return client.fetch(
     `*[_type == "gameResult"] | order(schedule->date desc) {
       ...,
-      "scheduleId": schedule->_id,
+      "scheduleID": schedule->_id,
       "date": schedule->date,
       "author": user->name,
       "courtName": schedule->courtName,
@@ -41,13 +41,46 @@ export async function getGame(scheduleId: string) {
   return client.fetch(
     `*[_type == "gameResult" && schedule._ref == "${scheduleId}"][0] {
       ...,
-      "scheduleId": schedule->_id,
+      "scheduleID": schedule->_id,
       "date": schedule->date,
       "courtName": schedule->courtName,
       "startTime": schedule->startTime,
       "endTime": schedule->endTime,
+      "scheduleStatus": schedule->status,
     }`
   );
+}
+
+export async function getGameById(gameId: string) {
+  return client.fetch(
+    `*[_type == "gameResult" && _id == "${gameId}"][0] {
+      ...,
+      "scheduleID": schedule->_id,
+      "date": schedule->date,
+      "courtName": schedule->courtName,
+      "startTime": schedule->startTime,
+      "endTime": schedule->endTime,
+      "scheduleStatus": schedule->status,
+    }`
+  );
+}
+
+export async function hasGameResult(scheduleId: string) {
+  const result = await client.fetch(
+    `*[_type == "gameResult" && schedule._ref == "${scheduleId}"][0] {
+      _id
+    }`
+  );
+  return !!result;
+}
+
+export async function getGameIdByScheduleId(scheduleId: string) {
+  const result = await client.fetch(
+    `*[_type == "gameResult" && schedule._ref == "${scheduleId}"][0] {
+      _id
+    }`
+  );
+  return result?._id;
 }
 
 export async function deleteGame(id: string) {

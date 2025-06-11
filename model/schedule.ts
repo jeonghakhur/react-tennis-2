@@ -73,4 +73,7 @@ export type AttendanceWithKeyProps = AttendanceProps & {
 
 export type GetScheduleProps = {
   id: string;
+  hasGameResult?: boolean;
+  gameResultId?: string;
+  gameResultCount?: number;
 } & ScheduleProps;

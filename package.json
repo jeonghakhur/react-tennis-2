@@ -51,7 +51,7 @@
     "codemirror": "^6.0.0",
     "date-fns": "^2.28.0",
     "lucide-react": "^0.468.0",
-    "next": "15.1.2",
+    "next": "^15.4.0-canary.75",
     "next-auth": "^4.24.11",
     "next-sanity": "^9.12.0",
     "punycode": "^2.3.1",

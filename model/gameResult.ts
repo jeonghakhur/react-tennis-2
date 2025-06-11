@@ -12,4 +12,5 @@ export interface GameResult {
   date: string;
   author: string;
   games: Game[]; // 경기 목록
+  scheduleStatus?: 'pending' | 'attendees_done' | 'match_done' | 'game_done';
 }

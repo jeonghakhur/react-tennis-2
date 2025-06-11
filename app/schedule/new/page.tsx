@@ -42,13 +42,14 @@ export default function ScheduleForm() {
       startTime: '19',
       endTime: '22',
       attendees: [],
+      status: 'pending',
     },
   });
 
   const startTime = parseInt(form.watch('startTime'), 10);
 
   function onSubmit(data: ScheduleFormType) {
-    console.log(data);
+    console.log('📝 폼 제출 데이터:', data);
     setLoading(true);
 
     if (data.courtName === '직접입력') {
@@ -60,9 +61,20 @@ export default function ScheduleForm() {
       data.courtName = data.otherCourtName;
     }
 
+    // status 값이 없으면 명시적으로 설정
+    if (!data.status) {
+      data.status = 'pending';
+    }
+
+    console.log('🚀 서버로 전송할 데이터:', data);
+
     postSchedule(data)
-      .then((data) => console.log(data))
-      .catch((error) => console.error(error))
+      .then((result) => {
+        console.log('✅ 서버 응답:', result);
+      })
+      .catch((error) => {
+        console.error('❌ 에러:', error);
+      })
       .finally(() => {
         setLoading(false);
         router.push('/schedule');

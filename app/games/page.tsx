@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 
 interface Game {
   _id: string;
-  scheduleId: string;
+  scheduleID: string;
   courtName: string;
   date: string;
   games: {
@@ -99,7 +99,7 @@ export default function Home() {
             <div
               key={game._id}
               className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => router.push(`/games/${game.scheduleId}`)}
+              onClick={() => router.push(`/games/${game.scheduleID}`)}
             >
               <div className="flex justify-between items-start mb-4">
                 <div>

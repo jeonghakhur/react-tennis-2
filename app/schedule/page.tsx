@@ -152,10 +152,13 @@ export default function ScheduleList() {
       <div className="grid gap-4">
         {schedules.map((schedule) => {
           const workoutInfo = getWorkoutInfo(schedule);
-          console.log('Debug Info:', {
+          console.log('🔍 Schedule Debug Info:', {
             userLevel: user?.level,
             scheduleStatus: schedule.status,
             scheduleId: schedule.id,
+            hasGameResult: schedule.hasGameResult,
+            gameResultId: schedule.gameResultId,
+            gameResultCount: schedule.gameResultCount,
           });
           return (
             <div
@@ -236,8 +239,10 @@ export default function ScheduleList() {
                           onClick={() => {
                             router.push(`/match/${schedule.id}`);
                           }}
+                          disabled={schedule.hasGameResult}
                         >
                           대진표작성
+                          {schedule.hasGameResult && ' (결과 등록됨)'}
                         </Button>
                         <Button
                           type="button"
@@ -247,15 +252,37 @@ export default function ScheduleList() {
                           onClick={() =>
                             router.push(`/schedule/${schedule.id}`)
                           }
+                          disabled={schedule.hasGameResult}
                         >
                           참석자 등록
+                          {schedule.hasGameResult && ' (결과 등록됨)'}
                         </Button>
                       </div>
                     )}
                     {schedule.status === 'match_done' && (
-                      <Button type="button" variant="outline">
-                        게임결과 등록
-                      </Button>
+                      <div className="flex gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="flex-1"
+                          disabled={schedule.hasGameResult}
+                        >
+                          게임결과 등록
+                          {schedule.hasGameResult && ' (등록 완료)'}
+                        </Button>
+                        {schedule.hasGameResult && schedule.gameResultId && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="lg"
+                            onClick={() =>
+                              router.push(`/games/${schedule.gameResultId}`)
+                            }
+                          >
+                            게임 결과 보기
+                          </Button>
+                        )}
+                      </div>
                     )}
                     {schedule.status === 'pending' && (
                       <Button
@@ -263,8 +290,10 @@ export default function ScheduleList() {
                         variant="outline"
                         size="lg"
                         onClick={() => router.push(`/schedule/${schedule.id}`)}
+                        disabled={schedule.hasGameResult}
                       >
                         참석자 등록
+                        {schedule.hasGameResult && ' (결과 등록됨)'}
                       </Button>
                     )}
                   </>
@@ -272,14 +301,29 @@ export default function ScheduleList() {
 
                 {user && user.level < 3 && (
                   <>
-                    {schedule.status !== 'game_done' && (
+                    {schedule.status !== 'game_done' &&
+                      !schedule.hasGameResult && (
+                        <Button
+                          type="button"
+                          variant="default"
+                          size="lg"
+                          onClick={() =>
+                            router.push(`/schedule/${schedule.id}`)
+                          }
+                        >
+                          참석투표
+                        </Button>
+                      )}
+                    {schedule.hasGameResult && (
                       <Button
                         type="button"
-                        variant="default"
+                        variant="outline"
                         size="lg"
-                        onClick={() => router.push(`/schedule/${schedule.id}`)}
+                        onClick={() =>
+                          router.push(`/games/${schedule.gameResultId}`)
+                        }
                       >
-                        참석투표
+                        게임 결과 보기
                       </Button>
                     )}
                   </>

@@ -12,6 +12,9 @@ export async function getAllSchedule() {
   return client.fetch(`*[_type == "schedule"] | order(date desc) {
     ...,
     "id": _id,
+    "hasGameResult": count(*[_type == "gameResult" && schedule._ref == ^._id]) > 0,
+    "gameResultId": *[_type == "gameResult" && schedule._ref == ^._id][0]._id,
+    "gameResultCount": count(*[_type == "gameResult" && schedule._ref == ^._id])
   }`);
 }
 
@@ -27,8 +30,12 @@ export async function createSchedule(
     courtCount,
     courtNumbers,
     attendees,
+    status,
   } = scheduleData;
-  console.log('attendees', attendees);
+
+  console.log('📋 createSchedule에서 받은 데이터:', scheduleData);
+  console.log('🎯 status 값:', status);
+
   return client.create(
     {
       _type: 'schedule',
@@ -40,6 +47,7 @@ export async function createSchedule(
       courtCount,
       courtNumbers,
       attendees,
+      status: status || 'pending', // status 필드 추가 및 기본값 보장
     },
     { autoGenerateArrayKeys: true }
   );
@@ -111,4 +119,21 @@ export async function removeAttendance(
     .patch(scheduleId)
     .unset([`attendees[_key=="${attendeeKey}"]`])
     .commit();
+}
+
+export async function updateScheduleStatus(
+  scheduleId: string,
+  status: 'pending' | 'attendees_done' | 'match_done' | 'game_done'
+) {
+  try {
+    const updatedSchedule = await client
+      .patch(scheduleId)
+      .set({ status })
+      .commit();
+
+    return updatedSchedule;
+  } catch (error) {
+    console.error('❌ updateScheduleStatus Error:', error);
+    throw new Error('스케줄 상태 업데이트 중 오류 발생');
+  }
 }

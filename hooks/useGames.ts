@@ -1,11 +1,21 @@
 // import { Match } from "@/model/match";
 
-import { GameResult } from '@/model/gameResult';
+import { GameResult, Game } from '@/model/gameResult';
 import useSWR, { useSWRConfig } from 'swr';
 
 async function deleteGame(scheduleId: string) {
   return fetch(`/api/games/${scheduleId}`, {
     method: 'DELETE',
+  }).then((res) => res.json());
+}
+
+async function updateGame(gameId: string, matches: Game[]) {
+  return fetch(`/api/games/${gameId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ matches }),
   }).then((res) => res.json());
 }
 
@@ -55,10 +65,32 @@ export default function useGame(scheduleId: string) {
     }
   };
 
+  const updateGameData = async (
+    id: string,
+    matches: Game[]
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      // 서버에 업데이트 요청
+      await updateGame(id, matches);
+
+      // 현재 게임 데이터 다시 가져오기
+      globalMutate(`/api/games/${id}`, undefined, { revalidate: true });
+
+      // 게임 목록도 갱신
+      globalMutate('/api/games', undefined, { revalidate: true });
+
+      return { success: true };
+    } catch (error) {
+      console.error('게임 업데이트 중 오류:', error);
+      return { success: false, error: '게임 업데이트 중 오류가 발생했습니다.' };
+    }
+  };
+
   return {
     game,
     isLoading,
     error,
     removeGame,
+    updateGameData,
   };
 }
