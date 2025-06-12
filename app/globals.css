@@ -192,7 +192,7 @@ td {
   }
 }
 
-@keyframes slideUp {
+/* @keyframes slideUp {
   from {
     opacity: 0;
     transform: translateY(100px);
@@ -205,4 +205,4 @@ td {
 
 [data-state='open'] {
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
+} */

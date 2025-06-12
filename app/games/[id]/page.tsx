@@ -131,6 +131,7 @@ export default function Page({ params }: Props) {
           title: '게임 정보가 성공적으로 수정되었습니다.',
           duration: 1500,
         });
+        setTimeout(() => router.push('/games'), 1500);
       } else {
         alert(gameResult.error || '수정 중 오류가 발생했습니다.');
       }

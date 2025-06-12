@@ -8,7 +8,6 @@ import React, { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-
 interface Game {
   _id: string;
   scheduleID: string;
@@ -23,7 +22,7 @@ interface Game {
 }
 
 export default function Home() {
-  const { isLoading } = useAuthRedirect('/', 0);
+  const { isLoading, user } = useAuthRedirect('/', 0);
   const { data: games } = useSWR<Game[]>('/api/games', {
     revalidateOnFocus: true,
     revalidateOnMount: true,
@@ -95,11 +94,22 @@ export default function Home() {
       <div className="grid gap-4">
         {games?.map((game) => {
           const date = new Date(game.date);
+          const isClickable =
+            typeof user?.level === 'number' && user.level >= 3;
+
           return (
             <div
               key={game._id}
-              className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => router.push(`/games/${game.scheduleID}`)}
+              className={`bg-white rounded-lg shadow-md p-6 transition-shadow ${
+                isClickable
+                  ? 'cursor-pointer hover:shadow-lg'
+                  : 'cursor-default'
+              }`}
+              onClick={
+                isClickable
+                  ? () => router.push(`/games/${game.scheduleID}`)
+                  : undefined
+              }
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -117,7 +127,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {game.games.slice(0, 2).map((g, index) => (
+                {game.games.map((g, index) => (
                   <div key={index} className="bg-gray-50 rounded-lg p-4">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-medium text-gray-700">
@@ -129,24 +139,24 @@ export default function Home() {
                       <div>
                         <div className="text-xs text-gray-500 mb-1">페어 A</div>
                         <div className="text-sm">
-                          {g.players[0]}, {g.players[1]}
+                          {g.players[0]}, {g.players[1]} [{g.score[0]}]
                         </div>
                       </div>
                       <div>
                         <div className="text-xs text-gray-500 mb-1">페어 B</div>
                         <div className="text-sm">
-                          {g.players[2]}, {g.players[3]}
+                          {g.players[2]}, {g.players[3]} [{g.score[1]}]
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-              {game.games.length > 2 && (
+              {/* {game.games.length > 2 && (
                 <div className="mt-4 text-center text-sm text-gray-500">
                   +{game.games.length - 2}개의 게임 더보기
                 </div>
-              )}
+              )} */}
             </div>
           );
         })}
