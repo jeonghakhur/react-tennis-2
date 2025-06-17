@@ -15,6 +15,7 @@ import LoadingGrid from '@/components/LoadingGrid';
 import useSchedule from '@/hooks/useSchedule';
 import { useRouter } from 'next/navigation';
 import { useSWRConfig } from 'swr';
+import { useRef, useLayoutEffect } from 'react';
 
 interface Attendee {
   name: string;
@@ -49,6 +50,40 @@ function shuffleArray(array: any[]) {
   }
   return array;
 }
+
+const getChosung = (text: string) => {
+  const CHO = [
+    'ㄱ',
+    'ㄲ',
+    'ㄴ',
+    'ㄷ',
+    'ㄸ',
+    'ㄹ',
+    'ㅁ',
+    'ㅂ',
+    'ㅃ',
+    'ㅅ',
+    'ㅆ',
+    'ㅇ',
+    'ㅈ',
+    'ㅉ',
+    'ㅊ',
+    'ㅋ',
+    'ㅌ',
+    'ㅍ',
+    'ㅎ',
+  ];
+  return Array.from(text)
+    .map((char) => {
+      const code = char.charCodeAt(0) - 44032;
+      if (code >= 0 && code <= 11171) {
+        return CHO[Math.floor(code / 588)];
+      } else {
+        return char;
+      }
+    })
+    .join('');
+};
 
 const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   attendees,
@@ -193,6 +228,16 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
       setMatches(updateMatches);
       setIdleSummary(updateIdleSummary);
+
+      // 상태 변경 후 즉시 포커스 설정
+      requestAnimationFrame(() => {
+        const input = document.querySelector(
+          `input[data-match-index="${matchIndex}"][data-player-index="${playerIndex}"]`
+        ) as HTMLInputElement;
+        if (input) {
+          input.focus();
+        }
+      });
     },
     [gamesPlayed, idleSummary, matches]
   );
@@ -291,48 +336,182 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
     return [...attendessPlayers, ...idleplayers];
   };
 
-  type AttendeeSelectProp = {
+  type PlayerAutocompleteProp = {
     matchIndex: number;
     match: Match;
     playerIndex: number;
   };
 
-  const AttendeeSelect: React.FC<AttendeeSelectProp> = ({
+  const PlayerAutocomplete: React.FC<PlayerAutocompleteProp> = ({
     matchIndex,
     match,
     playerIndex,
   }) => {
+    const [inputValue, setInputValue] = useState(match.players[playerIndex]);
+    const [filteredPlayers, setFilteredPlayers] = useState<string[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [shouldFocus, setShouldFocus] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const listRef = useRef<HTMLUListElement>(null);
+
+    useLayoutEffect(() => {
+      if (shouldFocus && inputRef.current) {
+        inputRef.current.focus();
+        setShouldFocus(false);
+      }
+    }, [shouldFocus]);
+
+    const validatePlayer = (value: string | undefined) => {
+      const players = match?.time
+        ? match?.players?.[playerIndex]
+          ? attendessAtTime(match.time, match.players[playerIndex])
+          : idleSummary[match.time] || []
+        : [];
+
+      // 현재 설정된 선수 이름이 있으면 유효한 것으로 처리
+      if (match.players[playerIndex] === value) {
+        return true;
+      }
+
+      if (!players.includes(value ?? '')) {
+        alert('등록되지 않은 선수입니다');
+        setInputValue(match.players[playerIndex] ?? ''); // 기존 값으로 복원
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 0);
+        return false;
+      }
+      return true;
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value.trim();
+      setInputValue(value);
+
+      if (!value) {
+        setFilteredPlayers([]);
+        setShowSuggestions(false);
+        return;
+      }
+
+      const players = match?.time
+        ? match?.players?.[playerIndex]
+          ? attendessAtTime(match.time, match.players[playerIndex])
+          : idleSummary[match.time] || []
+        : [];
+
+      const matched = players.filter(
+        (name) => name.includes(value) || getChosung(name).includes(value)
+      );
+      setFilteredPlayers(matched);
+      setShowSuggestions(true);
+    };
+
+    const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (validatePlayer(inputValue)) {
+          handlePlayersChange(inputValue ?? '', matchIndex, playerIndex);
+          setShouldFocus(true);
+        }
+      } else if (
+        e.key === 'Tab' &&
+        showSuggestions &&
+        filteredPlayers.length > 0
+      ) {
+        e.preventDefault();
+        const firstItem = listRef.current?.querySelector('li');
+        if (firstItem instanceof HTMLElement) {
+          firstItem.focus();
+        }
+      }
+    };
+
+    const handleListKeyDown = (
+      e: React.KeyboardEvent<HTMLLIElement>,
+      index: number
+    ) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextIndex = (index + 1) % filteredPlayers.length;
+        const nextItem = listRef.current?.querySelectorAll('li')[nextIndex];
+        if (nextItem instanceof HTMLElement) {
+          nextItem.focus();
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prevIndex =
+          (index - 1 + filteredPlayers.length) % filteredPlayers.length;
+        const prevItem = listRef.current?.querySelectorAll('li')[prevIndex];
+        if (prevItem instanceof HTMLElement) {
+          prevItem.focus();
+        }
+      } else if (e.key === 'Escape') {
+        setShowSuggestions(false);
+        inputRef.current?.focus();
+      }
+    };
+
+    const handleSelect = (name: string) => {
+      setInputValue(name);
+      setShowSuggestions(false);
+      handlePlayersChange(name, matchIndex, playerIndex);
+      // 선택 후 포커스 유지
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
+    };
+
     return (
-      <div className="px-1">
-        <Select
-          defaultValue={match.players[playerIndex] || '선택'}
-          onValueChange={(value) =>
-            handlePlayersChange(value, matchIndex, playerIndex)
-          }
-        >
-          <SelectTrigger className="text-xs my-1 pr-1">
-            <SelectValue>{match.players[playerIndex]}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {match?.time &&
-              (match?.players?.[playerIndex]
-                ? attendessAtTime(match.time, match.players[playerIndex])
-                : idleSummary[match.time] || []
-              ).map((player, idx) => (
-                <SelectItem value={player} key={idx} className="text-xs">
-                  {player}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+      <div style={{ position: 'relative', width: '80px' }}>
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={handleChange}
+          onKeyUp={handleKeyUp}
+          placeholder="선수 이름 또는 초성 입력"
+          style={{ width: '100%', padding: '8px' }}
+          className="border rounded-md text-center"
+          data-match-index={matchIndex}
+          data-player-index={playerIndex}
+        />
+        {showSuggestions && filteredPlayers.length > 0 && (
+          <ul
+            ref={listRef}
+            className="absolute w-full bg-white border border-gray-200 rounded-md shadow-sm z-50 max-h-[150px] overflow-y-auto"
+          >
+            {filteredPlayers.map((name, index) => (
+              <li
+                key={name}
+                onClick={() => handleSelect(name)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSelect(name);
+                  } else {
+                    handleListKeyDown(e, index);
+                  }
+                }}
+                tabIndex={0}
+                className="px-2 py-1.5 cursor-pointer outline-none transition-colors duration-200 hover:bg-gray-50 focus:bg-gray-100 first:rounded-t-md last:rounded-b-md"
+                onMouseDown={(e) => e.preventDefault()}
+              >
+                {name}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     );
   };
 
   type MatchRowProps = {
+    key: number;
+    match: Match;
+    matchIndex: number;
     rowspan: number;
     isFirstMatch: boolean;
-  } & Omit<AttendeeSelectProp, 'playerIndex'>;
+  };
 
   const MatchRow = React.memo(
     ({ match, matchIndex, rowspan, isFirstMatch }: MatchRowProps) => {
@@ -347,24 +526,24 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
           <td className="p-0">
             <div className="flex flex-col">
               <div className="flex gap-x-1 justify-center border-b-[1px]">
-                <AttendeeSelect
+                <PlayerAutocomplete
                   matchIndex={matchIndex}
                   match={match}
                   playerIndex={0}
                 />
-                <AttendeeSelect
+                <PlayerAutocomplete
                   matchIndex={matchIndex}
                   match={match}
                   playerIndex={1}
                 />
               </div>
               <div className="flex gap-x-1 justify-center">
-                <AttendeeSelect
+                <PlayerAutocomplete
                   matchIndex={matchIndex}
                   match={match}
                   playerIndex={2}
                 />
-                <AttendeeSelect
+                <PlayerAutocomplete
                   matchIndex={matchIndex}
                   match={match}
                   playerIndex={3}
