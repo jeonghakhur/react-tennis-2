@@ -15,7 +15,23 @@ import LoadingGrid from '@/components/LoadingGrid';
 import useSchedule from '@/hooks/useSchedule';
 import { useRouter } from 'next/navigation';
 import { useSWRConfig } from 'swr';
-import { useRef, useLayoutEffect } from 'react';
+import { useRef } from 'react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
 
 interface Attendee {
   name: string;
@@ -51,40 +67,6 @@ function shuffleArray(array: any[]) {
   return array;
 }
 
-const getChosung = (text: string) => {
-  const CHO = [
-    'ㄱ',
-    'ㄲ',
-    'ㄴ',
-    'ㄷ',
-    'ㄸ',
-    'ㄹ',
-    'ㅁ',
-    'ㅂ',
-    'ㅃ',
-    'ㅅ',
-    'ㅆ',
-    'ㅇ',
-    'ㅈ',
-    'ㅉ',
-    'ㅊ',
-    'ㅋ',
-    'ㅌ',
-    'ㅍ',
-    'ㅎ',
-  ];
-  return Array.from(text)
-    .map((char) => {
-      const code = char.charCodeAt(0) - 44032;
-      if (code >= 0 && code <= 11171) {
-        return CHO[Math.floor(code / 588)];
-      } else {
-        return char;
-      }
-    })
-    .join('');
-};
-
 const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   attendees,
   startTime,
@@ -98,6 +80,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const { mutate } = useSWRConfig();
+  const [showScore, setShowScore] = useState(true);
 
   const generateSchedule = useCallback(() => {
     shuffleArray(attendees);
@@ -228,16 +211,6 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
       setMatches(updateMatches);
       setIdleSummary(updateIdleSummary);
-
-      // 상태 변경 후 즉시 포커스 설정
-      requestAnimationFrame(() => {
-        const input = document.querySelector(
-          `input[data-match-index="${matchIndex}"][data-player-index="${playerIndex}"]`
-        ) as HTMLInputElement;
-        if (input) {
-          input.focus();
-        }
-      });
     },
     [gamesPlayed, idleSummary, matches]
   );
@@ -327,11 +300,11 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
     }
   };
 
-  const attendessAtTime = (time: string, name: string) => {
+  const attendessAtTime = (time: string) => {
     const attendessPlayers = matches
       .filter((match) => match.time === time)
-      .flatMap((match) => match.players)
-      .filter((player) => player !== name && player !== '');
+      .flatMap((match) => match.players);
+
     const idleplayers = idleSummary[time] || [];
     return [...attendessPlayers, ...idleplayers];
   };
@@ -342,166 +315,73 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
     playerIndex: number;
   };
 
-  const PlayerAutocomplete: React.FC<PlayerAutocompleteProp> = ({
+  const PopoverCommand: React.FC<PlayerAutocompleteProp> = ({
     matchIndex,
     match,
     playerIndex,
   }) => {
-    const [inputValue, setInputValue] = useState(match.players[playerIndex]);
-    const [filteredPlayers, setFilteredPlayers] = useState<string[]>([]);
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const [shouldFocus, setShouldFocus] = useState(false);
-    const inputRef = useRef<HTMLInputElement>(null);
-    const listRef = useRef<HTMLUListElement>(null);
+    const [popoverOpen, setPopoverOpen] = useState(false);
+    const [memberValue, setMemberValue] = useState(match.players[playerIndex]);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const players = match?.time
+      ? match?.players?.[playerIndex]
+        ? attendessAtTime(match.time)
+        : idleSummary[match.time] || []
+      : [];
 
-    useLayoutEffect(() => {
-      if (shouldFocus && inputRef.current) {
-        inputRef.current.focus();
-        setShouldFocus(false);
-      }
-    }, [shouldFocus]);
-
-    const validatePlayer = (value: string | undefined) => {
-      const players = match?.time
-        ? match?.players?.[playerIndex]
-          ? attendessAtTime(match.time, match.players[playerIndex])
-          : idleSummary[match.time] || []
-        : [];
-
-      // 현재 설정된 선수 이름이 있으면 유효한 것으로 처리
-      if (match.players[playerIndex] === value) {
-        return true;
-      }
-
-      if (!players.includes(value ?? '')) {
-        alert('등록되지 않은 선수입니다');
-        setInputValue(match.players[playerIndex] ?? ''); // 기존 값으로 복원
-        setTimeout(() => {
-          inputRef.current?.focus();
-        }, 0);
-        return false;
-      }
-      return true;
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value.trim();
-      setInputValue(value);
-
-      if (!value) {
-        setFilteredPlayers([]);
-        setShowSuggestions(false);
-        return;
-      }
-
-      const players = match?.time
-        ? match?.players?.[playerIndex]
-          ? attendessAtTime(match.time, match.players[playerIndex])
-          : idleSummary[match.time] || []
-        : [];
-
-      const matched = players.filter(
-        (name) => name.includes(value) || getChosung(name).includes(value)
-      );
-      setFilteredPlayers(matched);
-      setShowSuggestions(true);
-    };
-
-    const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        if (validatePlayer(inputValue)) {
-          handlePlayersChange(inputValue ?? '', matchIndex, playerIndex);
-          setShouldFocus(true);
-        }
-      } else if (
-        e.key === 'Tab' &&
-        showSuggestions &&
-        filteredPlayers.length > 0
-      ) {
-        e.preventDefault();
-        const firstItem = listRef.current?.querySelector('li');
-        if (firstItem instanceof HTMLElement) {
-          firstItem.focus();
-        }
-      }
-    };
-
-    const handleListKeyDown = (
-      e: React.KeyboardEvent<HTMLLIElement>,
-      index: number
-    ) => {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        const nextIndex = (index + 1) % filteredPlayers.length;
-        const nextItem = listRef.current?.querySelectorAll('li')[nextIndex];
-        if (nextItem instanceof HTMLElement) {
-          nextItem.focus();
-        }
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        const prevIndex =
-          (index - 1 + filteredPlayers.length) % filteredPlayers.length;
-        const prevItem = listRef.current?.querySelectorAll('li')[prevIndex];
-        if (prevItem instanceof HTMLElement) {
-          prevItem.focus();
-        }
-      } else if (e.key === 'Escape') {
-        setShowSuggestions(false);
-        inputRef.current?.focus();
-      }
-    };
-
-    const handleSelect = (name: string) => {
-      setInputValue(name);
-      setShowSuggestions(false);
-      handlePlayersChange(name, matchIndex, playerIndex);
-      // 선택 후 포커스 유지
+    const handleSelect = (value: string) => {
+      setMemberValue(value);
+      handlePlayersChange(value, matchIndex, playerIndex);
+      // Popover를 닫기 전에 포커스 설정
       setTimeout(() => {
-        inputRef.current?.focus();
+        const button = document.querySelector(
+          `button[data-match-index="${matchIndex}"][data-player-index="${playerIndex}"]`
+        ) as HTMLButtonElement;
+        if (button) {
+          button.focus();
+        }
       }, 0);
+      setPopoverOpen(false);
     };
 
     return (
-      <div style={{ position: 'relative', width: '80px' }}>
-        <input
-          ref={inputRef}
-          type="text"
-          value={inputValue}
-          onChange={handleChange}
-          onKeyUp={handleKeyUp}
-          placeholder="선수 이름 또는 초성 입력"
-          style={{ width: '100%', padding: '8px' }}
-          className="border rounded-md text-center"
-          data-match-index={matchIndex}
-          data-player-index={playerIndex}
-        />
-        {showSuggestions && filteredPlayers.length > 0 && (
-          <ul
-            ref={listRef}
-            className="absolute w-full bg-white border border-gray-200 rounded-md shadow-sm z-50 max-h-[150px] overflow-y-auto"
+      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+        <PopoverTrigger asChild className="">
+          <Button
+            ref={buttonRef}
+            variant="outline"
+            role="combobox"
+            aria-expanded={popoverOpen}
+            data-match-index={matchIndex}
+            data-player-index={playerIndex}
+            className="flex-1"
           >
-            {filteredPlayers.map((name, index) => (
-              <li
-                key={name}
-                onClick={() => handleSelect(name)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSelect(name);
-                  } else {
-                    handleListKeyDown(e, index);
-                  }
-                }}
-                tabIndex={0}
-                className="px-2 py-1.5 cursor-pointer outline-none transition-colors duration-200 hover:bg-gray-50 focus:bg-gray-100 first:rounded-t-md last:rounded-b-md"
-                onMouseDown={(e) => e.preventDefault()}
-              >
-                {name}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+            {memberValue}
+            <ChevronsUpDown className="opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="h-[300px]">
+          <Command className="w-full">
+            <CommandInput placeholder="Search member" />
+            <CommandList>
+              <CommandEmpty>No member found.</CommandEmpty>
+              <CommandGroup>
+                {players.map((player, idx) => (
+                  <CommandItem key={idx} value={player} onSelect={handleSelect}>
+                    {player}
+                    <Check
+                      className={cn(
+                        'ml-auto',
+                        memberValue === player ? 'opacity-100' : 'opacity-0'
+                      )}
+                    />
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
     );
   };
 
@@ -511,10 +391,17 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
     matchIndex: number;
     rowspan: number;
     isFirstMatch: boolean;
+    showScore: boolean;
   };
 
   const MatchRow = React.memo(
-    ({ match, matchIndex, rowspan, isFirstMatch }: MatchRowProps) => {
+    ({
+      match,
+      matchIndex,
+      rowspan,
+      isFirstMatch,
+      showScore,
+    }: MatchRowProps) => {
       return (
         <tr>
           {isFirstMatch && (
@@ -525,25 +412,25 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
           <td className="text-xxs">{match.court}</td>
           <td className="p-0">
             <div className="flex flex-col">
-              <div className="flex gap-x-1 justify-center border-b-[1px]">
-                <PlayerAutocomplete
+              <div className="flex gap-x-2 p-2 border-b-[1px]">
+                <PopoverCommand
                   matchIndex={matchIndex}
                   match={match}
                   playerIndex={0}
                 />
-                <PlayerAutocomplete
+                <PopoverCommand
                   matchIndex={matchIndex}
                   match={match}
                   playerIndex={1}
                 />
               </div>
-              <div className="flex gap-x-1 justify-center">
-                <PlayerAutocomplete
+              <div className="flex gap-x-2 p-2">
+                <PopoverCommand
                   matchIndex={matchIndex}
                   match={match}
                   playerIndex={2}
                 />
-                <PlayerAutocomplete
+                <PopoverCommand
                   matchIndex={matchIndex}
                   match={match}
                   playerIndex={3}
@@ -551,54 +438,58 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
               </div>
             </div>
           </td>
-          <td className="p-0">
-            <div className="px-1 border-b-[1px]">
-              <Select
-                defaultValue={match.score[0] || '0'}
-                onValueChange={(value) =>
-                  handleScoreChange(value, matchIndex, 0)
-                }
-              >
-                <SelectTrigger className="text-xs my-1 pr-1" value="0">
-                  <SelectValue>{match.score[0]}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 7 }, (_, i) => (
-                    <SelectItem
-                      value={i.toString()}
-                      key={i}
-                      className="text-xs"
-                    >
-                      {i}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="px-1">
-              <Select
-                defaultValue={match.score[1] || '0'}
-                onValueChange={(value) =>
-                  handleScoreChange(value, matchIndex, 1)
-                }
-              >
-                <SelectTrigger className="text-xs my-1 pr-1">
-                  <SelectValue>{match.score[1]}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 7 }, (_, i) => (
-                    <SelectItem
-                      value={i.toString()}
-                      key={i}
-                      className="text-xs"
-                    >
-                      {i}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </td>
+          {showScore && (
+            <td className="p-0">
+              <div className="flex flex-col">
+                <div className="p-2 border-b-[1px]">
+                  <Select
+                    defaultValue={match.score[0] || '0'}
+                    onValueChange={(value) =>
+                      handleScoreChange(value, matchIndex, 0)
+                    }
+                  >
+                    <SelectTrigger className="text-xs" value="0">
+                      <SelectValue>{match.score[0]}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 7 }, (_, i) => (
+                        <SelectItem
+                          value={i.toString()}
+                          key={i}
+                          className="text-xs"
+                        >
+                          {i}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="p-2">
+                  <Select
+                    defaultValue={match.score[1] || '0'}
+                    onValueChange={(value) =>
+                      handleScoreChange(value, matchIndex, 1)
+                    }
+                  >
+                    <SelectTrigger className="text-xs">
+                      <SelectValue>{match.score[1]}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 7 }, (_, i) => (
+                        <SelectItem
+                          value={i.toString()}
+                          key={i}
+                          className="text-xs"
+                        >
+                          {i}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </td>
+          )}
           {isFirstMatch && (
             <td rowSpan={rowspan} className="text-xs">
               {match?.time && (idleSummary[match.time] || []).length > 0
@@ -617,13 +508,24 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
   return (
     <div className="pb-20">
+      <div className="flex items-center gap-2 mb-4 justify-between">
+        <label htmlFor="scoreCheck" className="font-bold">
+          스코어 입력
+        </label>
+        <Switch
+          id="scoreCheck"
+          name="scoreCheck"
+          checked={showScore}
+          onCheckedChange={setShowScore}
+        />
+      </div>
       <table className="table">
         <thead>
           <tr>
             <th>시간</th>
             <th>코트</th>
             <th>페어</th>
-            <th>스코어</th>
+            {showScore && <th>스코어</th>}
             <th>대기자</th>
           </tr>
         </thead>
@@ -643,6 +545,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
                 matchIndex={index}
                 rowspan={rowspan}
                 isFirstMatch={isFirstMatch}
+                showScore={showScore}
               />
             );
           })}
