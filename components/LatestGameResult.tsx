@@ -126,23 +126,22 @@ export default function LatestGameResult({
           {gameResult && (
             <button
               onClick={() => router.push(`/games/${gameResult.scheduleID}`)}
-              className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              className="flex items-center gap-1 text-sm text-blue-700 hover:text-blue-900 transition-colors underline underline-offset-4"
             >
+              상세보기
               <svg
-                className="w-4 h-4"
+                className="w-3 h-3 opacity-60"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  d="M9 5l7 7-7 7"
                 />
               </svg>
-              상세보기
             </button>
           )}
         </div>

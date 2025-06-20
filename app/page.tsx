@@ -5,6 +5,7 @@ import LatestGameResult from '@/components/LatestGameResult';
 import LatestPendingSchedule from '@/components/LatestPendingSchedule';
 import LatestMatchSchedule from '@/components/LatestMatchSchedule';
 import StatsTable from '@/components/StatsTable';
+import LatestGameRanking from '@/components/LatestGameRanking';
 import { useSession } from 'next-auth/react';
 
 export default function Home() {
@@ -35,6 +36,11 @@ export default function Home() {
         {/* 최근 게임 결과 섹션 */}
         <div>
           <LatestGameResult />
+        </div>
+
+        {/* 최근 게임 순위 섹션 */}
+        <div>
+          <LatestGameRanking />
         </div>
 
         {/* 통계 테이블 섹션 */}

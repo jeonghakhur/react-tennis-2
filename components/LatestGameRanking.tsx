@@ -4,8 +4,8 @@ import { GameResult } from '@/model/gameResult';
 import LoadingGrid from '@/components/LoadingGrid';
 import useSWR from 'swr';
 import { useMemo, useState } from 'react';
+import { format } from 'date-fns';
 import { Button } from './ui/button';
-import { useRouter } from 'next/navigation';
 
 type PlayerStats = {
   name: string;
@@ -107,17 +107,76 @@ function calculateStats(games: GameResult[]): PlayerStats[] {
   );
 }
 
-function StatsTableContent({ stats }: { stats: PlayerStats[] }) {
+export default function LatestGameRanking() {
   const [showAll, setShowAll] = useState(false);
-  const displayStats = showAll ? stats : stats.slice(0, 10);
-  const router = useRouter();
+  const {
+    data: games,
+    isLoading,
+    error,
+  } = useSWR<GameResult[]>('/api/games?status=game_done');
 
-  const handleNameClick = (name: string) => {
-    router.push(`/player/${encodeURIComponent(name)}`);
-  };
+  // 마지막 스케줄의 game_done 게임만 필터링
+  const latestGame = useMemo(() => {
+    if (!games || games.length === 0) return null;
+    return games
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .find((game) => game.games && game.games.length > 0);
+  }, [games]);
+
+  const stats = useMemo(() => {
+    if (!latestGame) return [];
+    return calculateStats([latestGame]);
+  }, [latestGame]);
+
+  const displayStats = showAll ? stats : stats.slice(0, 3);
+
+  if (isLoading) {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          최근게임순위
+        </h2>
+        <LoadingGrid loading={isLoading} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          최근게임순위
+        </h2>
+        <div className="text-center py-20 text-lg text-red-500 overflow-x-auto">
+          데이터를 불러오는 중 오류가 발생했습니다.
+        </div>
+      </div>
+    );
+  }
+
+  if (stats.length === 0) {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          최근게임순위
+        </h2>
+        <div className="text-center py-20 text-lg text-gray-500">
+          최근 완료된 게임 데이터가 없습니다.
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
+    <div>
+      <h2 className="text-xl font-semibold text-gray-800 mb-4">
+        최근게임순위
+        {latestGame && (
+          <span className="text-sm font-normal text-gray-600 ml-2">
+            ({format(new Date(latestGame.date), 'MM.dd')})
+          </span>
+        )}
+      </h2>
       <div className="overflow-x-auto">
         <table className="table w-full text-center text-sm">
           <thead>
@@ -138,15 +197,13 @@ function StatsTableContent({ stats }: { stats: PlayerStats[] }) {
           <tbody>
             {displayStats.map((row, idx) => (
               <tr key={row.name}>
-                <td>{idx + 1}</td>
-                <td>
-                  <div
-                    className="whitespace-nowrap cursor-pointer text-blue-700 hover:text-blue-900 transition-colors underline underline-offset-4"
-                    onClick={() => handleNameClick(row.name)}
-                  >
-                    {row.name}
-                  </div>
+                <td className="font-semibold">
+                  {idx === 0 && '🥇'}
+                  {idx === 1 && '🥈'}
+                  {idx === 2 && '🥉'}
+                  {idx > 2 && (showAll ? idx + 1 : idx + 1)}
                 </td>
+                <td className="whitespace-nowrap font-medium">{row.name}</td>
                 <td className="text-green-600 font-semibold">{row.win}</td>
                 <td className="text-yellow-600">{row.draw}</td>
                 <td className="text-red-600">{row.lose}</td>
@@ -175,65 +232,17 @@ function StatsTableContent({ stats }: { stats: PlayerStats[] }) {
         </table>
       </div>
 
-      {stats.length > 10 && (
-        <div className="flex justify-center">
+      {stats.length > 3 && (
+        <div className="flex justify-center mt-4">
           <Button
             variant="outline"
             onClick={() => setShowAll(!showAll)}
             className="px-6"
           >
-            {showAll ? '접기' : `더보기 (${stats.length - 10}명 더)`}
+            {showAll ? '접기' : `더보기 (${stats.length - 3}명 더)`}
           </Button>
         </div>
       )}
     </div>
-  );
-}
-
-export default function StatsTable() {
-  const {
-    data: games,
-    isLoading,
-    error,
-  } = useSWR<GameResult[]>('/api/games?status=game_done');
-
-  const stats = useMemo(() => (games ? calculateStats(games) : []), [games]);
-
-  if (isLoading) {
-    return (
-      <div>
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">전체순위</h2>
-        <LoadingGrid loading={isLoading} />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div>
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">전체순위</h2>
-        <div className="text-center py-20 text-lg text-red-500 overflow-x-auto">
-          데이터를 불러오는 중 오류가 발생했습니다.
-        </div>
-      </div>
-    );
-  }
-
-  if (stats.length === 0) {
-    return (
-      <div>
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">전체순위</h2>
-        <div className="text-center py-20 text-lg text-gray-500">
-          집계할 데이터가 없습니다.
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">전체순위</h2>
-      <StatsTableContent stats={stats} />
-    </>
   );
 }
