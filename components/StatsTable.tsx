@@ -3,7 +3,8 @@
 import { GameResult } from '@/model/gameResult';
 import LoadingGrid from '@/components/LoadingGrid';
 import useSWR from 'swr';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { Button } from './ui/button';
 
 type PlayerStats = {
   name: string;
@@ -106,42 +107,89 @@ function calculateStats(games: GameResult[]): PlayerStats[] {
 }
 
 function StatsTableContent({ stats }: { stats: PlayerStats[] }) {
+  const [showAll, setShowAll] = useState(false);
+  const displayStats = showAll ? stats : stats.slice(0, 10);
+
+  // 최고값들 찾기 (1, 2위)
+  const sortedByPoint = [...stats].sort((a, b) => b.point - a.point);
+  const top2Points = sortedByPoint.slice(0, 2).map((s) => s.point);
+
+  const sortedByWinRate = [...stats].sort((a, b) => b.winRate - a.winRate);
+  const top2WinRates = sortedByWinRate.slice(0, 2).map((s) => s.winRate);
+
+  const sortedByMargin = [...stats].sort((a, b) => b.margin - a.margin);
+  const top2Margins = sortedByMargin.slice(0, 2).map((s) => s.margin);
+
+  const getPointClass = (point: number) => {
+    if (point === top2Points[0]) return 'bg-red-200 font-semibold';
+    if (point === top2Points[1]) return 'bg-red-100 font-semibold';
+    return '';
+  };
+
+  const getWinRateClass = (winRate: number) => {
+    if (winRate === top2WinRates[0]) return 'bg-green-200 font-semibold';
+    if (winRate === top2WinRates[1]) return 'bg-green-100 font-semibold';
+    return '';
+  };
+
+  const getMarginClass = (margin: number) => {
+    if (margin === top2Margins[0]) return 'bg-sky-200 font-semibold';
+    if (margin === top2Margins[1]) return 'bg-sky-100 font-semibold';
+    return '';
+  };
+
   return (
-    <div className="overflow-x-auto">
-      <table className="table">
-        <thead>
-          <tr>
-            <th>순위</th>
-            <th>이름</th>
-            <th>승</th>
-            <th>무</th>
-            <th>패</th>
-            <th>게임</th>
-            <th>승점</th>
-            <th>승률</th>
-            <th>득점</th>
-            <th>실점</th>
-            <th>마진</th>
-          </tr>
-        </thead>
-        <tbody>
-          {stats.map((row, idx) => (
-            <tr key={row.name}>
-              <td>{idx + 1}</td>
-              <td className="whitespace-nowrap">{row.name}</td>
-              <td>{row.win}</td>
-              <td>{row.draw}</td>
-              <td>{row.lose}</td>
-              <td>{row.game}</td>
-              <td>{row.point}</td>
-              <td>{(row.winRate * 100).toFixed(1)}%</td>
-              <td>{row.score}</td>
-              <td>{row.loseScore}</td>
-              <td>{row.margin}</td>
+    <div className="space-y-4">
+      <div className="overflow-x-auto">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>순위</th>
+              <th>이름</th>
+              <th>승</th>
+              <th>무</th>
+              <th>패</th>
+              <th>게임</th>
+              <th>승점</th>
+              <th>승률</th>
+              <th>득점</th>
+              <th>실점</th>
+              <th>마진</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {displayStats.map((row, idx) => (
+              <tr key={row.name}>
+                <td>{idx + 1}</td>
+                <td className="whitespace-nowrap">{row.name}</td>
+                <td>{row.win}</td>
+                <td>{row.draw}</td>
+                <td>{row.lose}</td>
+                <td>{row.game}</td>
+                <td className={getPointClass(row.point)}>{row.point}</td>
+                <td className={getWinRateClass(row.winRate)}>
+                  {(row.winRate * 100).toFixed(1)}%
+                </td>
+                <td>{row.score}</td>
+                <td>{row.loseScore}</td>
+                <td className={getMarginClass(row.margin)}>{row.margin}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {stats.length > 10 && (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => setShowAll(!showAll)}
+            className="px-6"
+          >
+            {showAll ? '접기' : `더보기 (${stats.length - 10}명 더)`}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
