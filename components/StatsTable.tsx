@@ -122,13 +122,24 @@ function StatsTableContent({ stats }: { stats: PlayerStats[] }) {
   // 각 항목별 상위 2명 찾기 (33% 이상 참석한 회원들 중에서)
   const sortedByPoint = [...qualifiedPlayers].sort((a, b) => b.point - a.point);
   const top2Points = sortedByPoint.slice(0, 2).map((s) => s.point);
+  const top2PointPlayers = sortedByPoint.slice(0, 2).map((s) => s.name);
 
-  const sortedByWinRate = [...qualifiedPlayers].sort(
+  // 승점 1,2위를 제외한 회원들 중에서 승률 1,2위 찾기
+  const remainingForWinRate = qualifiedPlayers.filter(
+    (p) => !top2PointPlayers.includes(p.name)
+  );
+  const sortedByWinRate = [...remainingForWinRate].sort(
     (a, b) => b.winRate - a.winRate || b.margin - a.margin
   );
   const top2WinRates = sortedByWinRate.slice(0, 2).map((s) => s.winRate);
+  const top2WinRatePlayers = sortedByWinRate.slice(0, 2).map((s) => s.name);
 
-  const sortedByMargin = [...qualifiedPlayers].sort(
+  // 승점과 승률 1,2위를 제외한 회원들 중에서 마진 1,2위 찾기
+  const remainingForMargin = qualifiedPlayers.filter(
+    (p) =>
+      !top2PointPlayers.includes(p.name) && !top2WinRatePlayers.includes(p.name)
+  );
+  const sortedByMargin = [...remainingForMargin].sort(
     (a, b) => b.margin - a.margin
   );
   const top2Margins = sortedByMargin.slice(0, 2).map((s) => s.margin);
