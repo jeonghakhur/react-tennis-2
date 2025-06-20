@@ -446,21 +446,21 @@ export default function Page({ params }: Props) {
                     <div className="flex gap-2 mt-2">
                       <Button
                         type="button"
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleGameUpdate(index)}
-                      >
-                        수정
-                      </Button>
-                      <Button
-                        type="button"
                         variant="destructive"
                         size="sm"
                         className="flex-1"
                         onClick={() => handleGameDelete(index)}
                       >
                         삭제
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleGameUpdate(index)}
+                      >
+                        수정
                       </Button>
                     </div>
                   )}

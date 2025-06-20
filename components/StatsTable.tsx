@@ -112,6 +112,45 @@ function StatsTableContent({ stats }: { stats: PlayerStats[] }) {
   const displayStats = showAll ? stats : stats.slice(0, 10);
   const router = useRouter();
 
+  // 가장 많은 게임 수 찾기
+  const maxGames = Math.max(...stats.map((s) => s.game));
+  const minGamesThreshold = Math.ceil(maxGames * 0.33);
+
+  // 33% 이상 참석한 회원들만 필터링
+  const qualifiedPlayers = stats.filter((s) => s.game >= minGamesThreshold);
+
+  // 각 항목별 상위 2명 찾기 (33% 이상 참석한 회원들 중에서)
+  const sortedByPoint = [...qualifiedPlayers].sort((a, b) => b.point - a.point);
+  const top2Points = sortedByPoint.slice(0, 2).map((s) => s.point);
+
+  const sortedByWinRate = [...qualifiedPlayers].sort(
+    (a, b) => b.winRate - a.winRate || b.margin - a.margin
+  );
+  const top2WinRates = sortedByWinRate.slice(0, 2).map((s) => s.winRate);
+
+  const sortedByMargin = [...qualifiedPlayers].sort(
+    (a, b) => b.margin - a.margin
+  );
+  const top2Margins = sortedByMargin.slice(0, 2).map((s) => s.margin);
+
+  const getPointClass = (point: number) => {
+    if (point === top2Points[0]) return 'bg-red-200 font-semibold';
+    if (point === top2Points[1]) return 'bg-red-100 font-semibold';
+    return '';
+  };
+
+  const getWinRateClass = (winRate: number) => {
+    if (winRate === top2WinRates[0]) return 'bg-green-200 font-semibold';
+    if (winRate === top2WinRates[1]) return 'bg-green-100 font-semibold';
+    return '';
+  };
+
+  const getMarginClass = (margin: number) => {
+    if (margin === top2Margins[0]) return 'bg-sky-200 font-semibold';
+    if (margin === top2Margins[1]) return 'bg-sky-100 font-semibold';
+    return '';
+  };
+
   const handleNameClick = (name: string) => {
     router.push(`/player/${encodeURIComponent(name)}`);
   };
@@ -151,21 +190,17 @@ function StatsTableContent({ stats }: { stats: PlayerStats[] }) {
                 <td className="text-yellow-600">{row.draw}</td>
                 <td className="text-red-600">{row.lose}</td>
                 <td>{row.game}</td>
-                <td className="font-semibold text-blue-600">{row.point}</td>
-                <td className="font-semibold">
+                <td
+                  className={`font-semibold text-blue-600 ${getPointClass(row.point)}`}
+                >
+                  {row.point}
+                </td>
+                <td className={getWinRateClass(row.winRate)}>
                   {(row.winRate * 100).toFixed(1)}%
                 </td>
                 <td>{row.score}</td>
                 <td>{row.loseScore}</td>
-                <td
-                  className={
-                    row.margin > 0
-                      ? 'text-green-600'
-                      : row.margin < 0
-                        ? 'text-red-600'
-                        : ''
-                  }
-                >
+                <td className={getMarginClass(row.margin)}>
                   {row.margin > 0 ? '+' : ''}
                   {row.margin}
                 </td>
