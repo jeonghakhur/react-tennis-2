@@ -7,6 +7,19 @@ import useSWR from 'swr';
 import { useParams, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import {
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  Legend,
+  Line,
+  ComposedChart,
+} from 'recharts';
+import { useState } from 'react';
 
 type PlayerGameResult = {
   date: string;
@@ -18,6 +31,15 @@ type PlayerGameResult = {
   gameNumber: number;
 };
 
+type PairStats = {
+  partner: string;
+  totalGames: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  winRate: number;
+};
+
 export default function PlayerGameHistory() {
   const params = useParams();
   const router = useRouter();
@@ -26,6 +48,8 @@ export default function PlayerGameHistory() {
     isLoading,
     error,
   } = useSWR<GameResult[]>('/api/games?status=game_done');
+  const [currentPage, setCurrentPage] = useState(0);
+  const [showAllPairs, setShowAllPairs] = useState(false);
 
   const playerName = params?.name
     ? decodeURIComponent(params.name as string)
@@ -129,6 +153,48 @@ export default function PlayerGameHistory() {
   const winRate =
     totalGames > 0 ? ((wins / totalGames) * 100).toFixed(1) : '0.0';
 
+  // 페어별 통계 계산
+  const pairStats: Record<string, PairStats> = {};
+
+  playerGames.forEach((game) => {
+    const teamMembers = game.team
+      .split(', ')
+      .filter((member) => member.trim() !== '');
+    const partner = teamMembers.find((member) => member !== playerName);
+
+    if (partner) {
+      if (!pairStats[partner]) {
+        pairStats[partner] = {
+          partner,
+          totalGames: 0,
+          wins: 0,
+          draws: 0,
+          losses: 0,
+          winRate: 0,
+        };
+      }
+
+      pairStats[partner].totalGames += 1;
+      if (game.result === 'win') pairStats[partner].wins += 1;
+      else if (game.result === 'draw') pairStats[partner].draws += 1;
+      else pairStats[partner].losses += 1;
+    }
+  });
+
+  // 승률 계산
+  Object.values(pairStats).forEach((pair) => {
+    pair.winRate =
+      pair.totalGames > 0 ? (pair.wins / pair.totalGames) * 100 : 0;
+  });
+
+  // 승률순으로 정렬
+  const sortedPairs = Object.values(pairStats).sort(
+    (a, b) => b.winRate - a.winRate
+  );
+
+  // 1경기 이상 함께 뛴 페어만 필터링
+  const qualifiedPairs = sortedPairs.filter((pair) => pair.totalGames >= 1);
+
   const handleTeamClick = (team: string) => {
     const teamMembers = team
       .split(', ')
@@ -138,6 +204,12 @@ export default function PlayerGameHistory() {
       const pairUrl = `/pair/${sortedMembers.join('+')}`;
       router.push(pairUrl);
     }
+  };
+
+  const handlePairClick = (partner: string) => {
+    const sortedMembers = [playerName, partner].sort();
+    const pairUrl = `/pair/${sortedMembers.join('+')}`;
+    router.push(pairUrl);
   };
 
   return (
@@ -173,6 +245,219 @@ export default function PlayerGameHistory() {
             <div className="text-sm text-gray-600">패</div>
           </div>
         </div>
+
+        {/* 페어 통계 */}
+        {qualifiedPairs.length > 0 && (
+          <div className="bg-white rounded-lg shadow border p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              페어별 승률 (1경기 이상) - {qualifiedPairs.length}명
+            </h3>
+
+            {/* 페어가 많을 때 페이지네이션 */}
+            {qualifiedPairs.length > 10 && (
+              <div className="mb-4 flex justify-center">
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                    disabled={currentPage === 0}
+                    className="px-3 py-1 text-sm bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
+                  >
+                    이전
+                  </button>
+                  <span className="px-3 py-1 text-sm">
+                    {currentPage + 1} / {Math.ceil(qualifiedPairs.length / 10)}
+                  </span>
+                  <button
+                    onClick={() =>
+                      setCurrentPage(
+                        Math.min(
+                          Math.ceil(qualifiedPairs.length / 10) - 1,
+                          currentPage + 1
+                        )
+                      )
+                    }
+                    disabled={
+                      currentPage >= Math.ceil(qualifiedPairs.length / 10) - 1
+                    }
+                    className="px-3 py-1 text-sm bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
+                  >
+                    다음
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={qualifiedPairs
+                    .slice(currentPage * 10, (currentPage + 1) * 10)
+                    .map((pair, index) => ({
+                      name: pair.partner,
+                      순위: currentPage * 10 + index + 1,
+                      승률: pair.winRate,
+                      총경기: pair.totalGames,
+                      승: pair.wins,
+                      무: pair.draws,
+                      패: pair.losses,
+                    }))}
+                  margin={{
+                    top: 5,
+                    right: 5,
+                    left: 5,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="name"
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    fontSize={qualifiedPairs.length > 15 ? 10 : 12}
+                    interval={0}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    domain={[0, 100]}
+                    tickFormatter={(value) => `${value}%`}
+                    fontSize={10}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    domain={[0, (dataMax: number) => Math.max(dataMax, 10)]}
+                    tickFormatter={(value) => `${value}경기`}
+                    fontSize={10}
+                  />
+                  <Tooltip
+                    formatter={(value, name) => {
+                      if (name === '승률') return [`${value}%`, '승률'];
+                      if (name === '총경기') return [value, '총 경기'];
+                      if (name === '순위') return [value, '순위'];
+                      if (name === '승') return [value, '승'];
+                      if (name === '무') return [value, '무'];
+                      if (name === '패') return [value, '패'];
+                      return [value, name];
+                    }}
+                    labelFormatter={(label) => `파트너: ${label}`}
+                  />
+                  <Legend />
+                  <Bar
+                    yAxisId="left"
+                    dataKey="승률"
+                    fill="#3b82f6"
+                    radius={[4, 4, 0, 0]}
+                    onClick={(data) => {
+                      if (data && data.name) {
+                        handlePairClick(data.name);
+                      }
+                    }}
+                    style={{ cursor: 'pointer' }}
+                    name="승률"
+                  >
+                    {qualifiedPairs
+                      .slice(currentPage * 10, (currentPage + 1) * 10)
+                      .map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            entry.winRate >= 50
+                              ? '#10b981'
+                              : entry.winRate >= 30
+                                ? '#f59e0b'
+                                : '#ef4444'
+                          }
+                        />
+                      ))}
+                  </Bar>
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="총경기"
+                    stroke="#8b5cf6"
+                    strokeWidth={3}
+                    dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6 }}
+                    name="총 경기"
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* 전체 페어 목록 링크 */}
+            {qualifiedPairs.length > 10 && (
+              <div className="mt-4 text-center">
+                <button
+                  onClick={() => setShowAllPairs(!showAllPairs)}
+                  className="text-blue-600 hover:text-blue-800 text-sm underline"
+                >
+                  {showAllPairs ? '차트로 보기' : '전체 페어 목록 보기'}
+                </button>
+              </div>
+            )}
+
+            {/* 전체 페어 목록 테이블 */}
+            {showAllPairs && qualifiedPairs.length > 10 && (
+              <div className="mt-4 overflow-x-auto">
+                <table className="table w-full text-sm">
+                  <thead>
+                    <tr>
+                      <th>순위</th>
+                      <th>파트너</th>
+                      <th>승률</th>
+                      <th>총 경기</th>
+                      <th>승/무/패</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {qualifiedPairs.map((pair, index) => (
+                      <tr key={pair.partner} className="border-t">
+                        <td>{index + 1}</td>
+                        <td
+                          className="cursor-pointer text-blue-600 underline hover:text-blue-800"
+                          onClick={() => handlePairClick(pair.partner)}
+                        >
+                          {pair.partner}
+                        </td>
+                        <td
+                          className={
+                            pair.winRate >= 50
+                              ? 'text-green-600'
+                              : pair.winRate >= 30
+                                ? 'text-yellow-600'
+                                : 'text-red-600'
+                          }
+                        >
+                          {pair.winRate.toFixed(1)}%
+                        </td>
+                        <td>{pair.totalGames}</td>
+                        <td>
+                          {pair.wins}/{pair.draws}/{pair.losses}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="mt-4 text-sm text-gray-600 text-center">
+              <span className="inline-block mr-4">
+                <span className="inline-block w-3 h-3 bg-green-500 rounded mr-1"></span>
+                50% 이상
+              </span>
+              <span className="inline-block mr-4">
+                <span className="inline-block w-3 h-3 bg-yellow-500 rounded mr-1"></span>
+                30-49%
+              </span>
+              <span className="inline-block">
+                <span className="inline-block w-3 h-3 bg-red-500 rounded mr-1"></span>
+                30% 미만
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* 게임 기록 테이블 */}
         {playerGames.length > 0 ? (
