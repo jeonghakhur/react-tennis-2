@@ -36,20 +36,18 @@ export default function LatestGameResult({
     });
   }, [gameResult?.date]);
 
-  // 스크롤 위치 복원을 위한 useEffect
   useEffect(() => {
-    if (shouldRestoreScroll) {
-      // DOM 업데이트 후 스크롤 위치 복원
-      const timer = setTimeout(() => {
-        window.scrollTo({
-          top: savedScrollPosition.current,
-          behavior: 'smooth',
-        });
-        setShouldRestoreScroll(false);
-      }, 100); // DOM 업데이트를 위한 충분한 시간
+    if (!shouldRestoreScroll) return;
 
-      return () => clearTimeout(timer);
-    }
+    const timer = setTimeout(() => {
+      window.scrollTo({
+        top: savedScrollPosition.current,
+        behavior: 'smooth',
+      });
+      setShouldRestoreScroll(false);
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [shouldRestoreScroll, isExpanded]);
 
   const handleToggleExpansion = () => {
