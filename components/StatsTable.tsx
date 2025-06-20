@@ -5,6 +5,7 @@ import LoadingGrid from '@/components/LoadingGrid';
 import useSWR from 'swr';
 import { useMemo, useState } from 'react';
 import { Button } from './ui/button';
+import { useRouter } from 'next/navigation';
 
 type PlayerStats = {
   name: string;
@@ -109,6 +110,7 @@ function calculateStats(games: GameResult[]): PlayerStats[] {
 function StatsTableContent({ stats }: { stats: PlayerStats[] }) {
   const [showAll, setShowAll] = useState(false);
   const displayStats = showAll ? stats : stats.slice(0, 10);
+  const router = useRouter();
 
   // 최고값들 찾기 (1, 2위)
   const sortedByPoint = [...stats].sort((a, b) => b.point - a.point);
@@ -138,6 +140,10 @@ function StatsTableContent({ stats }: { stats: PlayerStats[] }) {
     return '';
   };
 
+  const handleNameClick = (name: string) => {
+    router.push(`/player/${encodeURIComponent(name)}`);
+  };
+
   return (
     <div className="space-y-4">
       <div className="overflow-x-auto">
@@ -161,7 +167,13 @@ function StatsTableContent({ stats }: { stats: PlayerStats[] }) {
             {displayStats.map((row, idx) => (
               <tr key={row.name}>
                 <td>{idx + 1}</td>
-                <td className="whitespace-nowrap">{row.name}</td>
+                <td
+                  className="whitespace-nowrap cursor-pointer text-blue-600 underline hover:text-blue-800"
+                  onClick={() => handleNameClick(row.name)}
+                  title={`${row.name}님의 게임 기록 보기`}
+                >
+                  {row.name}
+                </td>
                 <td>{row.win}</td>
                 <td>{row.draw}</td>
                 <td>{row.lose}</td>
