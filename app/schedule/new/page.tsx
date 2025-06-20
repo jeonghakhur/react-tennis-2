@@ -3,7 +3,7 @@
 import { Container } from '@/components/Layout';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ScheduleFormSchema, ScheduleFormType } from '@/model/schedule';
@@ -29,11 +29,24 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Grid } from 'react-loader-spinner';
+import { Switch } from '@/components/ui/switch';
+import useAuthRedirect from '@/hooks/useAuthRedirect';
 
 export default function ScheduleForm() {
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
   const { postSchedule } = useSchedule();
+
+  // 사용자 권한 확인
+  const { user } = useAuthRedirect('/', 0);
+
+  useEffect(() => {
+    console.log('👤 스케줄 생성 페이지 - 사용자 정보:', {
+      user: user,
+      level: user?.level,
+      canCreateSchedule: user && user.level >= 3,
+    });
+  }, [user]);
 
   const form = useForm<ScheduleFormType>({
     resolver: zodResolver(ScheduleFormSchema),
@@ -88,6 +101,10 @@ export default function ScheduleForm() {
     });
   };
 
+  const handleStatusChange = (checked: boolean) => {
+    form.setValue('status', checked ? 'attendees_done' : 'pending');
+  };
+
   return (
     <Container>
       <Form {...form}>
@@ -106,7 +123,7 @@ export default function ScheduleForm() {
         )}
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-6 p-6 bg-white rounded-lg shadow-md"
+          className="space-y-4 pb-[80px]"
         >
           <div className="grid gap-6">
             <FormDatePicker form={form} />
@@ -175,6 +192,18 @@ export default function ScheduleForm() {
               startTime={Number(form.watch('startTime'))}
               endTime={Number(form.watch('endTime'))}
             />
+
+            <div className="flex items-center gap-2 justify-between">
+              <label htmlFor="status" className="font-bold">
+                참석자 등록 완료
+              </label>
+              <Switch
+                id="status"
+                name="status"
+                checked={form.watch('status') === 'attendees_done'}
+                onCheckedChange={handleStatusChange}
+              />
+            </div>
 
             <div className="flex gap-4">
               <Button

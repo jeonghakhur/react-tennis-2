@@ -24,10 +24,18 @@ export default function useSchedule() {
     isLoading,
     error,
     mutate,
-  } = useSWR<GetScheduleType[]>('/api/schedule', async () => {
-    const data = await fetchSchedules();
-    return sortByDate(data); // ✅ 데이터 로딩 시 정렬 적용
-  });
+  } = useSWR<GetScheduleType[]>(
+    '/api/schedule',
+    async () => {
+      const data = await fetchSchedules();
+      return sortByDate(data); // ✅ 데이터 로딩 시 정렬 적용
+    },
+    {
+      revalidateOnFocus: false, // 포커스 시 다시 요청 방지
+      revalidateOnReconnect: false, // 네트워크 변경 시 다시 요청 방지
+      dedupingInterval: 60000, // 1분 동안 중복 요청 방지
+    }
+  );
 
   // ✅ 새로운 데이터를 가져오거나 추가할 때 항상 정렬 유지
   const refreshSchedules = async () => {

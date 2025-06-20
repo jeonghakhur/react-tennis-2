@@ -31,6 +31,8 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
 interface Attendee {
@@ -80,7 +82,70 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const { mutate } = useSWRConfig();
-  const [showScore, setShowScore] = useState(true);
+  const [showScore, setShowScore] = useState(false);
+  const [scheduleStatus, setScheduleStatus] = useState<
+    'pending' | 'attendees_done' | 'match_done' | 'game_done'
+  >('attendees_done');
+
+  // 대기자 정보 계산 함수
+  const calculateIdleSummary = useCallback(
+    (gameMatches: Match[]) => {
+      const timeSlots: string[] = [];
+      let currentTime = new Date(`2023-01-01T${startTime}:00`);
+      const end = new Date(`2023-01-01T${endTime}:00`);
+
+      while (currentTime < end) {
+        timeSlots.push(currentTime.toTimeString().slice(0, 5));
+        currentTime = new Date(currentTime.getTime() + 30 * 60 * 1000);
+      }
+
+      const idleByTime: Record<string, string[]> = {};
+
+      timeSlots.forEach((slot) => {
+        const playingAtTime = gameMatches
+          .filter((match) => match.time === slot)
+          .flatMap((match) => match.players);
+
+        const available = attendees.filter(
+          (attendee) =>
+            new Date(
+              `2023-01-01T${attendee.startHour}:${attendee.startMinute}`
+            ) <= new Date(`2023-01-01T${slot}:00`) &&
+            new Date(`2023-01-01T${slot}:00`) <
+              new Date(`2023-01-01T${attendee.endHour}:${attendee.endMinute}`)
+        );
+
+        idleByTime[slot] = available
+          .map((attendee) => attendee.name)
+          .filter((name) => !playingAtTime.includes(name));
+      });
+
+      setIdleSummary(idleByTime);
+    },
+    [attendees, startTime, endTime]
+  );
+
+  // 게임 플레이 횟수 계산 함수
+  const calculateGamesPlayed = useCallback(
+    (gameMatches: Match[]) => {
+      const gamesCount: Record<string, number> = {};
+
+      attendees.forEach((attendee) => {
+        gamesCount[attendee.name] = 0;
+      });
+
+      gameMatches.forEach((match) => {
+        match.players.forEach((player) => {
+          if (gamesCount[player] !== undefined) {
+            gamesCount[player]++;
+          }
+        });
+      });
+
+      setGamesPlayed(gamesCount);
+    },
+    [attendees]
+  );
 
   const generateSchedule = useCallback(() => {
     shuffleArray(attendees);
@@ -155,9 +220,60 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
     setGamesPlayed(gamesCount);
   }, [attendees, startTime, endTime, courts]);
 
+  // 기존 게임 데이터 가져오기
   useEffect(() => {
-    generateSchedule();
-  }, [generateSchedule]);
+    const fetchExistingGame = async () => {
+      try {
+        console.log('🔄 매치 페이지 로드 - 스케줄 ID:', scheduleId);
+        const response = await fetch(`/api/match/${scheduleId}`);
+        if (response.ok) {
+          const gameData = await response.json();
+          console.log('📊 기존 게임 데이터:', gameData);
+          console.log('🔍 스케줄 상태 확인:', {
+            scheduleStatus: gameData.scheduleStatus,
+            hasScheduleStatus: !!gameData.scheduleStatus,
+            type: typeof gameData.scheduleStatus,
+          });
+
+          if (gameData && gameData.games && gameData.games.length > 0) {
+            console.log('✅ 기존 게임 데이터 발견 - 대진 복원');
+            // 기존 게임 데이터가 있으면 해당 대진을 설정
+            setMatches(gameData.games);
+            // 기존 게임 데이터의 스케줄 상태를 설정
+            const currentStatus = gameData.scheduleStatus || 'attendees_done';
+            setScheduleStatus(currentStatus);
+            console.log('🎯 설정된 스케줄 상태:', currentStatus);
+            console.log(
+              '🎯 Switch 상태:',
+              currentStatus === 'match_done' ? 'ON' : 'OFF'
+            );
+
+            // 대기자 정보 계산
+            calculateIdleSummary(gameData.games);
+            calculateGamesPlayed(gameData.games);
+          } else {
+            console.log('🆕 기존 게임 데이터 없음 - 새 대진 생성');
+            // 기존 데이터가 없으면 새로 생성
+            generateSchedule();
+          }
+        } else {
+          console.log('❌ API 호출 실패 - 새 대진 생성');
+          // API 호출 실패 시 새로 생성
+          generateSchedule();
+        }
+      } catch (error) {
+        console.error('❌ 기존 게임 데이터 조회 실패:', error);
+        generateSchedule();
+      }
+    };
+
+    fetchExistingGame();
+  }, [
+    scheduleId,
+    calculateIdleSummary,
+    calculateGamesPlayed,
+    generateSchedule,
+  ]);
 
   const handlePlayersChange = useCallback(
     (player: string, matchIndex: number, playerIndex: number) => {
@@ -223,6 +339,14 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
       match.score[scoreIndex] = value;
       setMatches(updateMatches);
+      setTimeout(() => {
+        const button = document.querySelector(
+          `button[data-match-index="${matchIndex}"][data-score-index="${scoreIndex}"]`
+        ) as HTMLButtonElement;
+        if (button) {
+          button.focus();
+        }
+      }, 0);
     },
     [matches]
   );
@@ -267,12 +391,15 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
   const handleSubmit = async () => {
     setLoading(true);
+    console.log('💾 대진표 저장 시작');
+    console.log('📋 저장할 대진 데이터:', matches);
+    console.log('🎯 저장할 스케줄 상태:', scheduleStatus);
 
     try {
       const response = await fetch(`/api/match/${scheduleId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scheduleId, matches }),
+        body: JSON.stringify({ scheduleId, matches, status: scheduleStatus }),
       });
 
       if (!response.ok) {
@@ -280,7 +407,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
       }
 
       const data = await response.json();
-      console.log(data);
+      console.log('✅ 대진표 저장 성공:', data);
 
       // SWR 캐시 무효화 후 페이지 이동
       await mutate('/api/games', undefined, { revalidate: true });
@@ -289,9 +416,10 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // 성공 시 페이지 이동
-      router.push('/games');
+      console.log('🔄 스케줄 목록 페이지로 이동');
+      router.push('/schedule');
     } catch (error) {
-      console.error('대진표 저장 중 오류:', error);
+      console.error('❌ 대진표 저장 중 오류:', error);
 
       // 에러 발생 시 사용자에게 알림
       alert('대진표 저장 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
@@ -357,7 +485,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
             className="flex-1"
           >
             {memberValue}
-            <ChevronsUpDown className="opacity-50" />
+            <ChevronsUpDown className="opacity-50 ml-auto" />
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="h-[300px]">
@@ -448,7 +576,12 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
                       handleScoreChange(value, matchIndex, 0)
                     }
                   >
-                    <SelectTrigger className="text-xs" value="0">
+                    <SelectTrigger
+                      className="text-xs"
+                      value="0"
+                      data-match-index={matchIndex}
+                      data-score-index={0}
+                    >
                       <SelectValue>{match.score[0]}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -471,7 +604,11 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
                       handleScoreChange(value, matchIndex, 1)
                     }
                   >
-                    <SelectTrigger className="text-xs">
+                    <SelectTrigger
+                      className="text-xs"
+                      data-match-index={matchIndex}
+                      data-score-index={1}
+                    >
                       <SelectValue>{match.score[1]}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -519,6 +656,53 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
           onCheckedChange={setShowScore}
         />
       </div>
+
+      {/* 스케줄 상태 설정 */}
+      <div className="mb-6">
+        <Label className="text-base font-bold mb-3 block">스케줄 상태</Label>
+        <RadioGroup
+          value={scheduleStatus}
+          onValueChange={(value) => {
+            const newStatus = value as
+              | 'pending'
+              | 'attendees_done'
+              | 'match_done'
+              | 'game_done';
+            console.log('🔄 스케줄 상태 변경:', {
+              oldStatus: scheduleStatus,
+              newStatus,
+            });
+            setScheduleStatus(newStatus);
+          }}
+          className="flex flex-wrap gap-4"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="pending" id="pending" />
+            <Label htmlFor="pending" className="text-sm">
+              대기중
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="attendees_done" id="attendees_done" />
+            <Label htmlFor="attendees_done" className="text-sm">
+              참석자 저장 완료
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="match_done" id="match_done" />
+            <Label htmlFor="match_done" className="text-sm">
+              대진표 작성 완료
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="game_done" id="game_done" />
+            <Label htmlFor="game_done" className="text-sm">
+              게임 결과 등록 완료
+            </Label>
+          </div>
+        </RadioGroup>
+      </div>
+
       <table className="table">
         <thead>
           <tr>
@@ -562,12 +746,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
         </thead>
         <tbody>
           {Object.entries(gamesPlayed)
-            .sort(([playerA, countA], [playerB, countB]) => {
-              if (countA !== countB) {
-                return countA - countB;
-              }
-              return playerA.localeCompare(playerB);
-            })
+            .sort(([playerA], [playerB]) => playerA.localeCompare(playerB))
             .map(([player, count], index) => (
               <tr key={index}>
                 <td>{player}</td>

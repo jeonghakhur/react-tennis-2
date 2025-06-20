@@ -1,6 +1,6 @@
 // import { Match } from "@/model/match";
 
-import { GameResult, Game } from '@/model/gameResult';
+import { GameResult, Game, GameComment } from '@/model/gameResult';
 import useSWR, { useSWRConfig } from 'swr';
 
 async function deleteGame(scheduleId: string) {
@@ -19,11 +19,72 @@ async function updateGame(gameId: string, matches: Game[]) {
   }).then((res) => res.json());
 }
 
+async function addCommentToGameResult(
+  gameResultId: string,
+  comment: GameComment
+) {
+  console.log('📤 게임 결과 코멘트 추가 요청:', { gameResultId, comment });
+
+  try {
+    const response = await fetch(`/api/gameResult/${gameResultId}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comment }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('❌ 게임 결과 코멘트 추가 실패:', errorData);
+      throw new Error(
+        errorData.error || '게임 결과 코멘트 추가에 실패했습니다.'
+      );
+    }
+
+    const result = await response.json();
+    console.log('✅ 게임 결과 코멘트 추가 성공:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ 게임 결과 코멘트 추가 중 에러:', error);
+    throw error;
+  }
+}
+
+async function removeCommentFromGameResult(
+  gameResultId: string,
+  commentKey: string
+) {
+  console.log('🗑️ 게임 결과 코멘트 삭제 요청:', { gameResultId, commentKey });
+
+  try {
+    const response = await fetch(`/api/gameResult/${gameResultId}/comments`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commentKey }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('❌ 게임 결과 코멘트 삭제 실패:', errorData);
+      throw new Error(
+        errorData.error || '게임 결과 코멘트 삭제에 실패했습니다.'
+      );
+    }
+
+    const result = await response.json();
+    console.log('✅ 게임 결과 코멘트 삭제 성공:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ 게임 결과 코멘트 삭제 중 에러:', error);
+    throw error;
+  }
+}
+
 export default function useGame(scheduleId: string) {
   const {
     data: game,
     isLoading,
     error,
+    mutate,
   } = useSWR<GameResult>(`/api/games/${scheduleId}`, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
@@ -86,11 +147,57 @@ export default function useGame(scheduleId: string) {
     }
   };
 
+  const addComment = async (comment: GameComment) => {
+    if (!game) return;
+
+    const newComments = [...(game.comments || []), comment];
+    const newGame = { ...game, comments: newComments } as GameResult;
+
+    return mutate(
+      async () => {
+        await addCommentToGameResult(game._id!, comment);
+        // 코멘트만 업데이트하고 전체 데이터는 다시 가져오지 않음
+        return { ...game, comments: newComments };
+      },
+      {
+        optimisticData: newGame,
+        rollbackOnError: true,
+        populateCache: true,
+        revalidate: false,
+      }
+    );
+  };
+
+  const removeComment = async (commentKey: string) => {
+    if (!game) return;
+
+    const updatedComments = (game.comments || []).filter(
+      (comment: GameComment) => comment._key !== commentKey
+    );
+    const newGame = { ...game, comments: updatedComments } as GameResult;
+
+    return mutate(
+      async () => {
+        await removeCommentFromGameResult(game._id!, commentKey);
+        // 코멘트만 업데이트하고 전체 데이터는 다시 가져오지 않음
+        return { ...game, comments: updatedComments };
+      },
+      {
+        optimisticData: newGame,
+        rollbackOnError: true,
+        populateCache: true,
+        revalidate: false,
+      }
+    );
+  };
+
   return {
     game,
     isLoading,
     error,
     removeGame,
     updateGameData,
+    addComment,
+    removeComment,
   };
 }

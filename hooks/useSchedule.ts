@@ -2,16 +2,9 @@
 import {
   AttendanceProps,
   GetScheduleProps,
-  GetScheduleType,
   ScheduleFormType,
 } from '@/model/schedule';
 import useSWR, { useSWRConfig } from 'swr';
-
-function sortByDate(schedules: GetScheduleType[]) {
-  return schedules.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-}
 
 async function addAttendance(scheduleId: string, attendance: AttendanceProps) {
   return fetch('/api/attendance', {
@@ -65,6 +58,59 @@ async function deleteSchedule(scheduleId: string) {
   }).then((res) => res.json());
 }
 
+async function addCommentToSchedule(scheduleId: string, comment: any) {
+  console.log('📤 코멘트 추가 요청:', { scheduleId, comment });
+
+  try {
+    const response = await fetch(`/api/schedule/${scheduleId}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comment }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('❌ 코멘트 추가 실패:', errorData);
+      throw new Error(errorData.error || '코멘트 추가에 실패했습니다.');
+    }
+
+    const result = await response.json();
+    console.log('✅ 코멘트 추가 성공:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ 코멘트 추가 중 에러:', error);
+    throw error;
+  }
+}
+
+async function removeCommentFromSchedule(
+  scheduleId: string,
+  commentKey: string
+) {
+  console.log('🗑️ 코멘트 삭제 요청:', { scheduleId, commentKey });
+
+  try {
+    const response = await fetch(`/api/schedule/${scheduleId}/comments`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commentKey }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('❌ 코멘트 삭제 실패:', errorData);
+      throw new Error(errorData.error || '코멘트 삭제에 실패했습니다.');
+    }
+
+    const result = await response.json();
+    console.log('✅ 코멘트 삭제 성공:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ 코멘트 삭제 중 에러:', error);
+    throw error;
+  }
+}
+
 export default function useSchedule(scheduleId?: string) {
   const {
     data: schedule,
@@ -76,6 +122,7 @@ export default function useSchedule(scheduleId?: string) {
     {
       revalidateOnFocus: false, // 🔹 포커스 시 다시 요청 방지
       revalidateOnReconnect: false, // 🔹 네트워크 변경 시 다시 요청 방지
+      dedupingInterval: 60000, // 1분 동안 중복 요청 방지
     }
   );
   const { mutate: globalMutate } = useSWRConfig();
@@ -152,37 +199,22 @@ export default function useSchedule(scheduleId?: string) {
   const postSchedule = async (newSchedule: ScheduleFormType) => {
     console.log('🟢 postSchedule 실행됨', newSchedule);
 
-    // ✅ 현재 목록 데이터 가져오기
-    const currentSchedules = await globalMutate('/api/schedule');
-
-    // // ✅ SWR 캐시에 새 데이터 즉시 반영 (Optimistic UI 적용)
-    globalMutate(
-      '/api/schedule',
-      sortByDate([
-        ...(currentSchedules || []),
-        { ...newSchedule, id: 'temp-id' },
-      ]),
-      { revalidate: false }
-    );
-
     try {
+      console.log('📤 서버로 데이터 전송 중...');
       const result = await createSchedule(newSchedule);
-
-      // ✅ 서버에서 받은 최신 데이터를 SWR에 반영 + 정렬 적용
-      // globalMutate('/api/schedule', async () => {
-      //   const updatedData = await fetch('/api/schedule').then((res) =>
-      //     res.json()
-      //   );
-      //   return sortByDate(updatedData); // ✅ 서버 데이터도 정렬
-      // });
-
       console.log('✅ 스케줄 등록 성공!', result);
+
+      // ✅ 서버에서 성공적으로 저장된 후 SWR 캐시를 다시 검증
+      console.log('🔄 SWR 캐시 재검증 중...');
+
+      // 즉시 캐시를 무효화하고 새로운 데이터를 가져옴
+      await globalMutate('/api/schedule', undefined, { revalidate: true });
+
+      console.log('✅ SWR 캐시 재검증 완료');
+
       return result;
     } catch (error) {
       console.error('❌ 스케줄 등록 실패:', error);
-
-      // ❌ 에러 발생 시 이전 상태로 롤백
-      // globalMutate('/api/schedule', currentSchedules, { revalidate: false });
       throw error;
     }
   };
@@ -216,6 +248,51 @@ export default function useSchedule(scheduleId?: string) {
     globalMutate('/api/schedule');
   };
 
+  const addComment = async (comment: any) => {
+    if (!schedule) return;
+
+    const newComments = [...(schedule.comments || []), comment];
+    const newSchedule = { ...schedule, comments: newComments } as any;
+
+    return mutate(
+      async () => {
+        const response = await addCommentToSchedule(scheduleId!, comment);
+        return response;
+      },
+      {
+        optimisticData: newSchedule,
+        rollbackOnError: true,
+        populateCache: false,
+        revalidate: false,
+      }
+    );
+  };
+
+  const removeComment = async (commentKey: string) => {
+    if (!schedule) return;
+
+    const updatedComments = (schedule.comments || []).filter(
+      (comment: any) => comment._key !== commentKey
+    );
+    const newSchedule = { ...schedule, comments: updatedComments } as any;
+
+    return mutate(
+      async () => {
+        const response = await removeCommentFromSchedule(
+          scheduleId!,
+          commentKey
+        );
+        return response;
+      },
+      {
+        optimisticData: newSchedule,
+        rollbackOnError: true,
+        populateCache: false,
+        revalidate: true,
+      }
+    );
+  };
+
   return {
     schedule,
     isLoading,
@@ -226,5 +303,7 @@ export default function useSchedule(scheduleId?: string) {
     postAttendance,
     patchAttendance,
     removeAttendance,
+    addComment,
+    removeComment,
   };
 }

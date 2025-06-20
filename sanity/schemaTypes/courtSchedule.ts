@@ -99,6 +99,12 @@ export const courtSchedule = {
               type: 'string',
               title: 'Comment Text',
             },
+            {
+              name: 'createdAt',
+              type: 'datetime',
+              title: 'Created At',
+              readOnly: true,
+            },
           ],
           preview: {
             select: {

@@ -76,4 +76,15 @@ export type GetScheduleProps = {
   hasGameResult?: boolean;
   gameResultId?: string;
   gameResultCount?: number;
+  comments?: Array<{
+    _key: string;
+    author: {
+      _ref: string;
+      name: string;
+      username: string;
+      image?: string;
+    };
+    text: string;
+    createdAt?: string;
+  }>;
 } & ScheduleProps;

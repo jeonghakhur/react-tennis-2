@@ -5,11 +5,41 @@ export async function getSchedule(id: string) {
   return client.fetch(`*[_type == "schedule" && _id == "${id}"][0]{
     ...,
     "id": _id,
-    }`);
+    "comments": comments[]{
+      ...,
+      "author": {
+        "_ref": author._ref,
+        "name": author->name,
+        "username": author->username,
+        "image": author->image
+      },
+
+    }
+  }`);
 }
 
 export async function getAllSchedule() {
   return client.fetch(`*[_type == "schedule"] | order(date desc) {
+    ...,
+    "id": _id,
+    "hasGameResult": count(*[_type == "gameResult" && schedule._ref == ^._id]) > 0,
+    "gameResultId": *[_type == "gameResult" && schedule._ref == ^._id][0]._id,
+    "gameResultCount": count(*[_type == "gameResult" && schedule._ref == ^._id])
+  }`);
+}
+
+export async function getLatestPendingSchedule() {
+  return client.fetch(`*[_type == "schedule" && (status == "pending" || status == "attendees_done")] | order(date desc)[0] {
+    ...,
+    "id": _id,
+    "hasGameResult": count(*[_type == "gameResult" && schedule._ref == ^._id]) > 0,
+    "gameResultId": *[_type == "gameResult" && schedule._ref == ^._id][0]._id,
+    "gameResultCount": count(*[_type == "gameResult" && schedule._ref == ^._id])
+  }`);
+}
+
+export async function getLatestMatchDoneSchedule() {
+  return client.fetch(`*[_type == "schedule" && status == "match_done"] | order(date desc)[0] {
     ...,
     "id": _id,
     "hasGameResult": count(*[_type == "gameResult" && schedule._ref == ^._id]) > 0,
@@ -35,22 +65,31 @@ export async function createSchedule(
 
   console.log('📋 createSchedule에서 받은 데이터:', scheduleData);
   console.log('🎯 status 값:', status);
+  console.log('👤 userId:', userId);
 
-  return client.create(
-    {
-      _type: 'schedule',
-      author: { _ref: userId },
-      date,
-      startTime,
-      endTime,
-      courtName,
-      courtCount,
-      courtNumbers,
-      attendees,
-      status: status || 'pending', // status 필드 추가 및 기본값 보장
-    },
-    { autoGenerateArrayKeys: true }
-  );
+  try {
+    const result = await client.create(
+      {
+        _type: 'schedule',
+        author: { _ref: userId },
+        date,
+        startTime,
+        endTime,
+        courtName,
+        courtCount,
+        courtNumbers,
+        attendees,
+        status: status || 'pending', // status 필드 추가 및 기본값 보장
+      },
+      { autoGenerateArrayKeys: true }
+    );
+
+    console.log('✅ Sanity 저장 성공:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Sanity 저장 실패:', error);
+    throw error;
+  }
 }
 
 export async function updateSchedule(

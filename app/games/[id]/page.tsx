@@ -12,6 +12,8 @@ import { ko } from 'date-fns/locale';
 import DataGrid from '@/components/DataGrid';
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
+import CommentSection from '@/components/common/CommentSection';
+import useAuthRedirect from '@/hooks/useAuthRedirect';
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -26,7 +28,14 @@ interface GameResult {
 
 export default function Page({ params }: Props) {
   const { id } = use(params);
-  const { game, isLoading, removeGame, updateGameData } = useGame(id);
+  const {
+    game,
+    isLoading,
+    removeGame,
+    updateGameData,
+    addComment,
+    removeComment,
+  } = useGame(id);
   const [loading, setLoading] = useState<boolean>(isLoading);
   const [dataLoading, setDataLoading] = useState<boolean>(false);
   const [editableGames, setEditableGames] = useState<GameResult[]>([]);
@@ -35,9 +44,12 @@ export default function Page({ params }: Props) {
   >('match_done');
   const router = useRouter();
 
+  // 사용자 인증 정보 가져오기
+  const { user } = useAuthRedirect('/', 0);
+
   useEffect(() => {
     if (game) {
-      console.log(game);
+      console.log('게임 데이터:', game);
       setEditableGames([...game.games]);
       setScheduleStatus(
         game.scheduleStatus === 'game_done' ? 'game_done' : 'match_done'
@@ -45,6 +57,16 @@ export default function Page({ params }: Props) {
       setLoading(false);
     }
   }, [game]);
+
+  // 사용자 정보 디버깅
+  useEffect(() => {
+    if (user) {
+      console.log('사용자 정보:', user);
+      console.log('user.name:', user.name);
+      console.log('user.userName:', user.userName);
+      console.log('user.id:', user.id);
+    }
+  }, [user]);
 
   const handleDelete = async (id: string) => {
     const isConfirmed = confirm('정말 삭제하시겠습니까?');
@@ -296,15 +318,19 @@ export default function Page({ params }: Props) {
               {game.courtName}
             </h1>
             <div className="text-lg text-gray-600">
-              {format(new Date(game.date), 'yyyy년 MM월 dd일 (EEE)', {
-                locale: ko,
-              })}
+              {game.date
+                ? format(new Date(game.date), 'yyyy년 MM월 dd일 (EEE)', {
+                    locale: ko,
+                  })
+                : '날짜 정보 없음'}
             </div>
           </div>
         </div>
 
         <div className="grid gap-4">
           {editableGames.map((result, index) => {
+            const isAdmin = typeof user?.level === 'number' && user.level >= 3;
+
             return (
               <div key={index} className="bg-white rounded-lg shadow-md p-4">
                 <div className="flex justify-between items-center mb-4">
@@ -319,30 +345,49 @@ export default function Page({ params }: Props) {
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          value={result.players[0]}
-                          onChange={(e) =>
-                            handlePlayerChange(index, 0, e.target.value)
-                          }
-                          className="w-full"
-                        />
-                        <Input
-                          value={result.players[1]}
-                          onChange={(e) =>
-                            handlePlayerChange(index, 1, e.target.value)
-                          }
-                          className="w-full"
-                        />
+                        {isAdmin ? (
+                          <>
+                            <Input
+                              value={result.players[0]}
+                              onChange={(e) =>
+                                handlePlayerChange(index, 0, e.target.value)
+                              }
+                              className="w-full"
+                            />
+                            <Input
+                              value={result.players[1]}
+                              onChange={(e) =>
+                                handlePlayerChange(index, 1, e.target.value)
+                              }
+                              className="w-full"
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-full p-2 bg-gray-50 rounded border text-sm">
+                              {result.players[0]}
+                            </div>
+                            <div className="w-full p-2 bg-gray-50 rounded border text-sm">
+                              {result.players[1]}
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="w-20">
-                      <Input
-                        value={result.score[0]}
-                        onChange={(e) =>
-                          handleScoreChange(index, 0, e.target.value)
-                        }
-                        className="w-full text-center"
-                      />
+                      {isAdmin ? (
+                        <Input
+                          value={result.score[0]}
+                          onChange={(e) =>
+                            handleScoreChange(index, 0, e.target.value)
+                          }
+                          className="w-full text-center"
+                        />
+                      ) : (
+                        <div className="w-full p-2 bg-gray-50 rounded border text-center text-sm">
+                          {result.score[0]}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -350,93 +395,141 @@ export default function Page({ params }: Props) {
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          value={result.players[2]}
-                          onChange={(e) =>
-                            handlePlayerChange(index, 2, e.target.value)
-                          }
-                          className="w-full"
-                        />
-                        <Input
-                          value={result.players[3]}
-                          onChange={(e) =>
-                            handlePlayerChange(index, 3, e.target.value)
-                          }
-                          className="w-full"
-                        />
+                        {isAdmin ? (
+                          <>
+                            <Input
+                              value={result.players[2]}
+                              onChange={(e) =>
+                                handlePlayerChange(index, 2, e.target.value)
+                              }
+                              className="w-full"
+                            />
+                            <Input
+                              value={result.players[3]}
+                              onChange={(e) =>
+                                handlePlayerChange(index, 3, e.target.value)
+                              }
+                              className="w-full"
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-full p-2 bg-gray-50 rounded border text-sm">
+                              {result.players[2]}
+                            </div>
+                            <div className="w-full p-2 bg-gray-50 rounded border text-sm">
+                              {result.players[3]}
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="w-20">
-                      <Input
-                        value={result.score[1]}
-                        onChange={(e) =>
-                          handleScoreChange(index, 1, e.target.value)
-                        }
-                        className="w-full text-center"
-                      />
+                      {isAdmin ? (
+                        <Input
+                          value={result.score[1]}
+                          onChange={(e) =>
+                            handleScoreChange(index, 1, e.target.value)
+                          }
+                          className="w-full text-center"
+                        />
+                      ) : (
+                        <div className="w-full p-2 bg-gray-50 rounded border text-center text-sm">
+                          {result.score[1]}
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* 게임별 수정/삭제 버튼 */}
-                  <div className="flex gap-2 mt-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleGameUpdate(index)}
-                    >
-                      수정
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleGameDelete(index)}
-                    >
-                      삭제
-                    </Button>
-                  </div>
+                  {/* 게임별 수정/삭제 버튼 - 관리자만 표시 */}
+                  {isAdmin && (
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleGameUpdate(index)}
+                      >
+                        수정
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleGameDelete(index)}
+                      >
+                        삭제
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
 
-        <div className="flex items-center gap-2 justify-between mt-4">
-          <label htmlFor="status" className="font-bold">
-            게임 결과 노출
-          </label>
-          <Switch
-            id="status"
-            name="status"
-            checked={scheduleStatus === 'game_done'}
-            onCheckedChange={(checked) =>
-              setScheduleStatus(checked ? 'game_done' : 'match_done')
-            }
-          />
-        </div>
+        {/* 게임 결과 노출 설정 - 관리자만 표시 */}
+        {typeof user?.level === 'number' && user.level >= 3 && (
+          <div className="flex items-center gap-2 justify-between mt-4">
+            <label htmlFor="status" className="font-bold">
+              게임 결과 노출
+            </label>
+            <Switch
+              id="status"
+              name="status"
+              checked={scheduleStatus === 'game_done'}
+              onCheckedChange={(checked) =>
+                setScheduleStatus(checked ? 'game_done' : 'match_done')
+              }
+            />
+          </div>
+        )}
 
-        <div className="flex gap-2 mt-4">
-          <Button
-            type="button"
-            variant="destructive"
-            size="lg"
-            className="flex-1"
-            onClick={() => handleDelete(game._id!)}
-          >
-            전체 삭제
-          </Button>
-          <Button
-            type="button"
-            size="lg"
-            className="flex-1"
-            onClick={() => handleUpdate(game._id!)}
-          >
-            전체 수정
-          </Button>
-        </div>
+        {/* 전체 수정/삭제 버튼 - 관리자만 표시 */}
+        {typeof user?.level === 'number' && user.level >= 3 && (
+          <div className="flex gap-2 mt-4 mb-10">
+            <Button
+              type="button"
+              variant="destructive"
+              size="lg"
+              className="flex-1"
+              onClick={() => handleDelete(game._id!)}
+            >
+              전체 삭제
+            </Button>
+            <Button
+              type="button"
+              size="lg"
+              className="flex-1"
+              onClick={() => handleUpdate(game._id!)}
+            >
+              전체 수정
+            </Button>
+          </div>
+        )}
+
+        {/* 게임 결과 코멘트 섹션 */}
+        {user && game && (
+          <CommentSection
+            comments={game.comments || []}
+            currentUserId={user.id}
+            currentUser={{
+              name: user.name || '',
+              username: user.userName || user.name || '',
+              ...(user.image && { image: user.image }),
+            }}
+            onAddComment={async (comment) => {
+              await addComment(comment);
+            }}
+            onRemoveComment={async (commentKey) => {
+              await removeComment(commentKey);
+            }}
+            title="게임 결과 코멘트"
+            placeholder="게임 결과에 대한 코멘트를 입력하세요..."
+          />
+        )}
       </div>
     </Container>
   );

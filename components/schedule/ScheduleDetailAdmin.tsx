@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Grid } from 'react-loader-spinner';
+import CommentSection from '@/components/common/CommentSection';
 
 type Props = {
   scheduleId: string;
@@ -31,8 +32,14 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
   const gender = user?.gender;
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
-  const { schedule, isLoading, patchSchedule, removeSchedule } =
-    useSchedule(scheduleId);
+  const {
+    schedule,
+    isLoading,
+    patchSchedule,
+    removeSchedule,
+    addComment,
+    removeComment,
+  } = useSchedule(scheduleId);
 
   const form = useForm<ScheduleFormType>({
     resolver: zodResolver(ScheduleFormSchema),
@@ -40,6 +47,7 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
 
   useEffect(() => {
     if (schedule) {
+      console.log(schedule);
       form.reset({
         ...schedule,
         date: schedule.date ? new Date(schedule.date) : new Date(),
@@ -113,8 +121,6 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
     } else {
       form.setValue('status', 'pending');
     }
-
-    console.log(form.getValues('status'));
   };
 
   return (
@@ -131,98 +137,103 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
         />
       )}
       {schedule && (
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4 pb-[80px]"
-          >
-            <FormDatePicker form={form} />
-            <div className="grid grid-cols-2 gap-4">
-              <FormSelectTime
-                name="startTime"
+        <>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-4 mb-4"
+            >
+              <FormDatePicker form={form} />
+              <div className="grid grid-cols-2 gap-4">
+                <FormSelectTime
+                  name="startTime"
+                  form={form}
+                  label="시작 시간"
+                  value={schedule?.startTime}
+                />
+                <FormSelectTime
+                  name="endTime"
+                  form={form}
+                  label="종료 시간"
+                  startTime={parseInt(schedule?.startTime, 10)}
+                  value={schedule?.endTime}
+                />
+              </div>
+
+              <div>
+                <Label>코트이름</Label>
+                <Input type="text" {...form.register('courtName')} />
+              </div>
+
+              <div>
+                <FormCourtCount
+                  form={form}
+                  value={schedule.courtCount}
+                  onHandleChange={handleCourtCountChange}
+                />
+              </div>
+
+              <div className="flex gap-3">
+                {Array.from(
+                  { length: parseInt(form.watch('courtCount'), 10) },
+                  (_, idx) => (
+                    <FormCourtNumber key={idx} form={form} idx={idx} />
+                  )
+                )}
+              </div>
+              <FormMembers
                 form={form}
-                label="시작 시간"
-                value={schedule?.startTime}
+                attendees={form.watch('attendees')}
+                startTime={Number(schedule.startTime)}
+                endTime={Number(schedule.endTime)}
               />
-              <FormSelectTime
-                name="endTime"
-                form={form}
-                label="종료 시간"
-                startTime={parseInt(schedule?.startTime, 10)}
-                value={schedule?.endTime}
-              />
-            </div>
+              <div className="flex items-center gap-2 justify-between">
+                <label htmlFor="status" className="font-bold">
+                  참석자 등록 완료
+                </label>
+                <Switch
+                  id="status"
+                  name="status"
+                  checked={form.watch('status') === 'attendees_done'}
+                  onCheckedChange={handleStatusChange}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => handleDelete()}
+                  className="flex-1"
+                  size="lg"
+                >
+                  삭제
+                </Button>
+                <Button type="submit" className="flex-1" size="lg">
+                  저장
+                </Button>
+              </div>
+            </form>
+          </Form>
 
-            <div>
-              <Label>코트이름</Label>
-              <Input type="text" {...form.register('courtName')} />
-            </div>
-
-            <div>
-              <FormCourtCount
-                form={form}
-                value={schedule.courtCount}
-                onHandleChange={handleCourtCountChange}
-              />
-              {/* <Input
-                type="text"
-                value={form.watch('courtCount') || ''}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  form.setValue('courtCount', value);
-                  handleCourtCountChange(value);
-                }}
-              /> */}
-            </div>
-
-            <div className="flex gap-3">
-              {Array.from(
-                { length: parseInt(form.watch('courtCount'), 10) },
-                (_, idx) => (
-                  <FormCourtNumber key={idx} form={form} idx={idx} />
-                )
-              )}
-            </div>
-
-            <FormMembers
-              form={form}
-              attendees={form.watch('attendees')}
-              startTime={Number(schedule.startTime)}
-              endTime={Number(schedule.endTime)}
-            />
-
-            <div className="flex items-center gap-2 justify-between">
-              <label htmlFor="status" className="font-bold">
-                참석자 등록 완료
-              </label>
-              <Switch
-                id="status"
-                name="status"
-                checked={form.watch('status') === 'attendees_done'}
-                onCheckedChange={handleStatusChange}
-              />
-            </div>
-
-            <div className="button-group">
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => handleDelete()}
-              >
-                삭제
-              </Button>
-              <Button type="submit">저장</Button>
-              {/* <Button
-                type="button"
-                onClick={() => {
-                  router.push(`/match/${scheduleId}`);
-                }}
-              >
-                대진표작성
-              </Button> */}
-            </div>
-          </form>
-        </Form>
+          {/* 코멘트 섹션 */}
+          <CommentSection
+            comments={schedule.comments || []}
+            currentUserId={user.id}
+            currentUser={{
+              name: user.name,
+              username: user.userName,
+              ...(user.image && { image: user.image }),
+            }}
+            onAddComment={async (comment) => {
+              await addComment(comment);
+            }}
+            onRemoveComment={async (commentKey) => {
+              await removeComment(commentKey);
+            }}
+            title="관리자 코멘트"
+            placeholder="관리자 코멘트를 입력하세요..."
+          />
+        </>
       )}
     </Container>
   );

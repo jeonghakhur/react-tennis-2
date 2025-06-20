@@ -9,6 +9,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   return withSessionUser(async (user) => {
+    console.log('🔍 POST /api/schedule 시작');
+    console.log('👤 현재 사용자:', user);
+
     const body = await req.json();
     body.date = new Date(body.date);
 
@@ -22,13 +25,23 @@ export async function POST(req: NextRequest) {
 
     console.log('📋 Zod 검증 전 데이터:', body);
 
-    const validatedData = ScheduleFormSchema.parse(body);
+    try {
+      const validatedData = ScheduleFormSchema.parse(body);
+      console.log('✅ Zod 검증 완료된 데이터:', validatedData);
 
-    console.log('✅ Zod 검증 완료된 데이터:', validatedData);
+      const result = await createSchedule(user.id, validatedData);
+      console.log('💾 Sanity에 저장된 데이터:', result);
 
-    return createSchedule(user.id, validatedData).then((data) => {
-      console.log('💾 Sanity에 저장된 데이터:', data);
-      return NextResponse.json(data);
-    });
+      return NextResponse.json(result);
+    } catch (error) {
+      console.error('❌ 스케줄 생성 중 오류:', error);
+      return NextResponse.json(
+        {
+          error: '스케줄 생성에 실패했습니다.',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 400 }
+      );
+    }
   });
 }

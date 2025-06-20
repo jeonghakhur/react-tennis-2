@@ -1,21 +1,28 @@
 import { createGameResult, getGame, updateGameResult } from '@/service/games';
+import { updateScheduleStatus } from '@/service/schedule';
 import { withSessionUser } from '@/util/session';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   return await withSessionUser(async (user) => {
-    const { scheduleId, matches } = await req.json();
+    const { scheduleId, matches, status } = await req.json();
 
     const game = await getGame(scheduleId);
 
     if (game) {
-      return updateGameResult(game._id, matches).then((data) =>
-        NextResponse.json(data)
-      );
+      // 기존 게임이 있어도 status가 전송되었다면 업데이트
+      const gameResult = await updateGameResult(game._id, matches);
+      if (status) {
+        await updateScheduleStatus(scheduleId, status);
+      }
+      return NextResponse.json(gameResult);
     } else {
-      return createGameResult(scheduleId, user.id, matches).then((data) =>
-        NextResponse.json(data)
-      );
+      // 게임 결과 생성 후 스케줄 status를 클라이언트에서 전송한 값으로 업데이트
+      const gameResult = await createGameResult(scheduleId, user.id, matches);
+      const targetStatus = status || 'match_done'; // 기본값은 match_done
+      await updateScheduleStatus(scheduleId, targetStatus);
+
+      return NextResponse.json(gameResult);
     }
   });
 }

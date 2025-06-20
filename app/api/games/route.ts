@@ -1,9 +1,12 @@
 import { getAllGames } from '@/service/games';
 import { withSessionUser } from '@/util/session';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   return await withSessionUser(async () => {
-    return getAllGames().then((data) => NextResponse.json(data));
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+
+    return getAllGames(status).then((data) => NextResponse.json(data));
   });
 }

@@ -8,6 +8,9 @@ import React, { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { GameComment } from '@/model/gameResult';
+import CommentSection from '@/components/common/CommentSection';
+
 interface Game {
   _id: string;
   scheduleID: string;
@@ -19,16 +22,18 @@ interface Game {
     players: string[];
     score: string[];
   }[];
+  comments?: GameComment[];
 }
 
 export default function Home() {
-  const { isLoading, user } = useAuthRedirect('/', 0);
+  const { isLoading } = useAuthRedirect('/', 0);
   const { data: games } = useSWR<Game[]>('/api/games', {
     revalidateOnFocus: true,
     revalidateOnMount: true,
     dedupingInterval: 0,
   });
   const [loading, setLoading] = useState<boolean>(isLoading);
+  const [expandedGames, setExpandedGames] = useState<Set<string>>(new Set());
   const router = useRouter();
 
   useEffect(() => {
@@ -37,6 +42,34 @@ export default function Home() {
       setLoading(false);
     }
   }, [games]);
+
+  const toggleGameExpansion = (gameId: string) => {
+    const newExpanded = new Set(expandedGames);
+    if (newExpanded.has(gameId)) {
+      newExpanded.delete(gameId);
+    } else {
+      newExpanded.add(gameId);
+    }
+    setExpandedGames(newExpanded);
+  };
+
+  // 게임별 코멘트 읽기 전용 컴포넌트
+  const GameComments = ({ game }: { game: Game }) => {
+    return (
+      <CommentSection
+        comments={game.comments || []}
+        currentUserId=""
+        currentUser={{
+          name: '',
+          username: '',
+        }}
+        onAddComment={async () => {}}
+        onRemoveComment={async () => {}}
+        title="게임 코멘트"
+        readOnly={true}
+      />
+    );
+  };
 
   if (loading) {
     return (
@@ -94,13 +127,17 @@ export default function Home() {
       <div className="grid gap-4">
         {games?.map((game) => {
           const date = new Date(game.date);
-          const isClickable =
-            typeof user?.level === 'number' && user.level >= 3;
+          const isClickable = true; // 모든 사용자가 클릭 가능
+          const isExpanded = expandedGames.has(game._id);
+          const displayedGames = isExpanded
+            ? game.games
+            : game.games.slice(0, 2);
+          const hasMoreGames = game.games.length > 2;
 
           return (
             <div
               key={game._id}
-              className={`bg-white rounded-lg shadow-md p-6 transition-shadow ${
+              className={`bg-white rounded-lg shadow-md p-6 transition-shadow border border-gray-200 ${
                 isClickable
                   ? 'cursor-pointer hover:shadow-lg'
                   : 'cursor-default'
@@ -127,36 +164,77 @@ export default function Home() {
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {game.games.map((g, index) => (
-                  <div key={index} className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-gray-700">
-                        게임 {index + 1}
-                      </span>
-                      <span className="text-sm text-gray-500">{g.time}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <div className="text-xs text-gray-500 mb-1">페어 A</div>
-                        <div className="text-sm">
-                          {g.players[0]}, {g.players[1]} [{g.score[0]}]
+                {displayedGames.map((g, index) => {
+                  const scoreA = parseInt(g.score[0] || '0') || 0;
+                  const scoreB = parseInt(g.score[1] || '0') || 0;
+                  const teamAWins = scoreA > scoreB;
+                  const teamBWins = scoreB > scoreA;
+
+                  return (
+                    <div key={index} className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium text-gray-700">
+                          게임 {index + 1}
+                        </span>
+                        <span className="text-sm text-gray-500">{g.time}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <div className="text-xs text-gray-500 mb-1">
+                            페어 A
+                          </div>
+                          <div
+                            className={`text-sm ${teamAWins ? 'font-bold' : ''}`}
+                          >
+                            {g.players[0]}, {g.players[1]}
+                            <span
+                              className={`ml-1 ${teamAWins ? 'text-red-600 font-bold' : 'text-gray-700'}`}
+                            >
+                              [{g.score[0] || '0'}]
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500 mb-1">
+                            페어 B
+                          </div>
+                          <div
+                            className={`text-sm ${teamBWins ? 'font-bold' : ''}`}
+                          >
+                            {g.players[2]}, {g.players[3]}
+                            <span
+                              className={`ml-1 ${teamBWins ? 'text-red-600 font-bold' : 'text-gray-700'}`}
+                            >
+                              [{g.score[1] || '0'}]
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <div className="text-xs text-gray-500 mb-1">페어 B</div>
-                        <div className="text-sm">
-                          {g.players[2]}, {g.players[3]} [{g.score[1]}]
-                        </div>
-                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-              {/* {game.games.length > 2 && (
-                <div className="mt-4 text-center text-sm text-gray-500">
-                  +{game.games.length - 2}개의 게임 더보기
+              {hasMoreGames && (
+                <div className="mt-4 text-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleGameExpansion(game._id);
+                    }}
+                    className="text-sm"
+                  >
+                    {isExpanded
+                      ? '접기'
+                      : `+${game.games.length - 2}개의 게임 더보기`}
+                  </Button>
                 </div>
-              )} */}
+              )}
+
+              {/* 게임 코멘트 섹션 */}
+              <GameComments game={game} />
             </div>
           );
         })}

@@ -1,21 +1,22 @@
-import useSchedule from '@/hooks/useSchedule';
-import { AuthUser } from '@/model/user';
-import LoadingGrid from '../LoadingGrid';
-import { Container } from '../Layout';
-import { format } from 'date-fns';
-import { Label } from '../ui/label';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../ui/select';
+} from '@/components/ui/select';
+import { Container } from '@/components/Layout';
+import LoadingGrid from '@/components/LoadingGrid';
+import { AuthUser } from '@/model/user';
 import { AttendanceProps } from '@/model/schedule';
-import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Button } from '../ui/button';
-import { toast } from '@/hooks/use-toast';
+import { useEffect, useState } from 'react';
+import useSchedule from '@/hooks/useSchedule';
+import { useToast } from '@/hooks/use-toast';
+import CommentSection from '@/components/common/CommentSection';
 
 const defaultAttendance: AttendanceProps = {
   _key: '',
@@ -33,24 +34,31 @@ type Props = {
 };
 
 export default function ScheduleDetailUser({ scheduleId, user }: Props) {
-  const userName = user.name;
-  const gender = user.gender;
-  const [myAttendance, setMyAttendance] =
-    useState<AttendanceProps>(defaultAttendance);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [existingIndex, setExistingIndex] = useState<number>(-1);
   const {
     schedule,
     isLoading,
     postAttendance,
     patchAttendance,
     removeAttendance,
+    addComment,
+    removeComment,
   } = useSchedule(scheduleId);
+  const { toast } = useToast();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [existingIndex, setExistingIndex] = useState<number>(-1);
+  const [myAttendance, setMyAttendance] =
+    useState<AttendanceProps>(defaultAttendance);
+
+  useEffect(() => {
+    if (schedule || isLoading) {
+      setLoading(false);
+    }
+  }, [schedule, isLoading]);
 
   useEffect(() => {
     if (schedule) {
       const foundIndex = schedule.attendees.findIndex(
-        (attendee: AttendanceProps) => attendee.name === userName
+        (attendee: AttendanceProps) => attendee.name === user.name
       );
       setExistingIndex(foundIndex);
 
@@ -59,8 +67,8 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
       } else {
         setMyAttendance({
           _key: crypto.randomUUID(),
-          name: userName,
-          gender: gender,
+          name: user.name,
+          gender: user.gender,
           startHour: schedule.startTime,
           startMinute: '00',
           endHour: schedule.endTime,
@@ -68,7 +76,7 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
         });
       }
     }
-  }, [schedule, userName, gender]);
+  }, [schedule, user.name, user.gender]);
 
   const handleAttendance = async () => {
     const { startHour, startMinute, endHour, endMinute } = myAttendance;
@@ -151,8 +159,8 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
       setExistingIndex(-1);
       setMyAttendance({
         _key: crypto.randomUUID(),
-        name: userName,
-        gender: gender,
+        name: user.name,
+        gender: user.gender,
         startHour: schedule?.startTime || '19',
         startMinute: '00',
         endHour: schedule?.endTime || '22',
@@ -186,7 +194,6 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
 
   const { date, courtName, courtNumbers, startTime, endTime, attendees } =
     schedule;
-  console.log(startTime, endTime);
 
   return (
     <Container className="space-y-4">
@@ -347,6 +354,23 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
           ))}
         </div>
       </div>
+
+      {/* 코멘트 섹션 */}
+      <CommentSection
+        comments={schedule.comments || []}
+        currentUserId={user.id}
+        currentUser={{
+          name: user.name,
+          username: user.userName,
+          ...(user.image && { image: user.image }),
+        }}
+        onAddComment={async (comment) => {
+          await addComment(comment);
+        }}
+        onRemoveComment={async (commentKey) => {
+          await removeComment(commentKey);
+        }}
+      />
     </Container>
   );
 }

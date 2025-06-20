@@ -25,14 +25,26 @@ export async function updateGameResult(id: string, games: any[]) {
     .commit({ autoGenerateArrayKeys: true });
 }
 
-export async function getAllGames() {
+export async function getAllGames(status?: string | null) {
+  const statusFilter = status ? `&& schedule->status == "${status}"` : '';
+
   return client.fetch(
-    `*[_type == "gameResult"] | order(schedule->date desc) {
+    `*[_type == "gameResult"${statusFilter}] | order(schedule->date desc) {
       ...,
       "scheduleID": schedule->_id,
       "date": schedule->date,
       "author": user->name,
       "courtName": schedule->courtName,
+      "comments": comments[]{
+        ...,
+        "author": {
+          "_ref": author._ref,
+          "name": author->name,
+          "username": author->username,
+          "image": author->image
+        },
+        "createdAt": createdAt
+      }
     }`
   );
 }
@@ -47,6 +59,16 @@ export async function getGame(scheduleId: string) {
       "startTime": schedule->startTime,
       "endTime": schedule->endTime,
       "scheduleStatus": schedule->status,
+      "comments": comments[]{
+        ...,
+        "author": {
+          "_ref": author._ref,
+          "name": author->name,
+          "username": author->username,
+          "image": author->image
+        },
+        "createdAt": createdAt
+      }
     }`
   );
 }
@@ -61,6 +83,16 @@ export async function getGameById(gameId: string) {
       "startTime": schedule->startTime,
       "endTime": schedule->endTime,
       "scheduleStatus": schedule->status,
+      "comments": comments[]{
+        ...,
+        "author": {
+          "_ref": author._ref,
+          "name": author->name,
+          "username": author->username,
+          "image": author->image
+        },
+        "createdAt": createdAt
+      }
     }`
   );
 }
@@ -95,4 +127,73 @@ export async function deleteGame(id: string) {
     }
     return { success: false, error: 'Unknown error' };
   }
+}
+
+export async function addCommentToGameResult(
+  gameResultId: string,
+  comment: any
+) {
+  return client
+    .patch(gameResultId)
+    .setIfMissing({ comments: [] })
+    .append('comments', [comment])
+    .commit({ autoGenerateArrayKeys: true });
+}
+
+export async function removeCommentFromGameResult(
+  gameResultId: string,
+  commentKey: string
+) {
+  return client
+    .patch(gameResultId)
+    .unset([`comments[_key=="${commentKey}"]`])
+    .commit();
+}
+
+export async function getLatestGame() {
+  return client.fetch(
+    `*[_type == "gameResult" && schedule->status == "game_done"] | order(schedule->date desc)[0] {
+      ...,
+      "scheduleID": schedule->_id,
+      "date": schedule->date,
+      "courtName": schedule->courtName,
+      "startTime": schedule->startTime,
+      "endTime": schedule->endTime,
+      "scheduleStatus": schedule->status,
+      "comments": comments[]{
+        ...,
+        "author": {
+          "_ref": author._ref,
+          "name": author->name,
+          "username": author->username,
+          "image": author->image
+        },
+        "createdAt": createdAt
+      }
+    }`
+  );
+}
+
+export async function getLatestMatchDoneGame() {
+  return client.fetch(
+    `*[_type == "gameResult" && schedule->status == "match_done"] | order(schedule->date desc)[0] {
+      ...,
+      "scheduleID": schedule->_id,
+      "date": schedule->date,
+      "courtName": schedule->courtName,
+      "startTime": schedule->startTime,
+      "endTime": schedule->endTime,
+      "scheduleStatus": schedule->status,
+      "comments": comments[]{
+        ...,
+        "author": {
+          "_ref": author._ref,
+          "name": author->name,
+          "username": author->username,
+          "image": author->image
+        },
+        "createdAt": createdAt
+      }
+    }`
+  );
 }

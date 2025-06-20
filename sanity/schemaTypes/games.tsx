@@ -59,6 +59,49 @@ export const gameResult = {
         },
       ],
     },
+    {
+      name: 'comments',
+      title: 'Comments',
+      type: 'array',
+      of: [
+        {
+          name: 'comment',
+          type: 'object',
+          fields: [
+            {
+              name: 'author',
+              type: 'reference',
+              to: [{ type: 'user' }],
+            },
+            {
+              name: 'text',
+              type: 'string',
+              title: 'Comment Text',
+            },
+            {
+              name: 'createdAt',
+              type: 'datetime',
+              title: 'Created At',
+              readOnly: true,
+            },
+          ],
+          preview: {
+            select: {
+              text: 'text',
+              authorName: 'author.name',
+            },
+            prepare({ text, authorName }: any) {
+              return {
+                title: text
+                  ? text.substring(0, 50) + (text.length > 50 ? '...' : '')
+                  : 'Empty comment',
+                subtitle: `by ${authorName || 'Unknown'}`,
+              };
+            },
+          },
+        },
+      ],
+    },
   ],
   preview: {
     select: {
