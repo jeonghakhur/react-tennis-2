@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useMemo, useState, useRef, useEffect } from 'react';
 import useSWR from 'swr';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { GameResult } from '@/model/gameResult';
 
@@ -18,7 +17,6 @@ export default function LatestMatchSchedule({
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldRestoreScroll, setShouldRestoreScroll] = useState(false);
   const savedScrollPosition = useRef<number>(0);
-  const router = useRouter();
 
   // 최신 match_done 게임 데이터를 가져오기
   const {
@@ -124,28 +122,6 @@ export default function LatestMatchSchedule({
           <div className="text-sm font-semibold text-gray-700">
             게임별 대진 (총 {totalGames}게임)
           </div>
-          {gameResult && (
-            <button
-              onClick={() => router.push(`/games/${gameResult.scheduleID}`)}
-              className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                />
-              </svg>
-              상세보기
-            </button>
-          )}
         </div>
         {displayedGames.map((game, index) => (
           <div key={index} className="bg-gray-50 rounded-lg p-4">
@@ -155,18 +131,13 @@ export default function LatestMatchSchedule({
               </span>
               <span className="text-sm text-gray-500">{game.time}</span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex justify-between gap-2">
               <div>
-                <div className="text-xs text-gray-500 mb-1">페어 A</div>
-                <div className="text-sm">
-                  {game.players[0]}, {game.players[1]}
-                </div>
+                {game.players[0]}/{game.players[1]}
               </div>
+              <div>vs</div>
               <div>
-                <div className="text-xs text-gray-500 mb-1">페어 B</div>
-                <div className="text-sm">
-                  {game.players[2]}, {game.players[3]}
-                </div>
+                {game.players[2]}/{game.players[3]}
               </div>
             </div>
           </div>
