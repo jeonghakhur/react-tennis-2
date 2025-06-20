@@ -26,7 +26,7 @@ export async function addUser({
     image,
     name,
     provider,
-    level,
+    level: level ?? 1,
     gender,
     phone_number,
     birthyear,

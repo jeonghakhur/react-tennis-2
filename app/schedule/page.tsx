@@ -204,29 +204,26 @@ export default function ScheduleList() {
                     })}
                   </p>
                 </div>
-                <div className="text-sm text-gray-500">
-                  {schedule.courtNumbers?.join(', ') || '0'} 코트
-                </div>
               </div>
 
               {workoutInfo && (
                 <div className="grid grid-cols-3 gap-4 mb-3">
                   <div className="bg-blue-50 p-3 rounded-lg">
-                    <p className="text-sm text-gray-600">시작 시간</p>
+                    <p className="text-sm text-gray-600">시간</p>
                     <p className="text-lg font-bold text-blue-600">
-                      {workoutInfo.startTime}
-                    </p>
-                  </div>
-                  <div className="bg-green-50 p-3 rounded-lg">
-                    <p className="text-sm text-gray-600">종료 시간</p>
-                    <p className="text-lg font-bold text-green-600">
-                      {workoutInfo.endTime}
+                      {workoutInfo.startTime} - {workoutInfo.endTime}
                     </p>
                   </div>
                   <div className="bg-orange-50 p-3 rounded-lg">
                     <p className="text-sm text-gray-600">총 참석자</p>
                     <p className="text-lg font-bold text-orange-600">
                       {workoutInfo.totalPlayers}명
+                    </p>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <p className="text-sm text-gray-600">코트</p>
+                    <p className="text-lg font-bold text-green-600">
+                      {schedule.courtNumbers?.join(', ') || '0'}
                     </p>
                   </div>
                 </div>

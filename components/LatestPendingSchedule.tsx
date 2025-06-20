@@ -68,7 +68,7 @@ export default function LatestPendingSchedule() {
             </p>
           </div>
           <div className="bg-green-50 p-3 rounded-lg">
-            <p className="text-sm text-gray-600">코드</p>
+            <p className="text-sm text-gray-600">코트</p>
             <p className="text-lg font-bold text-green-600">
               {schedule.courtNumbers?.join(', ') || '0'}
             </p>
