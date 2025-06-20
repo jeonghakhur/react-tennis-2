@@ -7,9 +7,82 @@ import LatestMatchSchedule from '@/components/LatestMatchSchedule';
 import StatsTable from '@/components/StatsTable';
 import LatestGameRanking from '@/components/LatestGameRanking';
 import { useSession } from 'next-auth/react';
+import useSWR from 'swr';
+
+// 스켈레톤 컴포넌트
+function HomeSkeleton() {
+  return (
+    <Container>
+      <div className="flex flex-col gap-8">
+        {/* 다음 게임 일정 스켈레톤 */}
+        <div className="bg-white rounded-lg shadow-md p-4 animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="space-y-3">
+            <div className="h-4 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        </div>
+
+        {/* 진행예정게임대진 스켈레톤 */}
+        <div className="bg-white rounded-lg shadow-md p-4 animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="space-y-3">
+            <div className="h-4 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        </div>
+
+        {/* 최근 게임 결과 스켈레톤 */}
+        <div className="bg-white rounded-lg shadow-md p-4 animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="space-y-3">
+            <div className="h-4 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        </div>
+
+        {/* 최근 게임 순위 스켈레톤 */}
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <div className="space-y-2">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-4 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 통계 테이블 스켈레톤 */}
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-4 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Container>
+  );
+}
 
 export default function Home() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+
+  // 게임 데이터 로딩 상태 확인
+  const { isLoading: gamesLoading } = useSWR('/api/games?status=game_done');
+
+  // 세션 로딩 중이거나 게임 데이터 로딩 중일 때 스켈레톤 표시
+  if (status === 'loading' || gamesLoading) {
+    return <HomeSkeleton />;
+  }
+
   const userLevel = session?.user?.level ?? 0;
 
   if (userLevel < 1) {
