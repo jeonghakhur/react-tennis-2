@@ -1,5 +1,6 @@
 'use client';
 
+import { Container } from '@/components/Layout';
 import LoadingGrid from '@/components/LoadingGrid';
 import useAuthRedirect from '@/hooks/useAuthRedirect';
 import { UserProps } from '@/model/user';
@@ -20,7 +21,7 @@ export default function Page() {
   }, [members]);
 
   return (
-    <div className="px-5">
+    <Container className="px-5">
       {isLoading ? (
         <LoadingGrid loading={loading} />
       ) : (
@@ -51,6 +52,6 @@ export default function Page() {
           </tbody>
         </table>
       )}
-    </div>
+    </Container>
   );
 }

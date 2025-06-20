@@ -39,6 +39,7 @@ export default function FormMembers({
   startTime,
 }: Props) {
   const { data: members, isLoading } = useSWR<UserProps[]>('/api/members');
+
   const [popoverOpen, setPopoverOpen] = useState<boolean>(false);
   const [guestField, setGuestField] = useState<boolean>(false);
   const [memberValue, setMemberValue] = useState<string>('');
@@ -76,17 +77,11 @@ export default function FormMembers({
     let name = '';
     if (guestField) {
       name = guestNameRef.current?.value || '';
-      console.log('직접 입력:', name);
     } else {
       name = memberValue;
-      console.log('선택된 회원:', name);
     }
 
     if (!name) return;
-
-    console.log('현재 참석자 목록:', fields);
-    console.log('추가하려는 이름:', name);
-    console.log('이미 존재하는가:', isAttendee(name));
 
     if (isAttendee(name)) {
       alert('이미 추가된 참석자입니다.');
@@ -160,7 +155,7 @@ export default function FormMembers({
                     </CommandItem>
                     {members?.map((member) => (
                       <CommandItem
-                        key={member.name}
+                        key={member.id}
                         value={member.name}
                         onSelect={(value) => {
                           handleMemberChange(value);
