@@ -230,9 +230,9 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
           const gameData = await response.json();
           console.log('📊 기존 게임 데이터:', gameData);
           console.log('🔍 스케줄 상태 확인:', {
-            scheduleStatus: gameData.scheduleStatus,
-            hasScheduleStatus: !!gameData.scheduleStatus,
-            type: typeof gameData.scheduleStatus,
+            scheduleStatus: gameData?.scheduleStatus,
+            hasScheduleStatus: !!gameData?.scheduleStatus,
+            type: typeof gameData?.scheduleStatus,
           });
 
           if (gameData && gameData.games && gameData.games.length > 0) {
