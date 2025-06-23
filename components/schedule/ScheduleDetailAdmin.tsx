@@ -12,7 +12,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import useSchedule from '@/hooks/useSchedule';
-import { ScheduleFormSchema, ScheduleFormType } from '@/model/schedule';
+import {
+  ScheduleFormSchema,
+  ScheduleFormType,
+  AttendanceProps,
+} from '@/model/schedule';
 import { AuthUser } from '@/model/user';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Switch } from '@/components/ui/switch';
@@ -54,6 +58,10 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
         courtNumbers: schedule.courtNumbers.map((court) =>
           typeof court === 'string' ? court : court.number
         ),
+        attendees: (schedule.attendees || []).map((att) => ({
+          ...att,
+          userId: att.userId || '',
+        })),
       });
     }
   }, [schedule, form, userName, gender]);
@@ -183,7 +191,12 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
               </div>
               <FormMembers
                 form={form}
-                attendees={form.watch('attendees')}
+                attendees={(
+                  (form.watch('attendees') as AttendanceProps[]) || []
+                ).map((att) => ({
+                  ...att,
+                  userId: typeof att.userId === 'string' ? att.userId : '',
+                }))}
                 startTime={Number(schedule.startTime)}
                 endTime={Number(schedule.endTime)}
               />

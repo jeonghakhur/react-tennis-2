@@ -23,7 +23,11 @@ import {
 } from './ui/select';
 import { Button } from './ui/button';
 import { AttendanceProps, ScheduleFormType } from '@/model/schedule';
-import { useFieldArray, UseFormReturn } from 'react-hook-form';
+import {
+  useFieldArray,
+  UseFormReturn,
+  FieldArrayWithId,
+} from 'react-hook-form';
 
 type Props = {
   form: UseFormReturn<ScheduleFormType>;
@@ -45,6 +49,7 @@ export default function FormMembers({
   const [memberValue, setMemberValue] = useState<string>('');
   const guestNameRef = useRef<HTMLInputElement>(null);
   const genderRef = useRef<HTMLButtonElement>(null);
+  const [memberGender, setMemberGender] = useState<string>('남성');
 
   const [attendanceTime, setAttendanceTime] = useState({
     startHour: String(startTime),
@@ -58,46 +63,60 @@ export default function FormMembers({
     name: 'attendees',
   });
 
-  const isAttendee = (name: string) => {
-    return fields.some((attendee: AttendanceProps) => attendee.name === name);
+  const isAttendee = (name: string, userId?: string) => {
+    if (userId) {
+      return fields.some(
+        (attendee: FieldArrayWithId<ScheduleFormType, 'attendees', 'id'>) =>
+          'userId' in attendee && attendee.userId === userId
+      );
+    }
+    return fields.some(
+      (attendee: FieldArrayWithId<ScheduleFormType, 'attendees', 'id'>) =>
+        attendee.name === name
+    );
   };
 
   const handleMemberChange = (member: string) => {
     if (member === '직접입력') {
       setGuestField(true);
+      setMemberGender('남성');
     } else {
       setGuestField(false);
+      const found = members?.find((item) => item.name === member);
+      setMemberGender(found?.gender || '남성');
     }
-
     setMemberValue(member);
     setPopoverOpen(false);
   };
 
   function handleAddMember() {
     let name = '';
+    let gender = memberGender;
+    let userId = '';
     if (guestField) {
       name = guestNameRef.current?.value || '';
+      gender = genderRef.current?.textContent || '남성';
+      userId = '';
     } else {
       name = memberValue;
+      const found = members?.find((item) => item.name === name);
+      userId = found?.id || '';
     }
-
     if (!name) return;
-
-    if (isAttendee(name)) {
+    if (isAttendee(name, userId)) {
       alert('이미 추가된 참석자입니다.');
       return;
     }
-
-    const gender = genderRef.current?.textContent || '남성';
     append({
       _key: crypto.randomUUID(),
       name,
       gender,
+      userId: userId || '',
       startHour: attendanceTime.startHour,
       startMinute: attendanceTime.startMinute,
       endHour: attendanceTime.endHour,
       endMinute: attendanceTime.endMinute,
-    });
+    } as AttendanceProps);
 
     // 직접 입력 필드 초기화
     if (guestField && guestNameRef.current) {

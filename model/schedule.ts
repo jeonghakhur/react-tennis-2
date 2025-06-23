@@ -57,15 +57,16 @@ export type ScheduleProps = {
   status: 'pending' | 'attendees_done' | 'match_done' | 'game_done';
 };
 
-export interface AttendanceProps {
+export type AttendanceProps = {
   _key: string;
   name: string;
   gender: string;
+  userId: string;
   startHour: string;
   startMinute: string;
   endHour: string;
   endMinute: string;
-}
+};
 
 export type AttendanceWithKeyProps = AttendanceProps & {
   _key: string;

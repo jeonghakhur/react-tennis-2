@@ -5,6 +5,7 @@ import {
 } from '@/service/schedule';
 import { withSessionUser } from '@/util/session';
 import { client } from '@/sanity/lib/client';
+import { getGameIdByScheduleId, deleteGame } from '@/service/games';
 
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -62,7 +63,14 @@ export async function PATCH(req: NextRequest, context: Context) {
 export async function DELETE(_: NextRequest, context: Context) {
   const { id } = await context.params;
 
-  return withSessionUser(async () =>
-    deleteSchedule(id).then((data) => NextResponse.json(data))
-  );
+  return withSessionUser(async () => {
+    // 1. 스케줄에 연결된 게임 결과가 있는지 확인
+    const gameResultId = await getGameIdByScheduleId(id);
+    if (gameResultId) {
+      // 2. 게임 결과가 있으면 먼저 삭제
+      await deleteGame(gameResultId);
+    }
+    // 3. 스케줄 삭제
+    return deleteSchedule(id).then((data) => NextResponse.json(data));
+  });
 }

@@ -17,11 +17,14 @@ import { useEffect, useState } from 'react';
 import useSchedule from '@/hooks/useSchedule';
 import { useToast } from '@/hooks/use-toast';
 import CommentSection from '@/components/common/CommentSection';
+import useSWR from 'swr';
+import { UserProps } from '@/model/user';
 
 const defaultAttendance: AttendanceProps = {
   _key: '',
   name: '',
   gender: '',
+  userId: '',
   startHour: '19',
   startMinute: '00',
   endHour: '22',
@@ -49,6 +52,11 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
   const [myAttendance, setMyAttendance] =
     useState<AttendanceProps>(defaultAttendance);
 
+  // 회원 목록 가져오기
+  const { data: members } = useSWR<UserProps[]>('/api/members');
+  // 정식 회원 정보 찾기
+  const myMember = members?.find((m) => m.id === user.id);
+
   useEffect(() => {
     if (schedule || isLoading) {
       setLoading(false);
@@ -58,7 +66,13 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
   useEffect(() => {
     if (schedule) {
       const foundIndex = schedule.attendees.findIndex(
-        (attendee: AttendanceProps) => attendee.name === user.name
+        (attendee: AttendanceProps) =>
+          (attendee.userId &&
+            myMember?.id &&
+            attendee.userId === myMember.id) ||
+          (!attendee.userId &&
+            attendee.name === (myMember?.name || user.name) &&
+            attendee.gender === (myMember?.gender || user.gender))
       );
       setExistingIndex(foundIndex);
 
@@ -67,8 +81,9 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
       } else {
         setMyAttendance({
           _key: crypto.randomUUID(),
-          name: user.name,
-          gender: user.gender,
+          name: myMember?.name || user.name,
+          gender: myMember?.gender || user.gender,
+          userId: myMember?.id || user.id,
           startHour: schedule.startTime,
           startMinute: '00',
           endHour: schedule.endTime,
@@ -76,7 +91,7 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
         });
       }
     }
-  }, [schedule, user.name, user.gender]);
+  }, [schedule, myMember, user.name, user.gender, user.id]);
 
   const handleAttendance = async () => {
     const { startHour, startMinute, endHour, endMinute } = myAttendance;
@@ -114,7 +129,12 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
 
     setLoading(true);
     try {
-      const data = await request(myAttendance);
+      const data = await request({
+        ...myAttendance,
+        name: myMember?.name || user.name,
+        gender: myMember?.gender || user.gender,
+        userId: myMember?.id || user.id,
+      });
       console.log(data);
       toast({
         title:
@@ -159,8 +179,9 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
       setExistingIndex(-1);
       setMyAttendance({
         _key: crypto.randomUUID(),
-        name: user.name,
-        gender: user.gender,
+        name: myMember?.name || user.name,
+        gender: myMember?.gender || user.gender,
+        userId: myMember?.id || user.id,
         startHour: schedule?.startTime || '19',
         startMinute: '00',
         endHour: schedule?.endTime || '22',
