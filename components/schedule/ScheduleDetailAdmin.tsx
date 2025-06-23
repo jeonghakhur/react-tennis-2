@@ -25,6 +25,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Grid } from 'react-loader-spinner';
 import CommentSection from '@/components/common/CommentSection';
+import { mutate } from 'swr';
 
 type Props = {
   scheduleId: string;
@@ -98,12 +99,8 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
         console.log(data);
       })
       .catch((error) => console.error(error))
-      .finally(() => {
-        // toast({
-        //   title: '업데이트 완료',
-        //   duration: 1500,
-        // });
-        // setLoading(false);
+      .finally(async () => {
+        await mutate('/api/schedule');
         router.push(`/schedule/`);
       });
   }

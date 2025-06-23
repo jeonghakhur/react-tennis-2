@@ -181,10 +181,8 @@ export default function FormMembers({
                     {members?.map((member) => (
                       <CommandItem
                         key={member.id}
-                        value={member.id}
-                        onSelect={(id) => {
-                          handleMemberChange(id);
-                        }}
+                        value={member.name}
+                        onSelect={() => handleMemberChange(member.id)}
                       >
                         {member.name}
                         <Check
