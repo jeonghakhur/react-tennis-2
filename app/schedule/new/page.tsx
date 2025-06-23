@@ -6,7 +6,11 @@ import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ScheduleFormSchema, ScheduleFormType } from '@/model/schedule';
+import {
+  ScheduleFormSchema,
+  ScheduleFormType,
+  AttendanceProps,
+} from '@/model/schedule';
 import FormDatePicker from '@/components/FormDatePicker';
 import FormSelectTime from '@/components/FormSelectTime';
 import FormCourtName from '@/components/FormCourtName';
@@ -188,7 +192,12 @@ export default function ScheduleForm() {
 
             <FormMembers
               form={form}
-              attendees={form.watch('attendees')}
+              attendees={(
+                (form.watch('attendees') as AttendanceProps[]) || []
+              ).map((att) => ({
+                ...att,
+                userId: typeof att.userId === 'string' ? att.userId : '',
+              }))}
               startTime={Number(form.watch('startTime'))}
               endTime={Number(form.watch('endTime'))}
             />
