@@ -50,6 +50,7 @@ export default function FormMembers({
   const guestNameRef = useRef<HTMLInputElement>(null);
   const genderRef = useRef<HTMLButtonElement>(null);
   const [memberGender, setMemberGender] = useState<string>('남성');
+  const [memberId, setMemberId] = useState<string>('');
 
   const [attendanceTime, setAttendanceTime] = useState({
     startHour: String(startTime),
@@ -63,7 +64,10 @@ export default function FormMembers({
     name: 'attendees',
   });
 
+  // console.log('members', members);
+
   const isAttendee = (name: string, userId?: string) => {
+    console.log('userId', userId);
     if (userId) {
       return fields.some(
         (attendee: FieldArrayWithId<ScheduleFormType, 'attendees', 'id'>) =>
@@ -72,20 +76,23 @@ export default function FormMembers({
     }
     return fields.some(
       (attendee: FieldArrayWithId<ScheduleFormType, 'attendees', 'id'>) =>
-        attendee.name === name
+        (!('userId' in attendee) || !attendee.userId) && attendee.name === name
     );
   };
 
-  const handleMemberChange = (member: string) => {
-    if (member === '직접입력') {
+  const handleMemberChange = (id: string) => {
+    if (id === '직접입력') {
       setGuestField(true);
       setMemberGender('남성');
+      setMemberId('');
+      setMemberValue('직접입력');
     } else {
       setGuestField(false);
-      const found = members?.find((item) => item.name === member);
+      const found = members?.find((item) => item.id === id);
       setMemberGender(found?.gender || '남성');
+      setMemberId(found?.id || '');
+      setMemberValue(found?.name || '');
     }
-    setMemberValue(member);
     setPopoverOpen(false);
   };
 
@@ -99,8 +106,7 @@ export default function FormMembers({
       userId = '';
     } else {
       name = memberValue;
-      const found = members?.find((item) => item.name === name);
-      userId = found?.id || '';
+      userId = memberId;
     }
     if (!name) return;
     if (isAttendee(name, userId)) {
@@ -175,18 +181,16 @@ export default function FormMembers({
                     {members?.map((member) => (
                       <CommandItem
                         key={member.id}
-                        value={member.name}
-                        onSelect={(value) => {
-                          handleMemberChange(value);
+                        value={member.id}
+                        onSelect={(id) => {
+                          handleMemberChange(id);
                         }}
                       >
                         {member.name}
                         <Check
                           className={cn(
                             'ml-auto',
-                            memberValue === member.name
-                              ? 'opacity-100'
-                              : 'opacity-0'
+                            memberId === member.id ? 'opacity-100' : 'opacity-0'
                           )}
                         />
                       </CommandItem>
