@@ -6,6 +6,10 @@ import useSWR from 'swr';
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { Button } from './ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import Image from 'next/image';
+import { UserProps } from '@/model/user';
+import { Check } from 'lucide-react';
 
 type PlayerStats = {
   name: string;
@@ -109,11 +113,14 @@ function calculateStats(games: GameResult[]): PlayerStats[] {
 
 export default function LatestGameRanking() {
   const [showAll, setShowAll] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const {
     data: games,
     isLoading,
     error,
   } = useSWR<GameResult[]>('/api/games?status=game_done');
+  const { data: members } = useSWR<UserProps[]>('/api/members');
 
   // 마지막 스케줄의 game_done 게임만 필터링
   const latestGame = useMemo(() => {
@@ -195,43 +202,186 @@ export default function LatestGameRanking() {
             </tr>
           </thead>
           <tbody>
-            {displayStats.map((row, idx) => (
-              <tr key={row.name}>
-                <td className="font-semibold">
-                  {idx === 0 && '🥇'}
-                  {idx === 1 && '🥈'}
-                  {idx === 2 && '🥉'}
-                  {idx > 2 && (showAll ? idx + 1 : idx + 1)}
-                </td>
-                <td className="whitespace-nowrap font-medium">{row.name}</td>
-                <td className="text-green-600 font-semibold">{row.win}</td>
-                <td className="text-yellow-600">{row.draw}</td>
-                <td className="text-red-600">{row.lose}</td>
-                <td>{row.game}</td>
-                <td className="font-semibold text-blue-600">{row.point}</td>
-                <td className="font-semibold">
-                  {(row.winRate * 100).toFixed(1)}%
-                </td>
-                <td>{row.score}</td>
-                <td>{row.loseScore}</td>
-                <td
-                  className={
-                    row.margin > 0
-                      ? 'text-green-600'
-                      : row.margin < 0
-                        ? 'text-red-600'
-                        : ''
-                  }
-                >
-                  {row.margin > 0 ? '+' : ''}
-                  {row.margin}
-                </td>
-              </tr>
-            ))}
+            {displayStats.map((row, idx) => {
+              // 회원 정보 찾기
+
+              return (
+                <tr key={row.name}>
+                  <td className="font-semibold">
+                    {idx === 0 && '🥇'}
+                    {idx === 1 && '🥈'}
+                    {idx === 2 && '🥉'}
+                    {idx > 2 && (showAll ? idx + 1 : idx + 1)}
+                  </td>
+                  <td
+                    className="whitespace-nowrap font-medium text-blue-700 hover:underline cursor-pointer flex items-center gap-2 justify-center underline underline-offset-4"
+                    onClick={() => {
+                      setSelectedPlayer(row.name);
+                      setDialogOpen(true);
+                    }}
+                  >
+                    {row.name}
+                  </td>
+                  <td className="text-green-600 font-semibold">{row.win}</td>
+                  <td className="text-yellow-600">{row.draw}</td>
+                  <td className="text-red-600">{row.lose}</td>
+                  <td>{row.game}</td>
+                  <td className="font-semibold text-blue-600">{row.point}</td>
+                  <td className="font-semibold">
+                    {(row.winRate * 100).toFixed(1)}%
+                  </td>
+                  <td>{row.score}</td>
+                  <td>{row.loseScore}</td>
+                  <td
+                    className={
+                      row.margin > 0
+                        ? 'text-green-600'
+                        : row.margin < 0
+                          ? 'text-red-600'
+                          : ''
+                    }
+                  >
+                    {row.margin > 0 ? '+' : ''}
+                    {row.margin}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
-
+      {/* 선택된 플레이어의 최근 게임 결과 Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedPlayer}의 최근 게임 결과</DialogTitle>
+          </DialogHeader>
+          {selectedPlayer && latestGame && (
+            <div className="space-y-4">
+              {latestGame.games
+                .filter((g) => g.players.includes(selectedPlayer))
+                .map((g, i) => {
+                  // 팀 정보
+                  const teamA = g.players.slice(0, 2);
+                  const teamB = g.players.slice(2, 4);
+                  // 회원 정보
+                  const getMember = (name: string) =>
+                    members?.find((m) => m.name === name);
+                  // 승리팀 판별
+                  const scoreA = Number(g.score?.[0] ?? 0);
+                  const scoreB = Number(g.score?.[1] ?? 0);
+                  const isTeamAWin = scoreA > scoreB;
+                  const isTeamBWin = scoreB > scoreA;
+                  // 본인 팀 강조
+                  const isMyTeamA = teamA.includes(selectedPlayer);
+                  const isMyTeamB = teamB.includes(selectedPlayer);
+                  // 체크 아이콘
+                  const CheckIcon = () => (
+                    <Check
+                      className="inline-block align-middle ml-1 text-green-600"
+                      size={20}
+                    />
+                  );
+                  return (
+                    <div
+                      key={i}
+                      className={`rounded-xl border p-3 shadow-sm bg-white flex flex-col gap-2`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="text-xs text-gray-500 font-semibold">
+                          {g.court}코트
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {g.time && `${g.time} 게임`}
+                        </div>
+                      </div>
+                      {/* 팀A */}
+                      <div
+                        className={`flex items-center gap-2 ${isTeamAWin ? 'font-bold text-green-700' : ''} ${isMyTeamA ? 'bg-blue-50 rounded' : ''}`}
+                      >
+                        {teamA.map((name, idx) => {
+                          const member = getMember(name);
+                          return (
+                            <span
+                              key={name}
+                              className="flex items-center gap-1"
+                            >
+                              <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-white ring-2 ring-gray-300 shadow-sm bg-white flex-shrink-0">
+                                <Image
+                                  src={
+                                    member?.image ||
+                                    '/icons/android-192x192.png'
+                                  }
+                                  alt={name + ' 프로필'}
+                                  width={28}
+                                  height={28}
+                                  className="object-cover w-full h-full"
+                                />
+                              </div>
+                              <span className="text-sm">{name}</span>
+                              {isTeamAWin && idx === teamA.length - 1 && (
+                                <CheckIcon />
+                              )}
+                            </span>
+                          );
+                        })}
+                        <span className="ml-auto flex gap-1 font-mono text-base">
+                          <span
+                            className={
+                              isTeamAWin ? 'text-green-700 font-bold' : ''
+                            }
+                          >
+                            {scoreA}
+                          </span>
+                        </span>
+                      </div>
+                      {/* 팀B */}
+                      <div
+                        className={`flex items-center gap-2 ${isTeamBWin ? 'font-bold text-green-700' : ''} ${isMyTeamB ? 'bg-blue-50 rounded' : ''}`}
+                      >
+                        {teamB.map((name, idx) => {
+                          const member = getMember(name);
+                          return (
+                            <span
+                              key={name}
+                              className="flex items-center gap-1"
+                            >
+                              <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-white ring-2 ring-gray-300 shadow-sm bg-white flex-shrink-0">
+                                <Image
+                                  src={
+                                    member?.image ||
+                                    '/icons/android-192x192.png'
+                                  }
+                                  alt={name + ' 프로필'}
+                                  width={28}
+                                  height={28}
+                                  className="object-cover w-full h-full"
+                                />
+                              </div>
+                              <span className="text-sm">{name}</span>
+                              {isTeamBWin && idx === teamB.length - 1 && (
+                                <CheckIcon />
+                              )}
+                            </span>
+                          );
+                        })}
+                        <span className="ml-auto flex gap-1 font-mono text-base">
+                          <span
+                            className={
+                              isTeamBWin ? 'text-green-700 font-bold' : ''
+                            }
+                          >
+                            {scoreB}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       {stats.length > 3 && (
         <div className="flex justify-center mt-4">
           <Button
