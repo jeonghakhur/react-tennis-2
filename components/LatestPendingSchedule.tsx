@@ -50,7 +50,7 @@ export default function LatestPendingSchedule() {
   return (
     <div className="bg-white shadow-md rounded-lg p-4 mb-6">
       <div className="mb-4 flex justify-between items-center">
-        <h3 className="text-xl font-bold text-gray-800">다음 게임 일정</h3>
+        <h3 className="text-xl font-bold text-gray-800">다음게임일정</h3>
         <div className="text-sm text-gray-600">
           {format(new Date(schedule.date), 'yyyy년 MM월 dd일 (EEE)', {
             locale: ko,

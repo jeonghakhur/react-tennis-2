@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import { useMemo, useState } from 'react';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
+import { UserProps } from '@/model/user';
 
 type PlayerStats = {
   name: string;
@@ -242,8 +243,22 @@ export default function StatsTable() {
     isLoading,
     error,
   } = useSWR<GameResult[]>('/api/games?status=game_done');
+  // 가입된 회원 목록 불러오기
+  const { data: members } = useSWR<UserProps[]>('/api/members');
 
-  const stats = useMemo(() => (games ? calculateStats(games) : []), [games]);
+  // 가입된 회원 이름 목록
+  const memberNames = useMemo(
+    () => (members ? members.map((m) => m.name) : []),
+    [members]
+  );
+
+  // stats에서 가입된 회원만 필터링
+  const stats = useMemo(() => {
+    if (!games) return [];
+    const allStats = calculateStats(games);
+    if (!memberNames.length) return allStats;
+    return allStats.filter((s) => memberNames.includes(s.name));
+  }, [games, memberNames]);
 
   if (isLoading) {
     return (

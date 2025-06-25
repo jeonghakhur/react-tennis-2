@@ -53,6 +53,10 @@ export default function Members({ params }: Props) {
     setLoading(true);
     updateUser({
       ...formData,
+      name: formData.name.trim(),
+      address: formData.address ? formData.address.trim() : '',
+      phone_number: formData.phone_number ? formData.phone_number.trim() : '',
+      birthyear: formData.birthyear ? formData.birthyear.trim() : '',
       level: Number(formData.level),
     })
       .then((data) => {

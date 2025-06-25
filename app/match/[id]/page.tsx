@@ -276,50 +276,59 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   ]);
 
   const handlePlayersChange = useCallback(
-    (player: string, matchIndex: number, playerIndex: number) => {
+    (
+      player: string,
+      time: string,
+      prePlayer: string,
+      playerIndex: number,
+      matchIndex?: number
+    ) => {
       const updateMatches = [...matches];
-      const match = updateMatches[matchIndex];
-      if (!match) return;
+      const sameTimeMatches = updateMatches.filter((m) => m.time === time);
 
-      const prevName = match.players[playerIndex];
-      const prevIndex = match.players.findIndex((item) => item === player);
-
-      // 교체 작업
-      if (prevIndex !== -1) {
-        // 이미 선택된 선수와 교체
-        match.players[playerIndex] = player;
-        if (prevName) {
-          match.players[prevIndex] = prevName;
+      if (prePlayer) {
+        sameTimeMatches.forEach((match) => {
+          match.players = match.players.map((name) => {
+            if (name === player) return prePlayer;
+            if (name === prePlayer) return player;
+            return name;
+          });
+        });
+      } else if (typeof matchIndex === 'number') {
+        // prePlayer가 없으면 matchIndex에 해당하는 매치의 playerIndex 위치에만 player를 넣어줌
+        const match = updateMatches[matchIndex];
+        if (match) {
+          match.players[playerIndex] = player;
         }
-      } else {
-        // 새로운 선수 선택
-        match.players[playerIndex] = player;
       }
 
+      console.log(updateMatches, idleSummary);
+
       // 대기자 업데이트
-      const matchTime = match.time;
       const updateIdleSummary = { ...idleSummary };
 
-      const idleIndex = updateIdleSummary[matchTime]?.findIndex(
+      const idleIndex = updateIdleSummary[time]?.findIndex(
         (item) => item === player
       );
+
+      console.log('idleIndex', idleIndex);
 
       if (idleIndex !== -1 && typeof idleIndex === 'number') {
         const updateGamesCount = { ...gamesPlayed };
         updateGamesCount[player] = (updateGamesCount[player] || 0) + 1;
 
-        if (prevName) {
-          if (!updateIdleSummary[matchTime]) {
-            updateIdleSummary[matchTime] = [];
+        if (prePlayer) {
+          if (!updateIdleSummary[time]) {
+            updateIdleSummary[time] = [];
           }
-          updateIdleSummary[matchTime] = [
-            ...updateIdleSummary[matchTime].slice(0, idleIndex),
-            prevName,
-            ...updateIdleSummary[matchTime].slice(idleIndex + 1),
+          updateIdleSummary[time] = [
+            ...updateIdleSummary[time].slice(0, idleIndex),
+            prePlayer,
+            ...updateIdleSummary[time].slice(idleIndex + 1),
           ];
-          updateGamesCount[prevName] = (updateGamesCount[prevName] || 0) - 1;
-        } else if (updateIdleSummary[matchTime]) {
-          updateIdleSummary[matchTime].splice(idleIndex, 1);
+          updateGamesCount[prePlayer] = (updateGamesCount[prePlayer] || 0) - 1;
+        } else if (updateIdleSummary[time]) {
+          updateIdleSummary[time].splice(idleIndex, 1);
         }
 
         setGamesPlayed(updateGamesCount);
@@ -457,9 +466,18 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
         : idleSummary[match.time] || []
       : [];
 
+    // 참석자 이름 오름차순 정렬
+    const sortedPlayers = [...players].sort((a, b) => a.localeCompare(b, 'ko'));
+
     const handleSelect = (value: string) => {
       setMemberValue(value);
-      handlePlayersChange(value, matchIndex, playerIndex);
+      handlePlayersChange(
+        value,
+        match.time,
+        memberValue || '',
+        playerIndex,
+        matchIndex
+      );
       // Popover를 닫기 전에 포커스 설정
       setTimeout(() => {
         const button = document.querySelector(
@@ -494,7 +512,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
             <CommandList>
               <CommandEmpty>No member found.</CommandEmpty>
               <CommandGroup>
-                {players.map((player, idx) => (
+                {sortedPlayers.map((player, idx) => (
                   <CommandItem key={idx} value={player} onSelect={handleSelect}>
                     {player}
                     <Check
