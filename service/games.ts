@@ -13,15 +13,29 @@ export async function createGameResult(
       schedule: { _ref: scheduleId, _type: 'reference' },
       author: { _ref: userId, _type: 'reference' },
       games: [...matches],
+      status: 'wait',
     },
     { autoGenerateArrayKeys: true }
   );
 }
 
-export async function updateGameResult(id: string, games: any[]) {
+export async function updateGameResult(
+  id: string,
+  games: any[],
+  status?: string,
+  editor?: any
+) {
+  const now = new Date().toISOString();
+  const authorRef = editor?._ref || editor;
+  console.log(authorRef);
+  const editRecord = {
+    author: { _ref: authorRef, _type: 'reference' },
+    createdAt: now,
+  };
   return client
     .patch(id)
-    .set({ games })
+    .set(status ? { games, status } : { games })
+    .append('editHistory', [editRecord])
     .commit({ autoGenerateArrayKeys: true });
 }
 
@@ -33,7 +47,7 @@ export async function getAllGames(status?: string | null) {
       ...,
       "scheduleID": schedule->_id,
       "date": schedule->date,
-      "author": user->name,
+      "author": {"name": author->name,},
       "courtName": schedule->courtName,
       "comments": comments[]{
         ...,
@@ -58,7 +72,7 @@ export async function getGame(scheduleId: string) {
       "courtName": schedule->courtName,
       "startTime": schedule->startTime,
       "endTime": schedule->endTime,
-      "scheduleStatus": schedule->status,
+      "status": status,
       "comments": comments[]{
         ...,
         "author": {
@@ -82,7 +96,7 @@ export async function getGameById(gameId: string) {
       "courtName": schedule->courtName,
       "startTime": schedule->startTime,
       "endTime": schedule->endTime,
-      "scheduleStatus": schedule->status,
+      "status": status,
       "comments": comments[]{
         ...,
         "author": {

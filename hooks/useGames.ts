@@ -9,14 +9,36 @@ async function deleteGame(scheduleId: string) {
   }).then((res) => res.json());
 }
 
-async function updateGame(gameId: string, matches: Game[]) {
+async function updateGame(
+  gameId: string,
+  matches: Game[],
+  status?: GameResult['status'],
+  editor?: GameResult['lastEditor']
+) {
   return fetch(`/api/games/${gameId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ matches }),
-  }).then((res) => res.json());
+    body: JSON.stringify({ matches, status, editor }),
+  }).then(async (res) => {
+    if (!res.ok) {
+      let errorMsg = 'Unknown error';
+      try {
+        const text = await res.text();
+        try {
+          const err = JSON.parse(text);
+          errorMsg = err?.error || text;
+        } catch {
+          errorMsg = text;
+        }
+      } catch {
+        // 완전히 실패하면 그대로
+      }
+      throw new Error(errorMsg);
+    }
+    return res.json();
+  });
 }
 
 async function addCommentToGameResult(
@@ -128,18 +150,14 @@ export default function useGame(scheduleId: string) {
 
   const updateGameData = async (
     id: string,
-    matches: Game[]
+    matches: Game[],
+    status?: GameResult['status'],
+    editor?: GameResult['lastEditor']
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      // 서버에 업데이트 요청
-      await updateGame(id, matches);
-
-      // 현재 게임 데이터 다시 가져오기
+      await updateGame(id, matches, status, editor);
       globalMutate(`/api/games/${id}`, undefined, { revalidate: true });
-
-      // 게임 목록도 갱신
       globalMutate('/api/games', undefined, { revalidate: true });
-
       return { success: true };
     } catch (error) {
       console.error('게임 업데이트 중 오류:', error);

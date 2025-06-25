@@ -102,6 +102,59 @@ export const gameResult = {
         },
       ],
     },
+    {
+      name: 'status',
+      title: 'Game Status',
+      type: 'string',
+      options: {
+        list: [
+          { title: '대기중', value: 'wait' },
+          { title: '게임중', value: 'ing' },
+          { title: '게임완료', value: 'done' },
+        ],
+        layout: 'radio',
+      },
+      description: '게임 상태(대기중/게임중/게임완료)',
+      initialValue: 'standby',
+    },
+    {
+      name: 'editHistory',
+      title: '수정 이력',
+      type: 'array',
+      of: [
+        {
+          name: 'editor',
+          type: 'object',
+          fields: [
+            {
+              name: 'author',
+              type: 'reference',
+              to: [{ type: 'user' }],
+            },
+            {
+              name: 'createdAt',
+              type: 'datetime',
+              title: 'Created At',
+              readOnly: true,
+            },
+          ],
+          preview: {
+            select: {
+              author: 'author.name',
+              createdAt: 'createdAt',
+            },
+            prepare({ author, createdAt }: any) {
+              return {
+                title: author ? `${author}` : '알 수 없음',
+                subtitle: createdAt
+                  ? `수정일: ${new Date(createdAt).toLocaleString()}`
+                  : '',
+              };
+            },
+          },
+        },
+      ],
+    },
   ],
   preview: {
     select: {

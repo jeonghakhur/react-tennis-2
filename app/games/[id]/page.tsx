@@ -11,20 +11,20 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import DataGrid from '@/components/DataGrid';
 import { toast } from '@/hooks/use-toast';
-import { Switch } from '@/components/ui/switch';
 import CommentSection from '@/components/common/CommentSection';
 import useAuthRedirect from '@/hooks/useAuthRedirect';
+import { Game, GameResult } from '@/model/gameResult';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
 
 type Props = {
   params: Promise<{ id: string }>;
 };
-
-interface GameResult {
-  time: string;
-  court: string;
-  players: string[];
-  score: string[];
-}
 
 export default function Page({ params }: Props) {
   const { id } = use(params);
@@ -38,10 +38,8 @@ export default function Page({ params }: Props) {
   } = useGame(id);
   const [loading, setLoading] = useState<boolean>(isLoading);
   const [dataLoading, setDataLoading] = useState<boolean>(false);
-  const [editableGames, setEditableGames] = useState<GameResult[]>([]);
-  const [scheduleStatus, setScheduleStatus] = useState<
-    'match_done' | 'game_done'
-  >('match_done');
+  const [editableGames, setEditableGames] = useState<Game[]>([]);
+  const [gameStatus, setGameStatus] = useState<GameResult['status']>('wait');
   const router = useRouter();
 
   // 사용자 인증 정보 가져오기
@@ -51,9 +49,7 @@ export default function Page({ params }: Props) {
     if (game) {
       console.log('게임 데이터:', game);
       setEditableGames([...game.games]);
-      setScheduleStatus(
-        game.scheduleStatus === 'game_done' ? 'game_done' : 'match_done'
-      );
+      setGameStatus(game.status);
       setLoading(false);
     }
   }, [game]);
@@ -131,29 +127,13 @@ export default function Page({ params }: Props) {
     setDataLoading(true);
     try {
       // 게임 데이터 업데이트
-      const gameResult = await updateGameData(id, editableGames);
-
+      const gameResult = await updateGameData(id, editableGames, gameStatus);
       if (gameResult.success) {
-        // 스케줄 상태 업데이트
-        if (game?.scheduleID) {
-          const response = await fetch(`/api/schedule/${game.scheduleID}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ status: scheduleStatus }),
-          });
-
-          if (!response.ok) {
-            throw new Error('스케줄 상태 업데이트 실패');
-          }
-        }
-
         toast({
           title: '게임 정보가 성공적으로 수정되었습니다.',
           duration: 1500,
         });
-        setTimeout(() => router.push('/games'), 1500);
+        // setTimeout(() => router.push('/games'), 1500);
       } else {
         alert(gameResult.error || '수정 중 오류가 발생했습니다.');
       }
@@ -311,6 +291,7 @@ export default function Page({ params }: Props) {
   return (
     <Container>
       {dataLoading && <DataGrid loading={true} />}
+
       <div>
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex flex-col items-center text-center">
@@ -326,6 +307,28 @@ export default function Page({ params }: Props) {
             </div>
           </div>
         </div>
+
+        {/* 게임 결과 노출 설정 - 관리자만 표시 */}
+        {typeof user?.level === 'number' && user.level >= 3 && (
+          <div className="flex items-center gap-2 justify-between my-4">
+            <label htmlFor="status" className="font-bold">
+              게임 상태
+            </label>
+            <Select
+              value={gameStatus || 'wait'}
+              onValueChange={(v) => setGameStatus(v as GameResult['status'])}
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="wait">대기중</SelectItem>
+                <SelectItem value="ing">게임중</SelectItem>
+                <SelectItem value="done">게임완료</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="grid gap-4">
           {editableGames.map((result, index) => {
@@ -470,26 +473,19 @@ export default function Page({ params }: Props) {
           })}
         </div>
 
-        {/* 게임 결과 노출 설정 - 관리자만 표시 */}
-        {typeof user?.level === 'number' && user.level >= 3 && (
-          <div className="flex items-center gap-2 justify-between mt-4">
-            <label htmlFor="status" className="font-bold">
-              게임 결과 노출
-            </label>
-            <Switch
-              id="status"
-              name="status"
-              checked={scheduleStatus === 'game_done'}
-              onCheckedChange={(checked) =>
-                setScheduleStatus(checked ? 'game_done' : 'match_done')
-              }
-            />
-          </div>
-        )}
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className="mt-8 w-full"
+          onClick={() => router.push('/games')}
+        >
+          목록으로
+        </Button>
 
         {/* 전체 수정/삭제 버튼 - 관리자만 표시 */}
         {typeof user?.level === 'number' && user.level >= 3 && (
-          <div className="flex gap-2 mt-4 mb-10">
+          <div className="flex gap-2 mt-8 mb-10">
             <Button
               type="button"
               variant="destructive"

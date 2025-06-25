@@ -17,6 +17,17 @@ export interface GameComment {
   createdAt?: string;
 }
 
+export interface Editor {
+  _key: string;
+  author: {
+    _ref: string;
+    name: string;
+    username: string;
+    image?: string;
+  };
+  createdAt?: string;
+}
+
 export interface GameResult {
   _id?: string; // 문서 ID (선택적)
   scheduleID: string;
@@ -24,6 +35,14 @@ export interface GameResult {
   date: string;
   author: string;
   games: Game[]; // 경기 목록
-  scheduleStatus?: 'pending' | 'attendees_done' | 'match_done' | 'game_done';
+  status?: 'wait' | 'ing' | 'done';
   comments?: GameComment[]; // 코멘트 목록
+  editHistory?: Editor[];
+  lastEditor?: {
+    _ref: string;
+    name: string;
+    username: string;
+    image?: string;
+  };
+  lastEditedAt?: string;
 }

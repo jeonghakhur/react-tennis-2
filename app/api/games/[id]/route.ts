@@ -15,9 +15,12 @@ export async function POST(req: NextRequest) {
     const game = await getGame(scheduleId);
 
     if (game) {
-      return updateGameResult(game._id, matches).then((data) =>
-        NextResponse.json(data)
-      );
+      return updateGameResult(game._id, matches, undefined, {
+        _ref: user.id,
+        name: user.name,
+        username: user.userName,
+        image: user.image,
+      }).then((data) => NextResponse.json(data));
     } else {
       return createGameResult(scheduleId, user.id, matches).then((data) =>
         NextResponse.json(data)
@@ -42,14 +45,14 @@ export async function GET(_: NextRequest, context: Context) {
 export async function PUT(req: NextRequest, context: Context) {
   const { id } = await context.params;
 
-  return await withSessionUser(async () => {
-    const { matches } = await req.json();
+  return await withSessionUser(async (user) => {
+    const { matches, status } = await req.json();
 
     // 게임 ID로 직접 게임을 찾아서 업데이트
     const game = await getGameById(id);
 
     if (game) {
-      return updateGameResult(id, matches).then((data) =>
+      return updateGameResult(id, matches, status, user.id).then((data) =>
         NextResponse.json(data)
       );
     } else {

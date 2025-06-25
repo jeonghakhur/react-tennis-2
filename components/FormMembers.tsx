@@ -178,21 +178,26 @@ export default function FormMembers({
                         )}
                       />
                     </CommandItem>
-                    {members?.map((member) => (
-                      <CommandItem
-                        key={member.id}
-                        value={member.name}
-                        onSelect={() => handleMemberChange(member.id)}
-                      >
-                        {member.name}
-                        <Check
-                          className={cn(
-                            'ml-auto',
-                            memberId === member.id ? 'opacity-100' : 'opacity-0'
-                          )}
-                        />
-                      </CommandItem>
-                    ))}
+                    {members
+                      ?.slice()
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((member) => (
+                        <CommandItem
+                          key={member.id}
+                          value={member.name}
+                          onSelect={() => handleMemberChange(member.id)}
+                        >
+                          {member.name}
+                          <Check
+                            className={cn(
+                              'ml-auto',
+                              memberId === member.id
+                                ? 'opacity-100'
+                                : 'opacity-0'
+                            )}
+                          />
+                        </CommandItem>
+                      ))}
                   </CommandGroup>
                 </CommandList>
               </Command>
