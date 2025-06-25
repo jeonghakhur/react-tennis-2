@@ -122,12 +122,12 @@ export default function CommentSection({
   };
 
   return (
-    <div className="mt-6">
+    <div className="mt-6 mb-10">
       <h3 className="text-lg font-bold text-gray-800 mb-3">{title}</h3>
 
       {/* 코멘트 입력 - 읽기 전용이 아닐 때만 표시 */}
       {!readOnly && (
-        <div className="mb-4">
+        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 bg-white">
           <form
             onSubmit={(e) => {
               e.preventDefault();

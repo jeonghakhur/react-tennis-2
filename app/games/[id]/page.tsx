@@ -1,7 +1,6 @@
 'use client';
 
 import { Container } from '@/components/Layout';
-import LoadingGrid from '@/components/LoadingGrid';
 import { use, useEffect, useState } from 'react';
 import useGame from '@/hooks/useGames';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,6 @@ import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import DataGrid from '@/components/DataGrid';
 import { toast } from '@/hooks/use-toast';
 import CommentSection from '@/components/common/CommentSection';
 import useAuthRedirect from '@/hooks/useAuthRedirect';
@@ -21,6 +19,14 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
+import Skeleton from '@/components/common/Skeleton';
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogTitle,
+  DialogClose,
+} from '@/components/ui/dialog';
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -44,6 +50,17 @@ export default function Page({ params }: Props) {
 
   // 사용자 인증 정보 가져오기
   const { user } = useAuthRedirect('/', 0);
+
+  // 새 게임 기본 객체 생성 함수
+  const createEmptyGame = () => ({
+    court: '',
+    players: ['', '', '', ''],
+    score: ['', ''],
+    time: '',
+  });
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newGame, setNewGame] = useState(createEmptyGame());
 
   useEffect(() => {
     if (game) {
@@ -250,14 +267,23 @@ export default function Page({ params }: Props) {
 
   const handlePlayerChange = (
     gameIndex: number,
-    playerIndex: number,
+    playerIndex: number | string,
     value: string
   ) => {
     const updatedGames = [...editableGames];
-    if (updatedGames[gameIndex]?.players) {
-      updatedGames[gameIndex].players[playerIndex] = value;
-      setEditableGames(updatedGames);
+    let changed = false;
+    if (typeof playerIndex === 'number') {
+      if (updatedGames[gameIndex]?.players) {
+        updatedGames[gameIndex].players[playerIndex] = value;
+        changed = true;
+      }
+    } else if (playerIndex === 'court' || playerIndex === 'time') {
+      if (updatedGames[gameIndex]) {
+        updatedGames[gameIndex][playerIndex] = value;
+        changed = true;
+      }
     }
+    if (changed) setEditableGames(updatedGames);
   };
 
   const handleScoreChange = (
@@ -272,10 +298,41 @@ export default function Page({ params }: Props) {
     }
   };
 
+  // 게임 추가 핸들러(다이얼로그 등록용)
+  const handleAddGameFromDialog = async () => {
+    if (!game) return;
+    const updatedGames = [...editableGames, newGame];
+    updatedGames.sort((a, b) => {
+      // 시간 형식이 'HH:mm'일 때 오름차순 정렬
+      if (!a.time) return 1;
+      if (!b.time) return -1;
+      return a.time.localeCompare(b.time);
+    });
+    setEditableGames(updatedGames);
+    setDataLoading(true);
+    try {
+      const result = await updateGameData(game._id!, updatedGames, gameStatus);
+      if (result.success) {
+        toast({ title: '게임이 등록되었습니다.', duration: 1500 });
+        setDialogOpen(false);
+        setNewGame(createEmptyGame());
+      } else {
+        toast({
+          title: result.error || '등록 중 오류',
+          variant: 'destructive',
+        });
+      }
+    } catch {
+      toast({ title: '등록 중 오류가 발생했습니다.', variant: 'destructive' });
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <Container>
-        <LoadingGrid loading={loading} />
+        <Skeleton lines={3} />
       </Container>
     );
   }
@@ -290,10 +347,10 @@ export default function Page({ params }: Props) {
 
   return (
     <Container>
-      {dataLoading && <DataGrid loading={true} />}
+      {dataLoading && <Skeleton lines={3} />}
 
       <div>
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-3 mb-6">
           <div className="flex flex-col items-center text-center">
             <h1 className="text-2xl font-bold text-gray-800 mb-2">
               {game.courtName}
@@ -310,8 +367,140 @@ export default function Page({ params }: Props) {
 
         {/* 게임 결과 노출 설정 - 관리자만 표시 */}
         {typeof user?.level === 'number' && user.level >= 3 && (
-          <div className="flex items-center gap-2 justify-between my-4">
-            <label htmlFor="status" className="font-bold">
+          <div className="flex items-center gap-2 my-4">
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button type="button" variant="default" size="sm" className="">
+                  + 게임 추가
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogTitle>새 게임 추가</DialogTitle>
+                <div className="flex flex-col gap-2 mt-4">
+                  <Input
+                    value={newGame.time ?? ''}
+                    onChange={(e) =>
+                      setNewGame({ ...newGame, time: e.target.value })
+                    }
+                    placeholder="시간(예: 19:00)"
+                    className="w-full"
+                  />
+                  <Input
+                    value={newGame.court ?? ''}
+                    onChange={(e) =>
+                      setNewGame({ ...newGame, court: e.target.value })
+                    }
+                    placeholder="코트"
+                    className="w-full"
+                  />
+                  <div className="flex gap-2">
+                    <Input
+                      value={newGame.players?.[0] ?? ''}
+                      onChange={(e) =>
+                        setNewGame({
+                          ...newGame,
+                          players: [
+                            e.target.value,
+                            newGame.players?.[1] ?? '',
+                            newGame.players?.[2] ?? '',
+                            newGame.players?.[3] ?? '',
+                          ],
+                        })
+                      }
+                      placeholder="선수 1"
+                      className="w-full"
+                    />
+                    <Input
+                      value={newGame.players?.[1] ?? ''}
+                      onChange={(e) =>
+                        setNewGame({
+                          ...newGame,
+                          players: [
+                            newGame.players?.[0] ?? '',
+                            e.target.value,
+                            newGame.players?.[2] ?? '',
+                            newGame.players?.[3] ?? '',
+                          ],
+                        })
+                      }
+                      placeholder="선수 2"
+                      className="w-full"
+                    />
+                    <Input
+                      value={newGame.score?.[0] ?? ''}
+                      onChange={(e) =>
+                        setNewGame({
+                          ...newGame,
+                          score: [e.target.value, newGame.score?.[1] ?? ''],
+                        })
+                      }
+                      placeholder="점수 1"
+                      className="w-16 text-center"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newGame.players?.[2] ?? ''}
+                      onChange={(e) =>
+                        setNewGame({
+                          ...newGame,
+                          players: [
+                            newGame.players?.[0] ?? '',
+                            newGame.players?.[1] ?? '',
+                            e.target.value,
+                            newGame.players?.[3] ?? '',
+                          ],
+                        })
+                      }
+                      placeholder="선수 3"
+                      className="w-full"
+                    />
+                    <Input
+                      value={newGame.players?.[3] ?? ''}
+                      onChange={(e) =>
+                        setNewGame({
+                          ...newGame,
+                          players: [
+                            newGame.players?.[0] ?? '',
+                            newGame.players?.[1] ?? '',
+                            newGame.players?.[2] ?? '',
+                            e.target.value,
+                          ],
+                        })
+                      }
+                      placeholder="선수 4"
+                      className="w-full"
+                    />
+                    <Input
+                      value={newGame.score?.[1] ?? ''}
+                      onChange={(e) =>
+                        setNewGame({
+                          ...newGame,
+                          score: [newGame.score?.[0] ?? '', e.target.value],
+                        })
+                      }
+                      placeholder="점수 2"
+                      className="w-16 text-center"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    type="button"
+                    onClick={handleAddGameFromDialog}
+                    className="flex-1"
+                  >
+                    등록
+                  </Button>
+                  <DialogClose asChild>
+                    <Button type="button" variant="outline" className="flex-1">
+                      취소
+                    </Button>
+                  </DialogClose>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <label htmlFor="status" className="ml-auto font-bold">
               게임 상태
             </label>
             <Select
@@ -332,141 +521,89 @@ export default function Page({ params }: Props) {
 
         <div className="grid gap-4">
           {editableGames.map((result, index) => {
-            const isAdmin = typeof user?.level === 'number' && user.level >= 3;
-
             return (
               <div key={index} className="bg-white rounded-lg shadow-md p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="text-lg font-semibold">게임 {index + 1}</div>
-                  <div className="text-sm text-gray-500">
-                    {result.time} - {result.court} 코트
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {/* 페어 A */}
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <div className="grid grid-cols-2 gap-2">
-                        {isAdmin ? (
-                          <>
-                            <Input
-                              value={result.players[0]}
-                              onChange={(e) =>
-                                handlePlayerChange(index, 0, e.target.value)
-                              }
-                              className="w-full"
-                            />
-                            <Input
-                              value={result.players[1]}
-                              onChange={(e) =>
-                                handlePlayerChange(index, 1, e.target.value)
-                              }
-                              className="w-full"
-                            />
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-full p-2 bg-gray-50 rounded border text-sm">
-                              {result.players[0]}
-                            </div>
-                            <div className="w-full p-2 bg-gray-50 rounded border text-sm">
-                              {result.players[1]}
-                            </div>
-                          </>
-                        )}
-                      </div>
+                <div className="flex gap-2">
+                  <div className="flex flex-col justify-center items-center ">
+                    <div className="font-semibold whitespace-nowrap">
+                      게임 {index + 1}
                     </div>
-                    <div className="w-20">
-                      {isAdmin ? (
-                        <Input
-                          value={result.score[0]}
-                          onChange={(e) =>
-                            handleScoreChange(index, 0, e.target.value)
-                          }
-                          className="w-full text-center"
-                        />
-                      ) : (
-                        <div className="w-full p-2 bg-gray-50 rounded border text-center text-sm">
-                          {result.score[0]}
-                        </div>
-                      )}
+                    <div className="text-sm text-gray-500">{result.time}</div>
+                    <div className="text-sm text-gray-500">
+                      {result.court} 코트
                     </div>
                   </div>
-
-                  {/* 페어 B */}
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <div className="grid grid-cols-2 gap-2">
-                        {isAdmin ? (
-                          <>
-                            <Input
-                              value={result.players[2]}
-                              onChange={(e) =>
-                                handlePlayerChange(index, 2, e.target.value)
-                              }
-                              className="w-full"
-                            />
-                            <Input
-                              value={result.players[3]}
-                              onChange={(e) =>
-                                handlePlayerChange(index, 3, e.target.value)
-                              }
-                              className="w-full"
-                            />
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-full p-2 bg-gray-50 rounded border text-sm">
-                              {result.players[2]}
-                            </div>
-                            <div className="w-full p-2 bg-gray-50 rounded border text-sm">
-                              {result.players[3]}
-                            </div>
-                          </>
-                        )}
-                      </div>
+                  <div className="flex flex-col gap-2 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={result.players[0]}
+                        onChange={(e) =>
+                          handlePlayerChange(index, 0, e.target.value)
+                        }
+                        className=""
+                      />
+                      <Input
+                        value={result.players[1]}
+                        onChange={(e) =>
+                          handlePlayerChange(index, 1, e.target.value)
+                        }
+                        className=""
+                      />
+                      <Input
+                        value={result.score[0]}
+                        onChange={(e) =>
+                          handleScoreChange(index, 0, e.target.value)
+                        }
+                        className="text-center w-10"
+                      />
                     </div>
-                    <div className="w-20">
-                      {isAdmin ? (
-                        <Input
-                          value={result.score[1]}
-                          onChange={(e) =>
-                            handleScoreChange(index, 1, e.target.value)
-                          }
-                          className="w-full text-center"
-                        />
-                      ) : (
-                        <div className="w-full p-2 bg-gray-50 rounded border text-center text-sm">
-                          {result.score[1]}
-                        </div>
-                      )}
+
+                    {/* 페어 B */}
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={result.players[2]}
+                        onChange={(e) =>
+                          handlePlayerChange(index, 2, e.target.value)
+                        }
+                        className="w-full"
+                      />
+                      <Input
+                        value={result.players[3]}
+                        onChange={(e) =>
+                          handlePlayerChange(index, 3, e.target.value)
+                        }
+                        className="w-full"
+                      />
+                      <Input
+                        value={result.score[1]}
+                        onChange={(e) =>
+                          handleScoreChange(index, 1, e.target.value)
+                        }
+                        className="w-10 text-center"
+                      />
                     </div>
                   </div>
 
-                  {/* 게임별 수정/삭제 버튼 - 관리자만 표시 */}
-                  {isAdmin && (
-                    <div className="flex gap-2 mt-2">
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleGameDelete(index)}
-                      >
-                        삭제
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleGameUpdate(index)}
-                      >
-                        수정
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleGameUpdate(index)}
+                    >
+                      수정
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleGameDelete(index)}
+                    >
+                      삭제
+                    </Button>
+                  </div>
                 </div>
               </div>
             );
