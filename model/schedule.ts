@@ -19,7 +19,7 @@ export const ScheduleFormSchema = z.object({
   }),
   courtNumbers: z.array(z.string()),
   status: z
-    .enum(['pending', 'attendees_done', 'match_done', 'game_done'])
+    .enum(['pending', 'attendees', 'matchmaking', 'shared', 'playing', 'done'])
     .default('pending'),
   attendees: z
     .array(
@@ -54,7 +54,13 @@ export type ScheduleProps = {
   courtCount: string;
   courtNumbers: { _key: string; number: string }[];
   attendees: AttendanceProps[];
-  status: 'pending' | 'attendees_done' | 'match_done' | 'game_done';
+  status:
+    | 'pending'
+    | 'attendees'
+    | 'matchmaking'
+    | 'shared'
+    | 'playing'
+    | 'done';
 };
 
 export type AttendanceProps = {

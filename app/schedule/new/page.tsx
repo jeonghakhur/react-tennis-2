@@ -106,7 +106,7 @@ export default function ScheduleForm() {
   };
 
   const handleStatusChange = (checked: boolean) => {
-    form.setValue('status', checked ? 'attendees_done' : 'pending');
+    form.setValue('status', checked ? 'attendees' : 'pending');
   };
 
   return (
@@ -209,7 +209,7 @@ export default function ScheduleForm() {
               <Switch
                 id="status"
                 name="status"
-                checked={form.watch('status') === 'attendees_done'}
+                checked={form.watch('status') === 'attendees'}
                 onCheckedChange={handleStatusChange}
               />
             </div>

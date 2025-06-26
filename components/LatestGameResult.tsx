@@ -25,7 +25,7 @@ export default function LatestGameResult({
     data: gameResult,
     isLoading: gameLoading,
     error: gameError,
-  } = useSWR<GameResult>('/api/games/latest');
+  } = useSWR<GameResult>('/api/games/latest?status=done');
 
   const isLoading = externalLoading || gameLoading;
 

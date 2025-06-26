@@ -23,20 +23,29 @@ export async function updateGameResult(
   id: string,
   games: any[],
   status?: string,
-  editor?: any
+  editor?: any,
+  scheduleId?: string
 ) {
   const now = new Date().toISOString();
   const authorRef = editor?._ref || editor;
-  console.log(authorRef);
   const editRecord = {
     author: { _ref: authorRef, _type: 'reference' },
     createdAt: now,
   };
-  return client
-    .patch(id)
-    .set(status ? { games, status } : { games })
-    .append('editHistory', [editRecord])
-    .commit({ autoGenerateArrayKeys: true });
+  console.log(status, scheduleId);
+  if (status && scheduleId) {
+    return client
+      .transaction()
+      .patch(id, { set: { games } })
+      .patch(scheduleId, { set: { status } })
+      .commit({ autoGenerateArrayKeys: true });
+  } else {
+    return client
+      .patch(id)
+      .set({ games })
+      .append('editHistory', [editRecord])
+      .commit({ autoGenerateArrayKeys: true });
+  }
 }
 
 export async function getAllGames(status?: string | null) {
@@ -72,7 +81,7 @@ export async function getGame(scheduleId: string) {
       "courtName": schedule->courtName,
       "startTime": schedule->startTime,
       "endTime": schedule->endTime,
-      "status": status,
+      "status": schedule->status,
       "comments": comments[]{
         ...,
         "author": {
@@ -164,33 +173,13 @@ export async function removeCommentFromGameResult(
     .commit();
 }
 
-export async function getLatestGame() {
+/**
+ * status 값을 인수로 받아 최신 게임 결과를 가져오는 함수
+ */
+export async function getLatestGameByStatus(status?: string | null) {
+  const statusFilter = status ? `&& schedule->status == "${status}"` : '';
   return client.fetch(
-    `*[_type == "gameResult" && schedule->status == "game_done"] | order(schedule->date desc)[0] {
-      ...,
-      "scheduleID": schedule->_id,
-      "date": schedule->date,
-      "courtName": schedule->courtName,
-      "startTime": schedule->startTime,
-      "endTime": schedule->endTime,
-      "scheduleStatus": schedule->status,
-      "comments": comments[]{
-        ...,
-        "author": {
-          "_ref": author._ref,
-          "name": author->name,
-          "username": author->username,
-          "image": author->image
-        },
-        "createdAt": createdAt
-      }
-    }`
-  );
-}
-
-export async function getLatestMatchDoneGame() {
-  return client.fetch(
-    `*[_type == "gameResult" && schedule->status == "match_done"] | order(schedule->date desc)[0] {
+    `*[_type == "gameResult"${statusFilter}] | order(schedule->date desc)[0] {
       ...,
       "scheduleID": schedule->_id,
       "date": schedule->date,

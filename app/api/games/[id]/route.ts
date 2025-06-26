@@ -50,11 +50,16 @@ export async function PUT(req: NextRequest, context: Context) {
 
     // 게임 ID로 직접 게임을 찾아서 업데이트
     const game = await getGameById(id);
+    console.log(status);
 
     if (game) {
-      return updateGameResult(id, matches, status, user.id).then((data) =>
-        NextResponse.json(data)
-      );
+      return updateGameResult(
+        id,
+        matches,
+        status,
+        user.id,
+        game.scheduleID
+      ).then((data) => NextResponse.json(data));
     } else {
       return NextResponse.json(
         { error: '게임을 찾을 수 없습니다.' },

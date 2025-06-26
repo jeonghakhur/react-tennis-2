@@ -92,17 +92,17 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
     }
   };
 
-  function onSubmit(data: ScheduleFormType) {
+  async function onSubmit(data: ScheduleFormType) {
     setLoading(true);
-    patchSchedule(data)
-      .then((data) => {
-        console.log(data);
-      })
-      .catch((error) => console.error(error))
-      .finally(async () => {
-        await mutate('/api/schedule');
-        router.push(`/schedule/`);
-      });
+    try {
+      await patchSchedule(data);
+      await mutate('/api/schedule', undefined, { revalidate: true });
+      router.push('/schedule');
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   }
 
   const handleCourtCountChange = (count: string) => {
@@ -122,7 +122,7 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
 
   const handleStatusChange = (value: boolean) => {
     if (value) {
-      form.setValue('status', 'attendees_done');
+      form.setValue('status', 'attendees');
     } else {
       form.setValue('status', 'pending');
     }
@@ -199,12 +199,12 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
               />
               <div className="flex items-center gap-2 justify-between">
                 <label htmlFor="status" className="font-bold">
-                  참석자 등록 완료
+                  참석투표시작
                 </label>
                 <Switch
                   id="status"
                   name="status"
-                  checked={form.watch('status') === 'attendees_done'}
+                  checked={form.watch('status') === 'attendees'}
                   onCheckedChange={handleStatusChange}
                 />
               </div>

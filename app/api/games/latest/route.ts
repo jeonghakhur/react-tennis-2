@@ -1,9 +1,14 @@
-import { getLatestGame } from '@/service/games';
+import { getLatestGameByStatus } from '@/service/games';
 import { withSessionUser } from '@/util/session';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   return await withSessionUser(async () => {
-    return getLatestGame().then((data) => NextResponse.json(data));
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+
+    return getLatestGameByStatus(status).then((data) =>
+      NextResponse.json(data)
+    );
   });
 }

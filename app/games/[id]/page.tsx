@@ -45,7 +45,7 @@ export default function Page({ params }: Props) {
   const [loading, setLoading] = useState<boolean>(isLoading);
   const [dataLoading, setDataLoading] = useState<boolean>(false);
   const [editableGames, setEditableGames] = useState<Game[]>([]);
-  const [gameStatus, setGameStatus] = useState<GameResult['status']>('wait');
+  const [gameStatus, setGameStatus] = useState<GameResult['status']>();
   const router = useRouter();
 
   // 사용자 인증 정보 가져오기
@@ -70,16 +70,6 @@ export default function Page({ params }: Props) {
       setLoading(false);
     }
   }, [game]);
-
-  // 사용자 정보 디버깅
-  useEffect(() => {
-    if (user) {
-      console.log('사용자 정보:', user);
-      console.log('user.name:', user.name);
-      console.log('user.userName:', user.userName);
-      console.log('user.id:', user.id);
-    }
-  }, [user]);
 
   const handleDelete = async (id: string) => {
     const isConfirmed = confirm('정말 삭제하시겠습니까?');
@@ -137,7 +127,6 @@ export default function Page({ params }: Props) {
   };
 
   const handleUpdate = async function (id: string) {
-    console.log('handleUpdate', id);
     const isConfirmed = confirm('게임 정보를 수정하시겠습니까?');
     if (!isConfirmed) return;
 
@@ -349,7 +338,7 @@ export default function Page({ params }: Props) {
     <Container>
       {dataLoading && <Skeleton lines={3} />}
 
-      <div>
+      <div className="pb-10">
         <div className="bg-white rounded-lg shadow-md p-3 mb-6">
           <div className="flex flex-col items-center text-center">
             <h1 className="text-2xl font-bold text-gray-800 mb-2">
@@ -511,8 +500,7 @@ export default function Page({ params }: Props) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="wait">대기중</SelectItem>
-                <SelectItem value="ing">게임중</SelectItem>
+                <SelectItem value="playing">게임 진행중</SelectItem>
                 <SelectItem value="done">게임완료</SelectItem>
               </SelectContent>
             </Select>

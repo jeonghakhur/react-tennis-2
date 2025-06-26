@@ -35,7 +35,13 @@ export interface GameResult {
   date: string;
   author: string;
   games: Game[]; // 경기 목록
-  status?: 'wait' | 'ing' | 'done';
+  status:
+    | 'pending'
+    | 'attendees'
+    | 'matchmaking'
+    | 'shared'
+    | 'playing'
+    | 'done';
   comments?: GameComment[]; // 코멘트 목록
   editHistory?: Editor[];
   lastEditor?: {

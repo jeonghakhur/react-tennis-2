@@ -33,14 +33,6 @@ export default function ScheduleList() {
     }
   }, [schedules, error]);
 
-  useEffect(() => {
-    console.log('👤 현재 사용자 정보:', {
-      user: user,
-      level: user?.level,
-      canCreateSchedule: user && user.level >= 3,
-    });
-  }, [user]);
-
   const toggleAttendeesExpansion = (scheduleId: string) => {
     setExpandedSchedules((prev) => {
       const newSet = new Set(prev);
@@ -57,7 +49,6 @@ export default function ScheduleList() {
     const uniquePlayers = new Set(
       schedule.attendees?.map((attendee) => attendee.name) || []
     );
-    console.log('Unique players:', Array.from(uniquePlayers));
 
     return {
       startTime: schedule.startTime,
@@ -180,14 +171,7 @@ export default function ScheduleList() {
       <div className="grid gap-4">
         {schedules.map((schedule) => {
           const workoutInfo = getWorkoutInfo(schedule);
-          console.log('🔍 Schedule Debug Info:', {
-            userLevel: user?.level,
-            scheduleStatus: schedule.status,
-            scheduleId: schedule.id,
-            hasGameResult: schedule.hasGameResult,
-            gameResultId: schedule.gameResultId,
-            gameResultCount: schedule.gameResultCount,
-          });
+
           return (
             <div
               key={schedule.id}
@@ -274,80 +258,46 @@ export default function ScheduleList() {
                 {user && user.level >= 3 && (
                   <>
                     <div className="flex gap-3">
-                      {schedule.status === 'pending' && (
-                        <Button
-                          type="button"
-                          className="flex-1"
-                          variant="default"
-                          size="lg"
-                          onClick={() => {
-                            router.push(`/schedule/${schedule.id}`);
-                          }}
-                        >
-                          참석자등록
-                        </Button>
-                      )}
-                      {schedule.status === 'attendees_done' && (
-                        <Button
-                          type="button"
-                          className="flex-1"
-                          variant="default"
-                          size="lg"
-                          onClick={() => {
-                            router.push(`/match/${schedule.id}`);
-                          }}
-                        >
-                          대진표작성
-                        </Button>
-                      )}
-                    </div>
+                      <Button
+                        type="button"
+                        className="flex-1"
+                        variant="outline"
+                        size="lg"
+                        onClick={() => {
+                          router.push(`/schedule/${schedule.id}`);
+                        }}
+                      >
+                        참석자등록
+                      </Button>
 
-                    {schedule.status === 'match_done' && (
-                      <div className="flex gap-3">
-                        <Button
-                          type="button"
-                          className="flex-1"
-                          onClick={() => {
-                            router.push(`/match/${schedule.id}`);
-                          }}
-                        >
-                          대진표수정
-                        </Button>
-                      </div>
-                    )}
-                    {schedule.status === 'game_done' && (
-                      <div className="flex gap-3">
-                        <Button
-                          type="button"
-                          className="flex-1"
-                          size="lg"
-                          onClick={() => {
-                            router.push(`/match/${schedule.id}`);
-                          }}
-                        >
-                          게임 결과 보기
-                        </Button>
-                      </div>
-                    )}
+                      <Button
+                        type="button"
+                        className="flex-1"
+                        variant="default"
+                        size="lg"
+                        onClick={() => {
+                          router.push(`/match/${schedule.id}`);
+                        }}
+                      >
+                        대진표
+                      </Button>
+                    </div>
                   </>
                 )}
 
                 {user && user.level < 3 && (
                   <>
-                    {schedule.status === 'pending' &&
-                      !schedule.hasGameResult && (
-                        <Button
-                          type="button"
-                          variant="default"
-                          size="lg"
-                          onClick={() =>
-                            router.push(`/schedule/${schedule.id}`)
-                          }
-                        >
-                          참석투표
-                        </Button>
-                      )}
-                    {schedule.status === 'game_done' && (
+                    {schedule.status === 'attendees' && (
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="lg"
+                        onClick={() => router.push(`/schedule/${schedule.id}`)}
+                      >
+                        참석투표
+                      </Button>
+                    )}
+                    {schedule.status === 'done' && (
                       <Button
                         type="button"
                         variant="outline"
