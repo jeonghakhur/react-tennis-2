@@ -31,9 +31,10 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import useGame from '@/hooks/useGames';
+import { ScheduleProps } from '@/model/schedule';
 
 interface Attendee {
   name: string;
@@ -83,9 +84,15 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   const [loading, setLoading] = useState(false);
   const { mutate } = useSWRConfig();
   const [showScore, setShowScore] = useState(false);
-  const [scheduleStatus, setScheduleStatus] = useState<
-    'pending' | 'attendees_done' | 'match_done' | 'game_done'
-  >('attendees_done');
+  const [scheduleStatus, setScheduleStatus] =
+    useState<ScheduleProps['status']>('attendees');
+
+  // useGame 훅을 최상단에서 호출
+  const {
+    game,
+    isLoading: gameLoading,
+    error: gameError,
+  } = useGame(scheduleId);
 
   // 대기자 정보 계산 함수
   const calculateIdleSummary = useCallback(
@@ -222,54 +229,25 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
   // 기존 게임 데이터 가져오기
   useEffect(() => {
-    const fetchExistingGame = async () => {
-      try {
-        console.log('🔄 매치 페이지 로드 - 스케줄 ID:', scheduleId);
-        const response = await fetch(`/api/match/${scheduleId}`);
-        if (response.ok) {
-          const gameData = await response.json();
-          console.log('📊 기존 게임 데이터:', gameData);
-          console.log('🔍 스케줄 상태 확인:', {
-            scheduleStatus: gameData?.scheduleStatus,
-            hasScheduleStatus: !!gameData?.scheduleStatus,
-            type: typeof gameData?.scheduleStatus,
-          });
+    if (gameLoading) return;
+    if (gameError) {
+      console.error('❌ 게임 데이터 조회 실패:', gameError);
+      generateSchedule();
+      return;
+    }
+    if (game && game.games && game.games.length > 0) {
+      setMatches(game.games);
 
-          if (gameData && gameData.games && gameData.games.length > 0) {
-            console.log('✅ 기존 게임 데이터 발견 - 대진 복원');
-            // 기존 게임 데이터가 있으면 해당 대진을 설정
-            setMatches(gameData.games);
-            // 기존 게임 데이터의 스케줄 상태를 설정
-            const currentStatus = gameData.scheduleStatus || 'attendees_done';
-            setScheduleStatus(currentStatus);
-            console.log('🎯 설정된 스케줄 상태:', currentStatus);
-            console.log(
-              '🎯 Switch 상태:',
-              currentStatus === 'match_done' ? 'ON' : 'OFF'
-            );
-
-            // 대기자 정보 계산
-            calculateIdleSummary(gameData.games);
-            calculateGamesPlayed(gameData.games);
-          } else {
-            console.log('🆕 기존 게임 데이터 없음 - 새 대진 생성');
-            // 기존 데이터가 없으면 새로 생성
-            generateSchedule();
-          }
-        } else {
-          console.log('❌ API 호출 실패 - 새 대진 생성');
-          // API 호출 실패 시 새로 생성
-          generateSchedule();
-        }
-      } catch (error) {
-        console.error('❌ 기존 게임 데이터 조회 실패:', error);
-        generateSchedule();
-      }
-    };
-
-    fetchExistingGame();
+      setScheduleStatus(game.status);
+      calculateIdleSummary(game.games);
+      calculateGamesPlayed(game.games);
+    } else {
+      generateSchedule();
+    }
   }, [
-    scheduleId,
+    game,
+    gameLoading,
+    gameError,
     calculateIdleSummary,
     calculateGamesPlayed,
     generateSchedule,
@@ -400,9 +378,6 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
   const handleSubmit = async () => {
     setLoading(true);
-    console.log('💾 대진표 저장 시작');
-    console.log('📋 저장할 대진 데이터:', matches);
-    console.log('🎯 저장할 스케줄 상태:', scheduleStatus);
 
     try {
       const response = await fetch(`/api/match/${scheduleId}`, {
@@ -419,17 +394,10 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
       console.log('✅ 대진표 저장 성공:', data);
 
       // SWR 캐시 무효화 후 페이지 이동
-      await mutate('/api/games', undefined, { revalidate: true });
-
-      // 잠시 대기하여 데이터 로드 완료 보장
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      // 성공 시 페이지 이동
-      console.log('🔄 스케줄 목록 페이지로 이동');
+      await mutate('/api/schedule', undefined, { revalidate: true });
       router.push('/schedule');
     } catch (error) {
       console.error('❌ 대진표 저장 중 오류:', error);
-
       // 에러 발생 시 사용자에게 알림
       alert('대진표 저장 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
@@ -676,49 +644,26 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
       </div>
 
       {/* 스케줄 상태 설정 */}
-      <div className="mb-6">
-        <Label className="text-base font-bold mb-3 block">스케줄 상태</Label>
-        <RadioGroup
-          value={scheduleStatus}
-          onValueChange={(value) => {
-            const newStatus = value as
-              | 'pending'
-              | 'attendees_done'
-              | 'match_done'
-              | 'game_done';
-            console.log('🔄 스케줄 상태 변경:', {
-              oldStatus: scheduleStatus,
-              newStatus,
-            });
-            setScheduleStatus(newStatus);
-          }}
-          className="flex flex-wrap gap-4"
+      <div className="mb-6 flex justify-between items-center">
+        <Label className="text-base font-bold" htmlFor="scheduleStatus">
+          게임진행 상태
+        </Label>
+        <Select
+          value={scheduleStatus || 'pending'}
+          onValueChange={(v) => setScheduleStatus(v as ScheduleProps['status'])}
         >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="pending" id="pending" />
-            <Label htmlFor="pending" className="text-sm">
-              대기중
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="attendees_done" id="attendees_done" />
-            <Label htmlFor="attendees_done" className="text-sm">
-              참석자 저장 완료
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="match_done" id="match_done" />
-            <Label htmlFor="match_done" className="text-sm">
-              대진표 작성 완료
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="game_done" id="game_done" />
-            <Label htmlFor="game_done" className="text-sm">
-              게임 결과 등록 완료
-            </Label>
-          </div>
-        </RadioGroup>
+          <SelectTrigger className="w-32" id="scheduleStatus">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pending">대기중</SelectItem>
+            <SelectItem value="attendees">참석자 등록</SelectItem>
+            <SelectItem value="matchmaking">대진표 작성</SelectItem>
+            <SelectItem value="shared">대진표 공유</SelectItem>
+            <SelectItem value="playing">게임진행</SelectItem>
+            <SelectItem value="done">게임완료</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <table className="table">

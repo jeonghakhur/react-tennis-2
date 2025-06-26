@@ -20,9 +20,11 @@ export const courtSchedule = {
       options: {
         list: [
           { title: '대기중', value: 'pending' },
-          { title: '참석자 저장 완료', value: 'attendees_done' },
-          { title: '대진표 작성 완료', value: 'match_done' },
-          { title: '게임 결과 등록 완료', value: 'game_done' },
+          { title: '참석자 등록', value: 'attendeese' },
+          { title: '대진표 작성', value: 'matchmaking' },
+          { title: '대진표 공유', value: 'shared' },
+          { title: '게임진행', value: 'playing' },
+          { title: '게임완료', value: 'done' },
         ],
         layout: 'dropdown',
       },

@@ -242,7 +242,7 @@ export default function StatsTable() {
     data: games,
     isLoading,
     error,
-  } = useSWR<GameResult[]>('/api/games?status=game_done');
+  } = useSWR<GameResult[]>('/api/games?status=done');
   // 가입된 회원 목록 불러오기
   const { data: members } = useSWR<UserProps[]>('/api/members');
 

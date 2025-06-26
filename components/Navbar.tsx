@@ -20,7 +20,7 @@ export default function NavBar() {
     <div className="mb-3 px-5 py-3">
       {status !== 'loading' && (
         <div className="flex items-center">
-          <ul className="flex gap-x-2">
+          <ul className="flex gap-x-4 text-xl">
             <li>
               <Link href="/">홈</Link>
             </li>
@@ -30,7 +30,7 @@ export default function NavBar() {
                   <Link href="/schedule">일정</Link>
                 </li>
                 <li>
-                  <Link href="/games">게임결과</Link>
+                  <Link href="/games">게임</Link>
                 </li>
               </>
             )}

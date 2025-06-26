@@ -23,7 +23,7 @@ export default function LatestMatchSchedule({
     data: gameResult,
     isLoading: gameLoading,
     error: gameError,
-  } = useSWR<GameResult>('/api/games/latest-match-done');
+  } = useSWR<GameResult>('/api/games/latest?status=shared');
 
   const isLoading = externalLoading || gameLoading;
 

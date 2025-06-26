@@ -119,7 +119,7 @@ export default function LatestGameRanking() {
     data: games,
     isLoading,
     error,
-  } = useSWR<GameResult[]>('/api/games?status=game_done');
+  } = useSWR<GameResult[]>('/api/games?status=done');
   const { data: members } = useSWR<UserProps[]>('/api/members');
 
   // 마지막 스케줄의 game_done 게임만 필터링
