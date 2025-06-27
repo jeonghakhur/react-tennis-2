@@ -22,9 +22,6 @@ export default function ScheduleList() {
     }
   );
   const [loading, setLoading] = useState<boolean>(isLoading);
-  const [expandedSchedules, setExpandedSchedules] = useState<Set<string>>(
-    new Set()
-  );
   const router = useRouter();
 
   useEffect(() => {
@@ -32,18 +29,6 @@ export default function ScheduleList() {
       setLoading(false);
     }
   }, [schedules, error]);
-
-  const toggleAttendeesExpansion = (scheduleId: string) => {
-    setExpandedSchedules((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(scheduleId)) {
-        newSet.delete(scheduleId);
-      } else {
-        newSet.add(scheduleId);
-      }
-      return newSet;
-    });
-  };
 
   const getWorkoutInfo = (schedule: GetScheduleProps) => {
     const uniquePlayers = new Set(
@@ -172,6 +157,16 @@ export default function ScheduleList() {
         {schedules.map((schedule) => {
           const workoutInfo = getWorkoutInfo(schedule);
 
+          const statusMap: Record<string, string> = {
+            pending: '대기중',
+            attendees: '참석자등록',
+            matchmaking: '대진표작성',
+            shared: '대진표공유',
+            playing: '게임진행',
+            done: '게임완료',
+          };
+          const status = statusMap[schedule.status] || '';
+
           return (
             <div
               key={schedule.id}
@@ -195,7 +190,7 @@ export default function ScheduleList() {
                   <div className="bg-blue-50 p-3 rounded-lg">
                     <p className="text-sm text-gray-600">시간</p>
                     <p className="text-lg font-bold text-blue-600">
-                      {workoutInfo.startTime} - {workoutInfo.endTime}
+                      {workoutInfo.startTime}-{workoutInfo.endTime}
                     </p>
                   </div>
                   <div className="bg-orange-50 p-3 rounded-lg">
@@ -213,75 +208,45 @@ export default function ScheduleList() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {schedule.attendees
-                  ?.slice(0, expandedSchedules.has(schedule.id) ? undefined : 2)
-                  .map((attendee, index) => (
-                    <div
-                      key={attendee._key ?? index}
-                      className="bg-gray-100 rounded-lg p-2"
-                    >
-                      <div className="flex justify-between items-center">
-                        {/* <span className="text-sm font-medium text-gray-700">
-                        참가자 {index + 1}
-                      </span> */}
-                        <div className="text-xs">
-                          {attendee.name} ({attendee.gender})
-                        </div>
-                        <span className="text-xs text-gray-500">
-                          {attendee.startHour}:{attendee.startMinute} -{' '}
-                          {attendee.endHour}:{attendee.endMinute}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-
-              {/* 더보기 버튼 */}
-              {schedule.attendees && schedule.attendees.length > 2 && (
-                <div className="mt-2 text-center">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toggleAttendeesExpansion(schedule.id)}
-                    className="text-xs"
-                  >
-                    {expandedSchedules.has(schedule.id)
-                      ? '접기'
-                      : `+${schedule.attendees.length - 2}명 더보기`}
-                  </Button>
-                </div>
-              )}
-
               <div className="grid mt-3">
                 {user && user.level >= 3 && (
                   <>
-                    <div className="flex gap-3">
+                    {schedule.status === 'done' ? (
                       <Button
                         type="button"
-                        className="flex-1"
-                        variant="outline"
-                        size="lg"
-                        onClick={() => {
-                          router.push(`/schedule/${schedule.id}`);
-                        }}
-                      >
-                        참석자등록
-                      </Button>
-
-                      <Button
-                        type="button"
-                        className="flex-1"
                         variant="default"
                         size="lg"
-                        onClick={() => {
-                          router.push(`/match/${schedule.id}`);
-                        }}
+                        onClick={() => router.push(`/games/${schedule.id}`)}
                       >
-                        대진표
+                        게임결과보기
                       </Button>
-                    </div>
+                    ) : (
+                      <div className="flex gap-3">
+                        <Button
+                          type="button"
+                          className="flex-1"
+                          variant="outline"
+                          size="lg"
+                          onClick={() => {
+                            router.push(`/schedule/${schedule.id}`);
+                          }}
+                        >
+                          참석자등록
+                        </Button>
+
+                        <Button
+                          type="button"
+                          className="flex-1"
+                          variant="default"
+                          size="lg"
+                          onClick={() => {
+                            router.push(`/match/${schedule.id}`);
+                          }}
+                        >
+                          대진표 ({status})
+                        </Button>
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -304,7 +269,7 @@ export default function ScheduleList() {
                         size="lg"
                         onClick={() => router.push(`/games/${schedule.id}`)}
                       >
-                        게임 결과 보기
+                        게임결과보기
                       </Button>
                     )}
                   </>

@@ -657,9 +657,9 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="pending">대기중</SelectItem>
-            <SelectItem value="attendees">참석자 등록</SelectItem>
-            <SelectItem value="matchmaking">대진표 작성</SelectItem>
-            <SelectItem value="shared">대진표 공유</SelectItem>
+            <SelectItem value="attendees">참석자등록</SelectItem>
+            <SelectItem value="matchmaking">대진표작성</SelectItem>
+            <SelectItem value="shared">대진표공유</SelectItem>
             <SelectItem value="playing">게임진행</SelectItem>
             <SelectItem value="done">게임완료</SelectItem>
           </SelectContent>

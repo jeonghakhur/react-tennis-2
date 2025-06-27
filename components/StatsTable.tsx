@@ -223,7 +223,7 @@ function StatsTableContent({ stats }: { stats: PlayerStats[] }) {
       </div>
 
       {stats.length > 10 && (
-        <div className="flex justify-center">
+        <div className="flex justify-center mt-4">
           <Button
             variant="outline"
             onClick={() => setShowAll(!showAll)}
@@ -292,9 +292,9 @@ export default function StatsTable() {
   }
 
   return (
-    <>
+    <div>
       <h2 className="text-xl font-semibold text-gray-800 mb-4">전체순위</h2>
       <StatsTableContent stats={stats} />
-    </>
+    </div>
   );
 }

@@ -5,10 +5,15 @@
 html,
 body {
   overscroll-behavior: none;
+  /* font-size: 1.2rem; */
 }
 
 body {
   font-family: Arial, Helvetica, sans-serif;
+}
+
+html.big-font {
+  font-size: 1.2rem;
 }
 
 @layer base {

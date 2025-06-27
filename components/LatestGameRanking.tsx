@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import Image from 'next/image';
 import { UserProps } from '@/model/user';
 import { Check } from 'lucide-react';
+import { ko } from 'date-fns/locale';
 
 type PlayerStats = {
   name: string;
@@ -176,12 +177,16 @@ export default function LatestGameRanking() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">
-        최근게임순위
+      <h2 className="mb-4 flex items-center justify-between">
+        <div className="text-xl text-gray-800 font-semibold">최근게임순위</div>
         {latestGame && (
-          <span className="text-sm font-normal text-gray-600 ml-2">
-            ({format(new Date(latestGame.date), 'MM.dd')})
-          </span>
+          <div className="text-sm text-gray-600 text-right">
+            {format(new Date(latestGame.date), 'yy년MM월dd일(EEE)', {
+              locale: ko,
+            })}
+            <br />
+            {latestGame.courtName}
+          </div>
         )}
       </h2>
       <div className="overflow-x-auto">
@@ -252,7 +257,7 @@ export default function LatestGameRanking() {
       </div>
       {/* 선택된 플레이어의 최근 게임 결과 Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl w-[95%] overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>{selectedPlayer}의 최근 게임 결과</DialogTitle>
           </DialogHeader>
@@ -273,12 +278,10 @@ export default function LatestGameRanking() {
                   const isTeamAWin = scoreA > scoreB;
                   const isTeamBWin = scoreB > scoreA;
                   // 본인 팀 강조
-                  const isMyTeamA = teamA.includes(selectedPlayer);
-                  const isMyTeamB = teamB.includes(selectedPlayer);
                   // 체크 아이콘
                   const CheckIcon = () => (
                     <Check
-                      className="inline-block align-middle ml-1 text-green-600"
+                      className="inline-block align-middle ml-1 "
                       size={20}
                     />
                   );
@@ -297,7 +300,7 @@ export default function LatestGameRanking() {
                       </div>
                       {/* 팀A */}
                       <div
-                        className={`flex items-center gap-2 ${isTeamAWin ? 'font-bold text-green-700' : ''} ${isMyTeamA ? 'bg-blue-50 rounded' : ''}`}
+                        className={`flex items-center gap-2 ${isTeamAWin ? 'font-bold' : ''}`}
                       >
                         {teamA.map((name, idx) => {
                           const member = getMember(name);
@@ -328,7 +331,7 @@ export default function LatestGameRanking() {
                         <span className="ml-auto flex gap-1 font-mono text-base">
                           <span
                             className={
-                              isTeamAWin ? 'text-green-700 font-bold' : ''
+                              isTeamAWin ? 'text-sky-500 font-bold' : ''
                             }
                           >
                             {scoreA}
@@ -337,7 +340,7 @@ export default function LatestGameRanking() {
                       </div>
                       {/* 팀B */}
                       <div
-                        className={`flex items-center gap-2 ${isTeamBWin ? 'font-bold text-green-700' : ''} ${isMyTeamB ? 'bg-blue-50 rounded' : ''}`}
+                        className={`flex items-center gap-2 ${isTeamBWin ? 'font-bold' : ''}`}
                       >
                         {teamB.map((name, idx) => {
                           const member = getMember(name);
@@ -368,7 +371,7 @@ export default function LatestGameRanking() {
                         <span className="ml-auto flex gap-1 font-mono text-base">
                           <span
                             className={
-                              isTeamBWin ? 'text-green-700 font-bold' : ''
+                              isTeamBWin ? 'text-sky-500 font-bold' : ''
                             }
                           >
                             {scoreB}

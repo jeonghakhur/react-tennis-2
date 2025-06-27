@@ -51,11 +51,12 @@ export default function LatestPendingSchedule() {
     <div className="bg-white shadow-md rounded-lg p-4 mb-6">
       <div className="mb-4 flex justify-between items-center">
         <h3 className="text-xl font-bold text-gray-800">다음게임일정</h3>
-        <div className="text-sm text-gray-600">
-          {format(new Date(schedule.date), 'yyyy년 MM월 dd일 (EEE)', {
+        <div className="text-sm text-gray-600 text-right">
+          {format(new Date(schedule.date), 'yy년MM월dd일(EEE)', {
             locale: ko,
-          })}{' '}
-          • {schedule.courtName}
+          })}
+          <br />
+          {schedule.courtName}
         </div>
       </div>
 
@@ -64,7 +65,7 @@ export default function LatestPendingSchedule() {
           <div className="bg-blue-50 p-3 rounded-lg">
             <p className="text-sm text-gray-600">시간</p>
             <p className="text-lg font-bold text-blue-600">
-              {workoutInfo.startTime} - {workoutInfo.endTime}
+              {workoutInfo.startTime}-{workoutInfo.endTime}
             </p>
           </div>
           <div className="bg-green-50 p-3 rounded-lg">

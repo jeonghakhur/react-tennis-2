@@ -199,7 +199,7 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
               />
               <div className="flex items-center gap-2 justify-between">
                 <label htmlFor="status" className="font-bold">
-                  참석투표시작
+                  참석자등록
                 </label>
                 <Switch
                   id="status"

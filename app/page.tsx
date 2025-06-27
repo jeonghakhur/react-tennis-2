@@ -15,7 +15,7 @@ export default function Home() {
   const { data: session, status } = useSession();
 
   // 게임 데이터 로딩 상태 확인
-  const { isLoading: gamesLoading } = useSWR('/api/games?status=game_done');
+  const { isLoading: gamesLoading } = useSWR('/api/games?status=done');
 
   // 현재 진행중인 게임 데이터와 로딩 상태
   const {

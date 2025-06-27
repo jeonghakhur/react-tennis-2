@@ -47,7 +47,7 @@ export default function PlayerGameHistory() {
     data: games,
     isLoading,
     error,
-  } = useSWR<GameResult[]>('/api/games?status=game_done');
+  } = useSWR<GameResult[]>('/api/games?status=done');
   const [currentPage, setCurrentPage] = useState(0);
   const [showAllPairs, setShowAllPairs] = useState(false);
 

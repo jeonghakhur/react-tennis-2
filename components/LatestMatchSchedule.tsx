@@ -29,7 +29,7 @@ export default function LatestMatchSchedule({
 
   const formattedDate = useMemo(() => {
     if (!gameResult?.date) return '';
-    return format(new Date(gameResult.date), 'yyyy년 MM월 dd일 (EEE)', {
+    return format(new Date(gameResult.date), 'yy년MM월dd일(EEE)', {
       locale: ko,
     });
   }, [gameResult?.date]);
@@ -111,8 +111,10 @@ export default function LatestMatchSchedule({
         <h3 className="text-lg font-semibold text-gray-800">
           진행예정게임대진
         </h3>
-        <div className="text-sm text-gray-600">
-          {formattedDate} • {gameResult.courtName}
+        <div className="text-sm text-gray-600 text-right">
+          {formattedDate}
+          <br />
+          {gameResult.courtName}
         </div>
       </div>
 
@@ -131,7 +133,7 @@ export default function LatestMatchSchedule({
               </span>
               <span className="text-sm text-gray-500">{game.time}</span>
             </div>
-            <div className="flex justify-between gap-2">
+            <div className="flex justify-between gap-2 text-lg">
               <div>
                 {game.players[0]}/{game.players[1]}
               </div>

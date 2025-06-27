@@ -31,7 +31,7 @@ export default function LatestGameResult({
 
   const formattedDate = useMemo(() => {
     if (!gameResult?.date) return '';
-    return format(new Date(gameResult.date), 'yyyy년 MM월 dd일 (EEE)', {
+    return format(new Date(gameResult.date), 'yy년MM월dd일(EEE)', {
       locale: ko,
     });
   }, [gameResult?.date]);
@@ -112,8 +112,10 @@ export default function LatestGameResult({
     <div className="bg-white rounded-lg shadow-md p-4">
       <div className="mb-4 flex justify-between items-center">
         <h3 className="text-lg font-semibold text-gray-800">최근게임결과</h3>
-        <div className="text-sm text-gray-600">
-          {formattedDate} • {gameResult.courtName}
+        <div className="text-sm text-gray-600 text-right">
+          {formattedDate}
+          <br />
+          {gameResult.courtName}
         </div>
       </div>
 
@@ -159,7 +161,7 @@ export default function LatestGameResult({
                 </span>
                 <span className="text-sm text-gray-500">{game.time}</span>
               </div>
-              <div className="flex justify-between gap-2">
+              <div className="flex justify-between gap-2 text-lg">
                 <div className={` ${teamAWins ? 'font-bold' : ''}`}>
                   {game.players[0]}/{game.players[1]}
                   <span

@@ -24,7 +24,7 @@ export default function PairGameHistory() {
     data: games,
     isLoading,
     error,
-  } = useSWR<GameResult[]>('/api/games?status=game_done');
+  } = useSWR<GameResult[]>('/api/games?status=done');
 
   const playersParam = params?.players
     ? decodeURIComponent(params.players as string)
