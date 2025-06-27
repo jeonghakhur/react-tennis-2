@@ -56,9 +56,9 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
       form.reset({
         ...schedule,
         date: schedule.date ? new Date(schedule.date) : new Date(),
-        courtNumbers: schedule.courtNumbers.map((court) =>
-          typeof court === 'string' ? court : court.number
-        ),
+        // courtNumbers: schedule.courtNumbers.map((court) =>
+        //   typeof court === 'string' ? court : court.number
+        // ),
         attendees: (schedule.attendees || []).map((att) => ({
           ...att,
           userId: att.userId || '',
@@ -108,11 +108,17 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
   const handleCourtCountChange = (count: string) => {
     const countNumber = parseInt(count, 10);
     const currentCourtNumbers = form.getValues('courtNumbers') || [];
+    const defaultStart = form.watch('startTime') || '19';
+    const defaultEnd = form.watch('endTime') || '22';
 
     if (countNumber > currentCourtNumbers.length) {
       const newCourts = Array.from(
         { length: countNumber - currentCourtNumbers.length },
-        (_, idx) => String(currentCourtNumbers.length + idx + 1)
+        (_, idx) => ({
+          number: String(currentCourtNumbers.length + idx + 1),
+          startTime: defaultStart,
+          endTime: defaultEnd,
+        })
       );
       form.setValue('courtNumbers', [...currentCourtNumbers, ...newCourts]);
     } else if (countNumber < currentCourtNumbers.length) {
@@ -178,14 +184,23 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
                 />
               </div>
 
-              <div className="flex gap-3">
+              {/* <div className="flex gap-3">
                 {Array.from(
                   { length: parseInt(form.watch('courtCount'), 10) },
                   (_, idx) => (
                     <FormCourtNumber key={idx} form={form} idx={idx} />
                   )
                 )}
-              </div>
+              </div> */}
+
+              {form.watch('courtCount') && (
+                <div className="flex gap-4">
+                  {(form.watch('courtNumbers') || []).map((_, idx) => (
+                    <FormCourtNumber key={idx} form={form} idx={idx} />
+                  ))}
+                </div>
+              )}
+
               <FormMembers
                 form={form}
                 attendees={(

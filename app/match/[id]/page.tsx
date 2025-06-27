@@ -58,7 +58,7 @@ interface MatchSchedulerProps {
   startTime: string; // Format: "HH:mm"
   endTime: string; // Format: "HH:mm"
   courts: number;
-  courtNumbers: { _key: string; number: string }[];
+  courtNumbers: { number: string; startTime: string; endTime: string }[];
   scheduleId: string;
 }
 
@@ -75,6 +75,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   startTime,
   endTime,
   courts,
+  courtNumbers,
   scheduleId,
 }) => {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -93,6 +94,36 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
     isLoading: gameLoading,
     error: gameError,
   } = useGame(scheduleId);
+
+  // 시간 슬롯별 사용 가능한 코트 수 계산 함수 (컴포넌트 내부로 이동)
+  const getCourtAvailabilityByTime = useCallback(() => {
+    const timeSlots: string[] = [];
+    let currentTime = new Date(`2023-01-01T${startTime}:00`);
+    const end = new Date(`2023-01-01T${endTime}:00`);
+    while (currentTime < end) {
+      timeSlots.push(currentTime.toTimeString().slice(0, 5));
+      currentTime = new Date(currentTime.getTime() + 30 * 60 * 1000);
+    }
+    // 각 시간 슬롯별로 사용 가능한 코트 수 계산
+    const courtAvailability: {
+      time: string;
+      count: number;
+      courts: string[];
+    }[] = timeSlots.map((slot) => {
+      const availableCourts = courtNumbers.filter((court) => {
+        const courtStart = new Date(`2023-01-01T${court.startTime}:00`);
+        const courtEnd = new Date(`2023-01-01T${court.endTime}:00`);
+        const slotTime = new Date(`2023-01-01T${slot}:00`);
+        return courtStart <= slotTime && slotTime < courtEnd;
+      });
+      return {
+        time: slot,
+        count: availableCourts.length,
+        courts: availableCourts.map((c) => c.number),
+      };
+    });
+    return courtAvailability;
+  }, [startTime, endTime, courtNumbers]);
 
   // 대기자 정보 계산 함수
   const calculateIdleSummary = useCallback(
@@ -179,7 +210,10 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
       gamesCount[attendee.name] = 0;
     });
 
-    timeSlots.forEach((slot) => {
+    // 시간대별 사용 가능한 코트 수 정보 가져오기
+    const courtAvailability = getCourtAvailabilityByTime();
+
+    timeSlots.forEach((slot, slotIdx) => {
       const available = attendees.filter(
         (attendee) =>
           new Date(
@@ -191,7 +225,9 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
       const playing: Attendee[] = [];
 
-      for (let court = 1; court <= courts; court++) {
+      // 시간대별 사용 가능한 코트 수만큼만 매치 생성
+      const slotCourtCount = courtAvailability[slotIdx]?.count || 0;
+      for (let court = 1; court <= slotCourtCount; court++) {
         if (available.length >= 4) {
           shuffleArray(available);
           const players = available
@@ -225,7 +261,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
     setMatches(schedule);
     setIdleSummary(idleByTime);
     setGamesPlayed(gamesCount);
-  }, [attendees, startTime, endTime, courts]);
+  }, [attendees, startTime, endTime, courts, getCourtAvailabilityByTime]);
 
   // 기존 게임 데이터 가져오기
   useEffect(() => {
@@ -696,6 +732,26 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
               />
             );
           })}
+        </tbody>
+      </table>
+
+      <h2 className="text-lg font-bold my-4">시간대별 사용 가능한 코트 수</h2>
+      <table className="table mb-6">
+        <thead>
+          <tr>
+            <th>시간</th>
+            <th>사용 가능 코트 수</th>
+            <th>코트 번호</th>
+          </tr>
+        </thead>
+        <tbody>
+          {getCourtAvailabilityByTime().map((slot, idx) => (
+            <tr key={idx}>
+              <td>{slot.time}</td>
+              <td>{slot.count}</td>
+              <td>{slot.courts.join(', ')}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
 

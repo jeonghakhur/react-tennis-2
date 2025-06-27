@@ -33,7 +33,16 @@ export const courtSchedule = {
       name: 'courtNumbers',
       title: 'Court Numbers',
       type: 'array',
-      of: [{ type: 'string' }],
+      of: [
+        {
+          type: 'object',
+          fields: [
+            { name: 'number', type: 'string', title: 'Court Number' },
+            { name: 'startTime', type: 'string', title: 'Start Time' },
+            { name: 'endTime', type: 'string', title: 'End Time' },
+          ],
+        },
+      ],
     },
     {
       name: 'attendees',

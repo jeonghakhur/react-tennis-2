@@ -161,7 +161,7 @@ export default function LatestGameResult({
                 </span>
                 <span className="text-sm text-gray-500">{game.time}</span>
               </div>
-              <div className="flex justify-between gap-2 text-lg">
+              <div className="flex justify-between gap-2 text-base">
                 <div className={` ${teamAWins ? 'font-bold' : ''}`}>
                   {game.players[0]}/{game.players[1]}
                   <span

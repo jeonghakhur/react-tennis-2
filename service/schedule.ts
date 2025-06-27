@@ -66,6 +66,7 @@ export async function createSchedule(
   console.log('👤 userId:', userId);
 
   try {
+    // courtNumbers는 [{ number, startTime, endTime }] 형태의 객체 배열이어야 함
     const result = await client.create(
       {
         _type: 'schedule',
@@ -75,7 +76,7 @@ export async function createSchedule(
         endTime,
         courtName,
         courtCount,
-        courtNumbers,
+        courtNumbers, // [{ number, startTime, endTime }]
         attendees,
         status: status || 'pending', // status 필드 추가 및 기본값 보장
       },
@@ -95,10 +96,11 @@ export async function updateSchedule(
   updateData: ScheduleFormType
 ) {
   try {
+    // courtNumbers는 [{ number, startTime, endTime }] 형태의 객체 배열이어야 함
     const updatedSchedule = await client
-      .patch(scheduleId) // 업데이트할 문서의 ID
-      .set(updateData) // 업데이트할 데이터
-      .commit(); // 변경 사항 저장
+      .patch(scheduleId)
+      .set(updateData)
+      .commit();
 
     return updatedSchedule;
   } catch (error) {

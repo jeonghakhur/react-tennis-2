@@ -133,7 +133,7 @@ export default function LatestMatchSchedule({
               </span>
               <span className="text-sm text-gray-500">{game.time}</span>
             </div>
-            <div className="flex justify-between gap-2 text-lg">
+            <div className="flex justify-between gap-2 text-base">
               <div>
                 {game.players[0]}/{game.players[1]}
               </div>

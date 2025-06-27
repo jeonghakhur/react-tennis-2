@@ -17,24 +17,24 @@ export default function NavBar() {
 
   const user = session?.user;
   const level = user?.level || 0;
-  const [largeFont, setLargeFont] = useState(false);
+  const [largeFont, setLargeFont] = useState<null | boolean>(null);
 
   // 마운트 후 localStorage에서 값 동기화
   useEffect(() => {
     const saved = localStorage.getItem('bigFont');
     if (saved === 'true') setLargeFont(true);
     else if (saved === 'false') setLargeFont(false);
+    else setLargeFont(false);
   }, []);
 
   // 큰글씨 상태를 html에 반영하고 localStorage에 저장
   useEffect(() => {
-    localStorage.setItem('bigFont', String(largeFont));
-    console.log('localStorage', localStorage.getItem('bigFont'));
-    const html = document.documentElement;
-    if (largeFont) {
-      html.classList.add('big-font');
-    } else {
-      html.classList.remove('big-font');
+    if (largeFont !== null) {
+      const html = document.documentElement;
+      if (largeFont) html.classList.add('big-font');
+      else html.classList.remove('big-font');
+
+      localStorage.setItem('bigFont', String(largeFont));
     }
   }, [largeFont]);
 
@@ -133,9 +133,9 @@ export default function NavBar() {
           )}
         </div>
       )}
-      {!isSignin && (
+      {user && (
         <div className="flex justify-end items-center gap-2 mr-6">
-          <Switch checked={largeFont} onCheckedChange={setLargeFont} />
+          <Switch checked={largeFont ?? false} onCheckedChange={setLargeFont} />
           <span className="text-xm">큰글씨보기</span>
         </div>
       )}

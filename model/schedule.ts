@@ -17,7 +17,13 @@ export const ScheduleFormSchema = z.object({
   courtCount: z.string({
     required_error: '코트 수 입력해주세요.',
   }),
-  courtNumbers: z.array(z.string()),
+  courtNumbers: z.array(
+    z.object({
+      number: z.string().min(1, '코트 번호를 입력해주세요.'),
+      startTime: z.string(),
+      endTime: z.string(),
+    })
+  ),
   status: z
     .enum(['pending', 'attendees', 'matchmaking', 'shared', 'playing', 'done'])
     .default('pending'),
@@ -52,7 +58,7 @@ export type ScheduleProps = {
   courtName: string;
   otherCourtName?: string;
   courtCount: string;
-  courtNumbers: { _key: string; number: string }[];
+  courtNumbers: { number: string; startTime: string; endTime: string }[];
   attendees: AttendanceProps[];
   status:
     | 'pending'

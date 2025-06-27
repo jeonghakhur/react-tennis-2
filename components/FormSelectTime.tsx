@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import { UseFormReturn } from 'react-hook-form';
+import { UseFormReturn, FieldPath } from 'react-hook-form';
 
 // type SelectTimeFormProps = {
 //   form: UseFormReturn<ScheduleFormType>;
@@ -15,19 +15,23 @@ import { UseFormReturn } from 'react-hook-form';
 // };
 
 type SelectTimeFormProps = {
-  form: UseFormReturn<ScheduleFormType>; // ✅ `startTime`만 포함
-  name: keyof ScheduleFormType;
+  form: UseFormReturn<ScheduleFormType>;
+  name: FieldPath<ScheduleFormType>;
   startTime?: number;
+  endTime?: number;
   label?: string;
   value?: string | undefined;
+  onChange?: (val: string) => void;
 };
 
 export default function FormSelectTime({
   form,
   name,
-  startTime = 19,
+  startTime,
+  endTime,
   label,
   value,
+  onChange,
 }: SelectTimeFormProps) {
   function timeFormat(value: number): string {
     return value.toString().padStart(2, '0'); // ✅ `0`을 앞에 붙여 2자리 문자열로 변환
@@ -42,28 +46,43 @@ export default function FormSelectTime({
           <FormItem className="flex flex-col">
             {label && <FormLabel>{label}</FormLabel>}
             <Select
-              onValueChange={field.onChange}
-              // defaultValue={String(field.value)}
+              onValueChange={(val) => {
+                field.onChange(val);
+                onChange?.(val);
+              }}
               value={field.value ? String(field.value) : value || ''}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent align="start" className="h-[200px]">
-                {name === 'startTime'
-                  ? Array.from({ length: 24 - 6 + 1 }, (_, i) => (
-                      <SelectItem value={`${6 + i}`} key={`startTime_${i}`}>
-                        {timeFormat(6 + i)}
-                      </SelectItem>
-                    ))
-                  : Array.from({ length: 24 - startTime }, (_, i) => (
-                      <SelectItem
-                        value={`${startTime + i + 1}`}
-                        key={`endTime_${i}`}
-                      >
-                        {timeFormat(startTime + i + 1)}
-                      </SelectItem>
-                    ))}
+                {name.endsWith('startTime')
+                  ? Array.from(
+                      { length: (endTime ?? 22) - (startTime ?? 19) },
+                      (_, i) => {
+                        const hour = (startTime ?? 19) + i;
+                        if (endTime !== undefined && hour >= endTime)
+                          return null;
+                        return (
+                          <SelectItem value={`${hour}`} key={`startTime_${i}`}>
+                            {timeFormat(hour)}
+                          </SelectItem>
+                        );
+                      }
+                    )
+                  : Array.from(
+                      { length: (endTime ?? 22) - (startTime ?? 19) },
+                      (_, i) => {
+                        const hour = (startTime ?? 19) + i + 1;
+                        if (endTime !== undefined && hour > endTime)
+                          return null;
+                        return (
+                          <SelectItem value={`${hour}`} key={`endTime_${i}`}>
+                            {timeFormat(hour)}
+                          </SelectItem>
+                        );
+                      }
+                    )}
               </SelectContent>
             </Select>
           </FormItem>

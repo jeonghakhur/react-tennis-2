@@ -58,6 +58,7 @@ export default function ScheduleForm() {
       date: new Date(),
       startTime: '19',
       endTime: '22',
+      courtNumbers: [{ number: '1', startTime: '19', endTime: '22' }],
       attendees: [],
       status: 'pending',
     },
@@ -100,9 +101,21 @@ export default function ScheduleForm() {
 
   const handleCourtCountChange = (count: string) => {
     const countNumber = parseInt(count, 10);
-    Array.from({ length: countNumber }, (_, idx) => {
-      form.setValue(`courtNumbers.${idx}`, String(idx + 1));
-    });
+    const defaultStart = form.watch('startTime') || '19';
+    const defaultEnd = form.watch('endTime') || '22';
+    const prevCourts = form.getValues('courtNumbers') || [];
+    let courts = prevCourts.slice(0, countNumber);
+    if (courts.length < countNumber) {
+      courts = courts.concat(
+        Array.from({ length: countNumber - courts.length }, (_, idx) => ({
+          number: String(courts.length + idx + 1),
+          startTime: defaultStart,
+          endTime: defaultEnd,
+        }))
+      );
+    }
+    form.setValue('courtNumbers', courts);
+    form.trigger('courtNumbers');
   };
 
   const handleStatusChange = (checked: boolean) => {
@@ -181,14 +194,13 @@ export default function ScheduleForm() {
               />
             )}
 
-            <div className="flex gap-4">
-              {Array.from(
-                { length: parseInt(form.watch('courtCount'), 10) },
-                (_, idx) => (
+            {form.watch('courtCount') && (
+              <div className="flex gap-4">
+                {(form.watch('courtNumbers') || []).map((_, idx) => (
                   <FormCourtNumber key={idx} form={form} idx={idx} />
-                )
-              )}
-            </div>
+                ))}
+              </div>
+            )}
 
             <FormMembers
               form={form}
