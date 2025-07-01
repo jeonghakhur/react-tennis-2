@@ -195,7 +195,7 @@ export default function ScheduleForm() {
             )}
 
             {form.watch('courtCount') && (
-              <div className="flex gap-4">
+              <div className="flex flex-col gap-4">
                 {(form.watch('courtNumbers') || []).map((_, idx) => (
                   <FormCourtNumber key={idx} form={form} idx={idx} />
                 ))}

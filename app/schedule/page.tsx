@@ -202,7 +202,15 @@ export default function ScheduleList() {
                   <div className="bg-green-50 p-3 rounded-lg">
                     <p className="text-sm text-gray-600">코트</p>
                     <p className="text-lg font-bold text-green-600">
-                      {schedule.courtNumbers?.join(', ') || '0'}
+                      {Array.isArray(schedule.courtNumbers)
+                        ? schedule.courtNumbers
+                            .map((cn) =>
+                              typeof cn === 'object' && cn.number
+                                ? cn.number
+                                : cn
+                            )
+                            .join(', ')
+                        : '0'}
                     </p>
                   </div>
                 </div>

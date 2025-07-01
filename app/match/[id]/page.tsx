@@ -74,7 +74,6 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   attendees,
   startTime,
   endTime,
-  courts,
   courtNumbers,
   scheduleId,
 }) => {
@@ -187,6 +186,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
   const generateSchedule = useCallback(() => {
     shuffleArray(attendees);
+
     const timeSlots: string[] = [];
     let currentTime = new Date(`2023-01-01T${startTime}:00`);
     const end = new Date(`2023-01-01T${endTime}:00`);
@@ -225,9 +225,9 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
       const playing: Attendee[] = [];
 
-      // 시간대별 사용 가능한 코트 수만큼만 매치 생성
-      const slotCourtCount = courtAvailability[slotIdx]?.count || 0;
-      for (let court = 1; court <= slotCourtCount; court++) {
+      // 시간대별 사용 가능한 코트 번호 배열
+      const slotCourtNumbers = courtAvailability[slotIdx]?.courts || [];
+      for (let courtIdx = 0; courtIdx < slotCourtNumbers.length; courtIdx++) {
         if (available.length >= 4) {
           shuffleArray(available);
           const players = available
@@ -248,7 +248,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
           schedule.push({
             time: slot,
-            court: court.toString(),
+            court: slotCourtNumbers[courtIdx] ?? '', // 실제 코트 번호 할당, undefined 방지
             players: players.map((p) => p.name),
             score: ['0', '0'],
           });
@@ -261,7 +261,8 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
     setMatches(schedule);
     setIdleSummary(idleByTime);
     setGamesPlayed(gamesCount);
-  }, [attendees, startTime, endTime, courts, getCourtAvailabilityByTime]);
+    console.log(schedule);
+  }, [attendees, startTime, endTime, getCourtAvailabilityByTime]);
 
   // 기존 게임 데이터 가져오기
   useEffect(() => {

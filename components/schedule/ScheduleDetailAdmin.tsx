@@ -93,6 +93,7 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
   };
 
   async function onSubmit(data: ScheduleFormType) {
+    // console.log('data', data);
     setLoading(true);
     try {
       await patchSchedule(data);
@@ -194,7 +195,7 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
               </div> */}
 
               {form.watch('courtCount') && (
-                <div className="flex gap-4">
+                <div className="flex flex-col gap-4">
                   {(form.watch('courtNumbers') || []).map((_, idx) => (
                     <FormCourtNumber key={idx} form={form} idx={idx} />
                   ))}
