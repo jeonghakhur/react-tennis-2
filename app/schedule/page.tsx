@@ -10,6 +10,13 @@ import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { GetScheduleProps } from '@/model/schedule';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@/components/ui/popover';
+import { CalendarPlus, SlidersHorizontal } from 'lucide-react';
 
 export default function ScheduleList() {
   const { isLoading, user } = useAuthRedirect('/', 0);
@@ -23,12 +30,24 @@ export default function ScheduleList() {
   );
   const [loading, setLoading] = useState<boolean>(isLoading);
   const router = useRouter();
+  // 조회기간 상태
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  // 팝오버 열림 상태 관리
+  const [openStart, setOpenStart] = useState(false);
+  const [openEnd, setOpenEnd] = useState(false);
+  // 조회기간 UI 노출 상태
+  const [showPeriod, setShowPeriod] = useState(false);
 
   useEffect(() => {
     if (schedules || error) {
       setLoading(false);
     }
   }, [schedules, error]);
+
+  useEffect(() => {
+    console.log(openStart);
+  }, [openStart]);
 
   const getWorkoutInfo = (schedule: GetScheduleProps) => {
     const uniquePlayers = new Set(
@@ -42,6 +61,12 @@ export default function ScheduleList() {
       courtCount: schedule.courtCount,
     };
   };
+
+  // 조회기간에 맞는 일정만 필터링
+  const filteredSchedules = schedules?.filter((schedule) => {
+    const date = new Date(schedule.date);
+    return (!startDate || date >= startDate) && (!endDate || date <= endDate);
+  });
 
   if (loading) {
     return (
@@ -139,22 +164,69 @@ export default function ScheduleList() {
 
   return (
     <Container>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">게임 일정</h1>
-
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold text-gray-800">게임일정</h1>
         {user && user.level >= 3 && (
-          <Button
-            type="button"
+          <CalendarPlus
+            className="ml-auto"
             onClick={() => router.push('/schedule/new')}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            새 일정 등록
-          </Button>
+          />
         )}
+        <SlidersHorizontal
+          className="ml-3 cursor-pointer"
+          onClick={() => setShowPeriod((prev) => !prev)}
+        />
       </div>
 
+      {/* 조회기간 선택 UI (토글) */}
+      {showPeriod && (
+        <div className="flex gap-2 items-center my-4">
+          <Popover open={openStart} onOpenChange={setOpenStart}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex-1 justify-start text-left"
+              >
+                {startDate ? format(startDate, 'yyyy-MM-dd') : '시작일 선택'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={startDate}
+                onSelect={(date) => {
+                  setStartDate(date ?? undefined);
+                  setOpenStart(false);
+                }}
+              />
+            </PopoverContent>
+          </Popover>
+          <span>~</span>
+          <Popover open={openEnd} onOpenChange={setOpenEnd}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex-1 justify-start text-left"
+              >
+                {endDate ? format(endDate, 'yyyy-MM-dd') : '종료일 선택'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="p-0">
+              <Calendar
+                mode="single"
+                selected={endDate}
+                onSelect={(date) => {
+                  setEndDate(date ?? undefined);
+                  setOpenEnd(false);
+                }}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
+
       <div className="grid gap-4">
-        {schedules.map((schedule) => {
+        {filteredSchedules?.map((schedule) => {
           const workoutInfo = getWorkoutInfo(schedule);
 
           const statusMap: Record<string, string> = {
