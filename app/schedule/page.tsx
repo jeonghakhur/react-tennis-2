@@ -138,7 +138,7 @@ export default function ScheduleList() {
   }
 
   return (
-    <Container className="p-5">
+    <Container>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">게임 일정</h1>
 

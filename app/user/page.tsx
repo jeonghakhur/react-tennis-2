@@ -16,11 +16,20 @@ import {
 } from '@/components/ui/select';
 import LoadingGrid from '@/components/LoadingGrid';
 import { toast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
 
 export default function User() {
   const { data, isLoading } = useSWR<SimpleUserProps>('/api/me');
   const { control, register, handleSubmit, reset } = useForm<SimpleUserProps>();
   const [loading, setLoading] = useState<boolean>(isLoading);
+  const getInitialFont = () => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bigFont');
+      return saved === 'true';
+    }
+    return false;
+  };
+  const [largeFont, setLargeFont] = useState(getInitialFont);
 
   async function updateUser(updateData: SimpleUserProps) {
     return fetch('/api/me', {
@@ -46,6 +55,17 @@ export default function User() {
       });
   }
 
+  // 큰글씨 상태를 html에 반영하고 localStorage에 저장
+  useEffect(() => {
+    if (largeFont !== null) {
+      const html = document.documentElement;
+      if (largeFont) html.classList.add('big-font');
+      else html.classList.remove('big-font');
+
+      localStorage.setItem('bigFont', String(largeFont));
+    }
+  }, [largeFont]);
+
   useEffect(() => {
     if (data) {
       reset({
@@ -61,6 +81,10 @@ export default function User() {
 
   return (
     <div>
+      <div className="flex justify-end items-center gap-2 mr-6 mt-4">
+        <Switch checked={largeFont} onCheckedChange={setLargeFont} />
+        <span className="text-xm">큰글씨보기</span>
+      </div>
       <LoadingGrid loading={loading} />
       {!isLoading && (
         <form className="px-5" onSubmit={handleSubmit(onSubmit)}>

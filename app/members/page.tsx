@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 
 export default function Page() {
-  const { isLoading } = useAuthRedirect('/', 3);
+  const { isLoading } = useAuthRedirect('/', 4);
 
   const { data: members } = useSWR<UserProps[]>('/api/members');
 

@@ -86,18 +86,7 @@ export default function LatestMatchSchedule({
     );
   }
 
-  if (!gameResult) {
-    return (
-      <div className="bg-white rounded-lg shadow-md p-4">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          진행예정게임대진
-        </h3>
-        <div className="text-center py-8 text-gray-500">
-          진행 예정인 게임이 없습니다.
-        </div>
-      </div>
-    );
-  }
+  if (!gameResult) return null;
 
   const totalGames = gameResult.games.length;
   const displayedGames = isExpanded

@@ -9,7 +9,6 @@ import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { GameComment } from '@/model/gameResult';
-import CommentSection from '@/components/common/CommentSection';
 
 interface Game {
   _id: string;
@@ -51,24 +50,6 @@ export default function Home() {
       newExpanded.add(gameId);
     }
     setExpandedGames(newExpanded);
-  };
-
-  // 게임별 코멘트 읽기 전용 컴포넌트
-  const GameComments = ({ game }: { game: Game }) => {
-    return (
-      <CommentSection
-        comments={game.comments || []}
-        currentUserId=""
-        currentUser={{
-          name: '',
-          username: '',
-        }}
-        onAddComment={async () => {}}
-        onRemoveComment={async () => {}}
-        title="게임 코멘트"
-        readOnly={true}
-      />
-    );
   };
 
   if (loading) {
@@ -123,8 +104,8 @@ export default function Home() {
   }
 
   return (
-    <Container className="p-5">
-      <div className="grid gap-4">
+    <Container>
+      <div className="flex flex-col gap-4">
         {games?.map((game) => {
           const date = new Date(game.date);
           const isClickable = true; // 모든 사용자가 클릭 가능
@@ -137,7 +118,7 @@ export default function Home() {
           return (
             <div
               key={game._id}
-              className={`bg-white rounded-lg shadow-md p-6 transition-shadow border border-gray-200 ${
+              className={`bg-white rounded-lg shadow-md py-6 px-4 transition-shadow border border-gray-200 ${
                 isClickable
                   ? 'cursor-pointer hover:shadow-lg'
                   : 'cursor-default'
@@ -234,7 +215,6 @@ export default function Home() {
               )}
 
               {/* 게임 코멘트 섹션 */}
-              <GameComments game={game} />
             </div>
           );
         })}

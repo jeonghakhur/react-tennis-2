@@ -161,11 +161,11 @@ export default function LatestGameResult({
                 </span>
                 <span className="text-sm text-gray-500">{game.time}</span>
               </div>
-              <div className="flex justify-between gap-2 text-base">
+              <div className="flex justify-between text-base">
                 <div className={` ${teamAWins ? 'font-bold' : ''}`}>
                   {game.players[0]}/{game.players[1]}
                   <span
-                    className={`ml-1 ${teamAWins ? 'text-red-600 font-bold' : 'text-gray-700'}`}
+                    className={` ${teamAWins ? 'text-red-600 font-bold' : 'text-gray-700'}`}
                   >
                     [{game.score[0] || '0'}]
                   </span>
@@ -174,7 +174,7 @@ export default function LatestGameResult({
                 <div className={` ${teamBWins ? 'font-bold' : ''}`}>
                   {game.players[2]}/{game.players[3]}
                   <span
-                    className={`ml-1 ${teamBWins ? 'text-red-600 font-bold' : 'text-gray-700'}`}
+                    className={` ${teamBWins ? 'text-red-600 font-bold' : 'text-gray-700'}`}
                   >
                     [{game.score[1] || '0'}]
                   </span>
