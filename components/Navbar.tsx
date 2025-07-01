@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useState, useEffect } from 'react';
 
 export default function NavBar() {
   const { data: session, status } = useSession();
@@ -15,9 +16,29 @@ export default function NavBar() {
 
   const user = session?.user;
   const level = user?.level || 0;
+  const [largeFont, setLargeFont] = useState<null | boolean>(null);
+
+  // 마운트 후 localStorage에서 값 동기화
+  useEffect(() => {
+    const saved = localStorage.getItem('bigFont');
+    if (saved === 'true') setLargeFont(true);
+    else if (saved === 'false') setLargeFont(false);
+    else setLargeFont(false);
+  }, []);
+
+  // 큰글씨 상태를 html에 반영하고 localStorage에 저장
+  useEffect(() => {
+    if (largeFont !== null) {
+      const html = document.documentElement;
+      if (largeFont) html.classList.add('big-font');
+      else html.classList.remove('big-font');
+
+      localStorage.setItem('bigFont', String(largeFont));
+    }
+  }, [largeFont]);
 
   return (
-    <div className="px-6 py-3">
+    <div className="mb-3 px-6 py-3">
       {status !== 'loading' && (
         <div className="flex items-center">
           <ul className="flex gap-x-3 text-lg font-bold">
@@ -64,7 +85,7 @@ export default function NavBar() {
                 </li>
               </>
             )}
-            {level > 3 && (
+            {level > 4 && (
               <li>
                 <Link
                   href="/members"
