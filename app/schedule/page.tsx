@@ -5,7 +5,7 @@ import LoadingGrid from '@/components/LoadingGrid';
 import useAuthRedirect from '@/hooks/useAuthRedirect';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -38,6 +38,9 @@ export default function ScheduleList() {
   const [openEnd, setOpenEnd] = useState(false);
   // 조회기간 UI 노출 상태
   const [showPeriod, setShowPeriod] = useState(false);
+  // 인피니티 스크롤 상태
+  const [visibleCount, setVisibleCount] = useState(5);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (schedules || error) {
@@ -48,6 +51,37 @@ export default function ScheduleList() {
   useEffect(() => {
     console.log(openStart);
   }, [openStart]);
+
+  const filteredSchedules = useMemo(() => {
+    return (
+      schedules?.filter((schedule) => {
+        const date = new Date(schedule.date);
+        return (
+          (!startDate || date >= startDate) && (!endDate || date <= endDate)
+        );
+      }) || []
+    );
+  }, [schedules, startDate, endDate]);
+
+  // 스크롤 이벤트 핸들러
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!listRef.current) return;
+      const { scrollTop, scrollHeight, clientHeight } =
+        document.documentElement;
+      // 브라우저 전체 스크롤이 하단에 닿았을 때
+      if (scrollTop + clientHeight >= scrollHeight - 10) {
+        setVisibleCount((prev) => {
+          if (filteredSchedules && prev < filteredSchedules.length) {
+            return Math.min(prev + 5, filteredSchedules.length);
+          }
+          return prev;
+        });
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [filteredSchedules]);
 
   const getWorkoutInfo = (schedule: GetScheduleProps) => {
     const uniquePlayers = new Set(
@@ -63,10 +97,6 @@ export default function ScheduleList() {
   };
 
   // 조회기간에 맞는 일정만 필터링
-  const filteredSchedules = schedules?.filter((schedule) => {
-    const date = new Date(schedule.date);
-    return (!startDate || date >= startDate) && (!endDate || date <= endDate);
-  });
 
   if (loading) {
     return (
@@ -215,6 +245,7 @@ export default function ScheduleList() {
               <Calendar
                 mode="single"
                 selected={endDate}
+                disabled={startDate ? { before: startDate } : undefined}
                 onSelect={(date) => {
                   setEndDate(date ?? undefined);
                   setOpenEnd(false);
@@ -225,8 +256,8 @@ export default function ScheduleList() {
         </div>
       )}
 
-      <div className="grid gap-4">
-        {filteredSchedules?.map((schedule) => {
+      <div className="grid gap-4" ref={listRef}>
+        {filteredSchedules?.slice(0, visibleCount).map((schedule) => {
           const workoutInfo = getWorkoutInfo(schedule);
 
           const statusMap: Record<string, string> = {

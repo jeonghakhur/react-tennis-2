@@ -176,3 +176,29 @@ export async function updateScheduleStatus(
     throw new Error('스케줄 상태 업데이트 중 오류 발생');
   }
 }
+
+// 게임 통계 조회기간 조회
+export async function getStatsPeriod() {
+  return client.fetch(
+    `*[_type == "gameStatsPeriod"] | order(_createdAt desc)[0]`
+  );
+}
+
+// 게임 통계 조회기간 저장(업데이트 또는 생성)
+export async function setStatsPeriod(startDate: string, endDate: string) {
+  // 항상 하나만 존재하도록, 기존 document가 있으면 업데이트, 없으면 생성
+  const existing = await client.fetch(
+    `*[_type == "gameStatsPeriod"] | order(_createdAt desc)[0]`
+  );
+  if (existing && existing._id) {
+    // 업데이트
+    return client.patch(existing._id).set({ startDate, endDate }).commit();
+  } else {
+    // 새로 생성
+    return client.create({
+      _type: 'gameStatsPeriod',
+      startDate,
+      endDate,
+    });
+  }
+}

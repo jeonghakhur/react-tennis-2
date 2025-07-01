@@ -4,11 +4,18 @@ import LoadingGrid from '@/components/LoadingGrid';
 import useAuthRedirect from '@/hooks/useAuthRedirect';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { GameComment } from '@/model/gameResult';
+import { SlidersHorizontal } from 'lucide-react';
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 interface Game {
   _id: string;
@@ -34,6 +41,13 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(isLoading);
   const [expandedGames, setExpandedGames] = useState<Set<string>>(new Set());
   const router = useRouter();
+  const [showPeriod, setShowPeriod] = useState(false);
+  const [openStart, setOpenStart] = useState(false);
+  const [openEnd, setOpenEnd] = useState(false);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [visibleCount, setVisibleCount] = useState(5);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (games) {
@@ -52,6 +66,35 @@ export default function Home() {
     setExpandedGames(newExpanded);
   };
 
+  const filteredGames = useMemo(() => {
+    return (
+      games?.filter((game) => {
+        const date = new Date(game.date);
+        return (
+          (!startDate || date >= startDate) && (!endDate || date <= endDate)
+        );
+      }) || []
+    );
+  }, [games, startDate, endDate]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!listRef.current) return;
+      const { scrollTop, scrollHeight, clientHeight } =
+        document.documentElement;
+      if (scrollTop + clientHeight >= scrollHeight - 10) {
+        setVisibleCount((prev) => {
+          if (filteredGames && prev < filteredGames.length) {
+            return Math.min(prev + 5, filteredGames.length);
+          }
+          return prev;
+        });
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [filteredGames]);
+
   if (loading) {
     return (
       <Container>
@@ -60,9 +103,68 @@ export default function Home() {
     );
   }
 
-  if (games?.length === 0) {
+  // 항상 상단에 SlidersHorizontal 및 조회기간 UI 노출
+  const periodUI = (
+    <>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold text-gray-800">게임결과</h1>
+        <SlidersHorizontal
+          className="ml-3 cursor-pointer"
+          onClick={() => setShowPeriod((prev) => !prev)}
+        />
+      </div>
+      {showPeriod && (
+        <div className="flex gap-2 items-center my-4">
+          <Popover open={openStart} onOpenChange={setOpenStart}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex-1 justify-start text-left"
+              >
+                {startDate ? format(startDate, 'yyyy-MM-dd') : '시작일 선택'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={startDate}
+                onSelect={(date) => {
+                  setStartDate(date ?? undefined);
+                  setOpenStart(false);
+                }}
+              />
+            </PopoverContent>
+          </Popover>
+          <span>~</span>
+          <Popover open={openEnd} onOpenChange={setOpenEnd}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex-1 justify-start text-left"
+              >
+                {endDate ? format(endDate, 'yyyy-MM-dd') : '종료일 선택'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="p-0">
+              <Calendar
+                mode="single"
+                selected={endDate}
+                onSelect={(date) => {
+                  setEndDate(date ?? undefined);
+                  setOpenEnd(false);
+                }}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
+    </>
+  );
+
+  if (filteredGames.length === 0) {
     return (
       <Container>
+        {periodUI}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex flex-col items-center text-center">
             <div className="bg-gray-50 rounded-lg p-8 w-full max-w-md">
@@ -86,7 +188,7 @@ export default function Home() {
                 등록된 게임이 없습니다
               </h3>
               <p className="text-gray-500 mb-6">
-                아직 등록된 게임 데이터가 없습니다.
+                조회기간에 해당하는 게임 데이터가 없습니다.
               </p>
               <Button
                 type="button"
@@ -105,8 +207,9 @@ export default function Home() {
 
   return (
     <Container>
-      <div className="flex flex-col gap-4">
-        {games?.map((game) => {
+      {periodUI}
+      <div className="flex flex-col gap-4" ref={listRef}>
+        {filteredGames.slice(0, visibleCount).map((game) => {
           const date = new Date(game.date);
           const isClickable = true; // 모든 사용자가 클릭 가능
           const isExpanded = expandedGames.has(game._id);

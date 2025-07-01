@@ -48,11 +48,18 @@ export async function updateGameResult(
   }
 }
 
-export async function getAllGames(status?: string | null) {
+export async function getAllGames(
+  status?: string | null,
+  startDate?: string | null,
+  endDate?: string | null
+) {
   const statusFilter = status ? `&& schedule->status == "${status}"` : '';
-
+  let dateFilter = '';
+  if (startDate && endDate) {
+    dateFilter = `&& schedule->date >= "${startDate}" && schedule->date <= "${endDate}"`;
+  }
   return client.fetch(
-    `*[_type == "gameResult"${statusFilter}] | order(schedule->date desc) {
+    `*[_type == "gameResult"${statusFilter}${dateFilter}] | order(schedule->date desc) {
       ...,
       "scheduleID": schedule->_id,
       "date": schedule->date,

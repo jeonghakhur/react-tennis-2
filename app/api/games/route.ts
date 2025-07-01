@@ -6,7 +6,10 @@ export async function GET(request: NextRequest) {
   return await withSessionUser(async () => {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
-
-    return getAllGames(status).then((data) => NextResponse.json(data));
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    return getAllGames(status, startDate, endDate).then((data) =>
+      NextResponse.json(data)
+    );
   });
 }

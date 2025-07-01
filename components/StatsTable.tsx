@@ -3,10 +3,13 @@
 import { GameResult } from '@/model/gameResult';
 import LoadingGrid from '@/components/LoadingGrid';
 import useSWR from 'swr';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
 import { UserProps } from '@/model/user';
+import { Calendar } from './ui/calendar';
+import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
+import useAuthRedirect from '@/hooks/useAuthRedirect';
 
 type PlayerStats = {
   name: string;
@@ -245,6 +248,50 @@ export default function StatsTable() {
   } = useSWR<GameResult[]>('/api/games?status=done');
   // 가입된 회원 목록 불러오기
   const { data: members } = useSWR<UserProps[]>('/api/members');
+  const { user } = useAuthRedirect('/', 0);
+  const isAdmin = user && user.level > 3;
+
+  // 시작일/종료일 상태 관리
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
+  const [openStart, setOpenStart] = useState(false);
+  const [openEnd, setOpenEnd] = useState(false);
+
+  // 현재 조회기간을 최초 1회 불러와 초기값 세팅
+  useEffect(() => {
+    fetch('/api/stats-period')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.startDate && data.endDate) {
+          setStartDate(new Date(data.startDate));
+          setEndDate(new Date(data.endDate));
+        }
+      });
+  }, []);
+
+  // 적용 버튼 클릭 시 동작(서버 저장/조회 등 연동 필요)
+  const handleApply = async () => {
+    if (!startDate || !endDate) return;
+    try {
+      const res = await fetch('/api/stats-period', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startDate: startDate.toISOString().slice(0, 10),
+          endDate: endDate.toISOString().slice(0, 10),
+        }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        alert('저장 실패: ' + (error.error || res.statusText));
+        return;
+      }
+      alert('조회기간이 저장되었습니다!');
+      // TODO: SWR mutate 등으로 데이터 갱신 필요시 추가
+    } catch {
+      alert('조회기간 저장 중 오류 발생');
+    }
+  };
 
   // 가입된 회원 이름 목록
   const memberNames = useMemo(
@@ -294,6 +341,50 @@ export default function StatsTable() {
   return (
     <div>
       <h2 className="text-xl font-semibold text-gray-800 mb-4">전체순위</h2>
+      {isAdmin && (
+        <div className="flex gap-2 mb-4">
+          <Popover open={openStart} onOpenChange={setOpenStart}>
+            <PopoverTrigger asChild>
+              <Button variant="outline">
+                {startDate ? startDate.toLocaleDateString() : '시작일 선택'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start">
+              <Calendar
+                mode="single"
+                selected={startDate}
+                onSelect={(date) => {
+                  setStartDate(date ?? undefined);
+                  setOpenStart(false);
+                }}
+
+                // 오늘 이전 비활성화 등 옵션 추가 가능
+              />
+            </PopoverContent>
+          </Popover>
+          <Popover open={openEnd} onOpenChange={setOpenEnd}>
+            <PopoverTrigger asChild>
+              <Button variant="outline">
+                {endDate ? endDate.toLocaleDateString() : '종료일 선택'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start">
+              <Calendar
+                mode="single"
+                selected={endDate}
+                onSelect={(date) => {
+                  setEndDate(date ?? undefined);
+                  setOpenEnd(false);
+                }}
+                disabled={(date) => !startDate || date < startDate}
+              />
+            </PopoverContent>
+          </Popover>
+          <Button onClick={handleApply} disabled={!startDate || !endDate}>
+            적용
+          </Button>
+        </div>
+      )}
       <StatsTableContent stats={stats} />
     </div>
   );
