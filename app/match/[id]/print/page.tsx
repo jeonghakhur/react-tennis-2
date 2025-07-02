@@ -131,7 +131,7 @@ export default function MatchPrintPage() {
         )}
       </h1>
       <div className="overflow-x-auto">
-        <table className="w-full border text-center mb-6 text-lg">
+        <table className="w-full border text-center font-bold table-2">
           <thead>
             <tr>
               <th className="border p-2">시간</th>
@@ -202,20 +202,20 @@ export default function MatchPrintPage() {
                             {pair1}
                           </td>
                           <td
-                            className={`w-[50px]   ${courtColors[idx % courtColors.length]}`}
+                            className={`px-4 ${courtColors[idx % courtColors.length]}`}
                           ></td>
                           <td
-                            className={`w-[50px]   ${courtColors[idx % courtColors.length]}`}
+                            className={`px-4 ${courtColors[idx % courtColors.length]}`}
                           ></td>
                           <td
-                            className={`p-2 whitespace-nowrap  ${courtColors[idx % courtColors.length]}`}
+                            className={`p-2 whitespace-nowrap ${courtColors[idx % courtColors.length]}`}
                           >
                             {pair2}
                           </td>
                         </Fragment>
                       );
                     })}
-                    <td className="border p-2" rowSpan={2}>
+                    <td className="border p-2 whitespace-nowrap" rowSpan={2}>
                       {waiting.join(', ')}
                     </td>
                   </tr>
@@ -223,8 +223,10 @@ export default function MatchPrintPage() {
                     {rowGames.map((_, idx) => (
                       <Fragment key={idx}>
                         <td
-                          className={`h-[50px] ${courtColors[idx % courtColors.length]}`}
-                        ></td>
+                          className={` ${courtColors[idx % courtColors.length]} text-transparent`}
+                        >
+                          {' - '}
+                        </td>
                         <td
                           className={`${courtColors[idx % courtColors.length]}`}
                         ></td>

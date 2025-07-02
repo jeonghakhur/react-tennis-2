@@ -31,9 +31,7 @@ export default function Home() {
   const currentWeekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 0 });
 
   // 인라인 데이트픽커용 상태
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    new Date()
-  );
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
   // 게임 데이터 로딩 상태 확인
   const { isLoading: gamesLoading } = useSWR('/api/games?status=done');
@@ -138,20 +136,23 @@ export default function Home() {
                 mode="single"
                 selected={selectedDate}
                 onSelect={(date) => {
-                  setSelectedDate(date);
-                  // 선택한 날짜가 현재 주 범위 밖이면 주를 이동
-                  if (
-                    date &&
-                    (date < currentWeekStart || date > currentWeekEnd)
-                  ) {
-                    setCurrentWeekStart(startOfWeek(date, { weekStartsOn: 0 }));
+                  // 같은 날짜를 다시 클릭해도 선택 해제되지 않도록 처리
+                  if (date) {
+                    setSelectedDate(date);
+                    // 선택한 날짜가 현재 주 범위 밖이면 주를 이동
+                    if (date < currentWeekStart || date > currentWeekEnd) {
+                      setCurrentWeekStart(
+                        startOfWeek(date, { weekStartsOn: 0 })
+                      );
+                    }
+                    // 해당 날짜의 스케줄 정보 저장
+                    const schedule = schedules?.find(
+                      (s) =>
+                        new Date(s.date).toDateString() === date.toDateString()
+                    );
+                    setSelectedSchedule(schedule || null);
                   }
-                  // 해당 날짜의 스케줄 정보 저장
-                  const schedule = schedules?.find(
-                    (s) =>
-                      new Date(s.date).toDateString() === date?.toDateString()
-                  );
-                  setSelectedSchedule(schedule || null);
+                  // date가 undefined인 경우 (같은 날짜 재클릭) 아무것도 하지 않음
                 }}
                 modifiers={{
                   doneSchedule: (date) =>
