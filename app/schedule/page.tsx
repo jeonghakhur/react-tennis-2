@@ -321,44 +321,41 @@ export default function ScheduleList() {
 
               <div className="grid mt-3">
                 {user && user.level >= 3 && (
-                  <>
-                    {schedule.status === 'done' ? (
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      className="flex-1"
+                      variant="outline"
+                      size="lg"
+                      onClick={() => {
+                        router.push(`/schedule/${schedule.id}`);
+                      }}
+                    >
+                      참석자등록
+                    </Button>
+                    <Button
+                      type="button"
+                      className="flex-1"
+                      variant="default"
+                      size="lg"
+                      onClick={() => {
+                        router.push(`/match/${schedule.id}`);
+                      }}
+                    >
+                      대진표 ({status})
+                    </Button>
+                    {schedule.status === 'done' && (
                       <Button
                         type="button"
+                        className="flex-1"
                         variant="default"
                         size="lg"
                         onClick={() => router.push(`/games/${schedule.id}`)}
                       >
                         게임결과보기
                       </Button>
-                    ) : (
-                      <div className="flex gap-3">
-                        <Button
-                          type="button"
-                          className="flex-1"
-                          variant="outline"
-                          size="lg"
-                          onClick={() => {
-                            router.push(`/schedule/${schedule.id}`);
-                          }}
-                        >
-                          참석자등록
-                        </Button>
-
-                        <Button
-                          type="button"
-                          className="flex-1"
-                          variant="default"
-                          size="lg"
-                          onClick={() => {
-                            router.push(`/match/${schedule.id}`);
-                          }}
-                        >
-                          대진표 ({status})
-                        </Button>
-                      </div>
                     )}
-                  </>
+                  </div>
                 )}
 
                 {user && user.level < 3 && (

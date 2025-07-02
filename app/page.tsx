@@ -12,7 +12,7 @@ import { GetScheduleProps } from '@/model/schedule';
 import CurrentPlayingGame from '@/components/CurrentPlayingGame';
 import Skeleton from '@/components/common/Skeleton';
 import { Calendar } from '@/components/ui/calendar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { startOfWeek, endOfWeek } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import {
@@ -66,6 +66,28 @@ export default function Home() {
 
   // 달력 토글 상태
   const [showCalendar, setShowCalendar] = useState(false);
+
+  useEffect(() => {
+    if (!schedules || schedules.length === 0) return;
+    const today = new Date();
+    const localMidnight = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    // const utcMidnightStr = localMidnight.toISOString();
+    // 오늘 또는 이후의 일정 중 가장 가까운 것 찾기
+    const nextSchedule = schedules
+      .map((s) => ({ ...s, dateObj: new Date(s.date) }))
+      .filter((s) => s.status === 'attendees' || s.status === 'pending')
+      .filter((s) => s.dateObj >= localMidnight)
+      .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())[0];
+
+    // 오늘 이후 일정이 없으면 가장 마지막 일정 선택(옵션)
+    setSelectedSchedule(
+      nextSchedule || schedules[schedules.length - 1] || null
+    );
+  }, [schedules]);
 
   if (status === 'loading' || gamesLoading || playingGameLoading) {
     return <Skeleton lines={3} cardHeight={120} />;

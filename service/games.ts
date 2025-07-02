@@ -89,6 +89,8 @@ export async function getGame(scheduleId: string) {
       "startTime": schedule->startTime,
       "endTime": schedule->endTime,
       "status": schedule->status,
+      "attendees": schedule->attendees,
+      "courtNumbers": schedule->courtNumbers,
       "comments": comments[]{
         ...,
         "author": {

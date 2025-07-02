@@ -7,6 +7,7 @@ import { format, formatDistanceToNow, isToday } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 interface Comment {
   _key: string;
@@ -162,8 +163,18 @@ export default function CommentSection({
             >
               <div className="flex justify-between items-center">
                 <div className="flex-1 flex items-center gap-2">
-                  <div className="w-8 h-8 !bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                    {comment.author?.name?.charAt(0) || '?'}
+                  <div className="w-8 h-8 !bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold overflow-hidden">
+                    {comment.author?.image ? (
+                      <Image
+                        src={comment.author.image}
+                        alt={comment.author?.name || 'profile'}
+                        width={32}
+                        height={32}
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : (
+                      comment.author?.name?.charAt(0) || '?'
+                    )}
                   </div>
                   <div className="flex justify-between items-center flex-1">
                     <div className="">

@@ -60,6 +60,7 @@ interface MatchSchedulerProps {
   courts: number;
   courtNumbers: { number: string; startTime: string; endTime: string }[];
   scheduleId: string;
+  id?: string;
 }
 
 function shuffleArray(array: any[]) {
@@ -76,6 +77,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   endTime,
   courtNumbers,
   scheduleId,
+  id,
 }) => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [idleSummary, setIdleSummary] = useState<Record<string, string[]>>({});
@@ -701,6 +703,13 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
             <SelectItem value="done">게임완료</SelectItem>
           </SelectContent>
         </Select>
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={() => router.push(`/match/${id}/print`)}
+        >
+          대진표인쇄미리보기
+        </Button>
       </div>
 
       <table className="table">
@@ -817,6 +826,7 @@ export default function Page({ params }: Props) {
           courts={parseInt(schedule.courtCount, 10)}
           courtNumbers={schedule.courtNumbers}
           scheduleId={id}
+          id={id}
         />
       )}
     </Container>

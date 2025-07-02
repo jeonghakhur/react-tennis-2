@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
-import useSWR from 'swr';
 
 type Props = {
   selectedSchedule?: GetScheduleProps | null;
@@ -13,26 +12,8 @@ type Props = {
 
 export default function LatestPendingSchedule({ selectedSchedule }: Props) {
   const router = useRouter();
-  let schedule = selectedSchedule;
-  const swr = useSWR<GetScheduleProps>('/api/schedule/latest-pending');
-  if (!schedule) {
-    if (swr.isLoading) {
-      return (
-        <div className="bg-white rounded-lg shadow-md p-6 animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
-          <div className="space-y-3">
-            <div className="h-3 bg-gray-200 rounded"></div>
-            <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-          </div>
-        </div>
-      );
-    }
-    if (swr.error || !swr.data) {
-      return null;
-    }
-    schedule = swr.data;
-  }
+  const schedule = selectedSchedule;
+  if (!schedule) return null;
 
   const getWorkoutInfo = (schedule: GetScheduleProps) => {
     const uniquePlayers = new Set(
@@ -118,10 +99,10 @@ export default function LatestPendingSchedule({ selectedSchedule }: Props) {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => router.push('/schedule')}
+            onClick={() => router.push(`/match/${schedule.id}`)}
             className="flex-1"
           >
-            전체일정보기
+            대진표작성
           </Button>
         </div>
       )}

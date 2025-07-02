@@ -28,23 +28,24 @@ export async function getAllSchedule() {
   }`);
 }
 
-export async function getLatestPendingSchedule() {
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
-  const todayStr = `${yyyy}-${mm}-${dd}`;
-  return client.fetch(
-    `*[_type == "schedule" && status == "attendees" && date >= $todayStr] | order(date asc)[0] {
-    ...,
-    "id": _id,
-    "hasGameResult": count(*[_type == "gameResult" && schedule._ref == ^._id]) > 0,
-    "gameResultId": *[_type == "gameResult" && schedule._ref == ^._id][0]._id,
-    "gameResultCount": count(*[_type == "gameResult" && schedule._ref == ^._id])
-  }`,
-    { todayStr }
-  );
-}
+// export async function getLatestPendingSchedule() {
+//   const today = new Date();
+//   const yyyy = today.getFullYear();
+//   const mm = String(today.getMonth() + 1).padStart(2, '0');
+//   const dd = String(today.getDate() - 1).padStart(2, '0');
+//   const todayStr = `${yyyy}-${mm}-${dd}`;
+
+//   return client.fetch(
+//     `*[_type == "schedule" && date >= $todayStr] | order(date asc)[0] {
+//     ...,
+//     "id": _id,
+//     "hasGameResult": count(*[_type == "gameResult" && schedule._ref == ^._id]) > 0,
+//     "gameResultId": *[_type == "gameResult" && schedule._ref == ^._id][0]._id,
+//     "gameResultCount": count(*[_type == "gameResult" && schedule._ref == ^._id])
+//   }`,
+//     { todayStr }
+//   );
+// }
 
 export async function createSchedule(
   userId: string,
