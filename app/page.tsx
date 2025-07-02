@@ -78,6 +78,7 @@ export default function Home() {
     const nextSchedule = schedules
       .map((s) => ({ ...s, dateObj: new Date(s.date) }))
       .filter((s) => s.status === 'attendees' || s.status === 'pending')
+      // .filter((s) => s.status === 'attendees' || s.status === 'pending')
       .filter((s) => s.dateObj >= localMidnight)
       .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())[0];
 

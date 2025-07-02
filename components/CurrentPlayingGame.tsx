@@ -78,33 +78,6 @@ export default function CurrentPlayingGame({ data, isLoading, mutate }: Props) {
       setDataLoading(false);
     }
   };
-  // 게임별 삭제
-  const handleGameDelete = async (gameIndex: number) => {
-    if (!data || !data.scheduleID) return;
-    if (!confirm(`게임 ${gameIndex + 1}을 삭제하시겠습니까?`)) return;
-    setDataLoading(true);
-    try {
-      const updatedGames = editableGames.filter((_, idx) => idx !== gameIndex);
-      const result = await gameApi.updateGameData?.(data._id!, updatedGames);
-      if (result?.success) {
-        setEditableGames(updatedGames);
-        toast({
-          title: `게임 ${gameIndex + 1}이 성공적으로 삭제되었습니다.`,
-          duration: 1500,
-        });
-        mutate();
-      } else {
-        toast({
-          title: result?.error || '삭제 중 오류가 발생했습니다.',
-          variant: 'destructive',
-        });
-      }
-    } catch {
-      toast({ title: '삭제 중 오류가 발생했습니다.', variant: 'destructive' });
-    } finally {
-      setDataLoading(false);
-    }
-  };
 
   const formattedDate = useMemo(() => {
     if (!data?.date) return '';
@@ -237,9 +210,9 @@ export default function CurrentPlayingGame({ data, isLoading, mutate }: Props) {
                     className="flex-1"
                     onClick={() => handleGameUpdate(index)}
                   >
-                    수정
+                    등록
                   </Button>
-                  <Button
+                  {/* <Button
                     type="button"
                     variant="destructive"
                     size="sm"
@@ -247,7 +220,7 @@ export default function CurrentPlayingGame({ data, isLoading, mutate }: Props) {
                     onClick={() => handleGameDelete(index)}
                   >
                     삭제
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
             </div>
