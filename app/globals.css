@@ -210,3 +210,10 @@ td {
 [data-state='open'] {
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 } */
+
+/* 프린트 시 네비게이션 등 숨김 */
+@media print {
+  .header-wrapper {
+    display: none !important;
+  }
+}
