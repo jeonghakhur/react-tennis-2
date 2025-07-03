@@ -674,13 +674,13 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
   MatchRow.displayName = 'MatchRow';
 
-  const handlePrint = () => {
-    setShowPrint(true);
-    setTimeout(() => {
-      window.print();
-      setShowPrint(false);
-    }, 200);
-  };
+  // const handlePrint = () => {
+  //   setShowPrint(true);
+  //   setTimeout(() => {
+  //     window.print();
+  //     setShowPrint(false);
+  //   }, 200);
+  // };
 
   // matchData 구성 (기존 로직 활용)
   const matchData = {
@@ -736,7 +736,13 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
           {scheduleStatus !== 'pending' && scheduleStatus !== 'attendees' && (
             <Button
               variant="outline"
-              onClick={handlePrint}
+              onClick={() => {
+                setShowPrint(true);
+                setTimeout(() => {
+                  window.print();
+                  setShowPrint(false);
+                }, 500);
+              }}
               // onClick={() => router.push(`/match/${id}/print`)}
             >
               <Printer />
