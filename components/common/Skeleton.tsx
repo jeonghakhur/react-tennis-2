@@ -22,7 +22,7 @@ export default function Skeleton({
   }, [cardHeight]);
 
   return (
-    <div className={clsx('bg-gray-50 min-h-screen py-8', className)}>
+    <div className={clsx(' min-h-screen', className)}>
       <div className="flex flex-col gap-6">
         {Array.from({ length: cardCount }).map((_, idx) => (
           <div

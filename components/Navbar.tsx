@@ -38,10 +38,28 @@ export default function NavBar() {
   }, [largeFont]);
 
   return (
-    <div className="print-hidden mb-3 px-6 py-3">
-      {status !== 'loading' && (
+    <div className="print-hidden px-6 py-3">
+      {status === 'loading' ? (
+        // 로딩 중일 때 동일한 높이를 유지하는 스켈레톤
         <div className="flex items-center">
-          <ul className="flex gap-x-3 text-lg font-bold">
+          <div className="flex gap-x-3 text-lg font-bold">
+            <div className="text-lg font-bold pb-0.5 border-b-2 border-transparent">
+              <div className="h-6 bg-gray-200 rounded w-8 animate-pulse"></div>
+            </div>
+            <div className="text-lg font-bold pb-0.5 border-b-2 border-transparent">
+              <div className="h-6 bg-gray-200 rounded w-12 animate-pulse"></div>
+            </div>
+            <div className="text-lg font-bold pb-0.5 border-b-2 border-transparent">
+              <div className="h-6 bg-gray-200 rounded w-8 animate-pulse"></div>
+            </div>
+          </div>
+          <div className="ml-auto">
+            <div className="h-9 w-9 bg-gray-200 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center">
+          <ul className="flex gap-x-3 text-lg font-bold h-[43px] items-center">
             <li>
               <Link
                 href="/"

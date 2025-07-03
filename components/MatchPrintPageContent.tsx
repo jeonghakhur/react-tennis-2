@@ -4,6 +4,7 @@ import { ko } from 'date-fns/locale';
 import { Game } from '@/model/gameResult';
 import { AttendanceProps } from '@/model/schedule';
 import { Button } from './ui/button';
+import Skeleton from './common/Skeleton';
 
 interface MatchPrintPageContentProps {
   matchData:
@@ -33,7 +34,7 @@ export default function MatchPrintPageContent({
     'bg-pink-50',
   ];
 
-  if (isLoading) return <div>로딩중...</div>;
+  if (isLoading) return <Skeleton lines={5} />;
   if (!matchData) return <div>데이터 없음</div>;
 
   // 시간/코트별로 실제 데이터 출력
@@ -134,7 +135,7 @@ export default function MatchPrintPageContent({
 
   return (
     <div className="">
-      <div className="print-hidden px-4">
+      <div className="print-hidden px-4 mb-2 text-right">
         <Button variant="outline" onClick={() => window.print()}>
           인쇄하기
         </Button>

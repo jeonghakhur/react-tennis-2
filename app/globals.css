@@ -242,6 +242,12 @@ td {
     display: none !important;
   }
 
+  /* 프린트 시 가로 모드 설정 */
+  @page {
+    size: landscape;
+    margin: 10mm;
+  }
+
   /* 프린트 시 배경색과 이미지 출력 허용 */
   * {
     -webkit-print-color-adjust: exact !important;
