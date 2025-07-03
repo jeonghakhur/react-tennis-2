@@ -213,8 +213,7 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
     return <p>데이터를 불러 올 수 없습니다.</p>;
   }
 
-  const { date, courtName, courtNumbers, startTime, endTime, attendees } =
-    schedule;
+  const { date, courtName, startTime, endTime, attendees } = schedule;
 
   return (
     <Container className="space-y-4">
@@ -329,23 +328,30 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
               })}
             </p>
           </div>
-          <div className="text-sm text-gray-500">
-            {courtNumbers?.join(', ') || '0'} 코트
-          </div>
         </div>
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-blue-50 p-3 rounded-lg">
-            <p className="text-sm text-gray-600">시작 시간</p>
-            <p className="text-lg font-bold text-blue-600">{startTime}</p>
-          </div>
-          <div className="bg-green-50 p-3 rounded-lg">
-            <p className="text-sm text-gray-600">종료 시간</p>
-            <p className="text-lg font-bold text-green-600">{endTime}</p>
+            <p className="text-sm text-gray-600">시작</p>
+            <p className="text-lg font-bold text-blue-600">
+              {startTime}-{endTime}
+            </p>
           </div>
           <div className="bg-orange-50 p-3 rounded-lg">
             <p className="text-sm text-gray-600">총 참석자</p>
-            <p className="text-lg font-bold text-orange-600">
+            <p className="text-lg font-bold text-green-600">
               {attendees.length}명
+            </p>
+          </div>
+          <div className=" bg-green-50 p-3 rounded-lg">
+            <p className="text-sm text-gray-600">코트</p>
+            <p className="text-lg font-bold text-orange-600">
+              {Array.isArray(schedule.courtNumbers)
+                ? schedule.courtNumbers
+                    .map((cn) =>
+                      typeof cn === 'object' && cn.number ? cn.number : cn
+                    )
+                    .join(', ')
+                : '0'}
             </p>
           </div>
         </div>

@@ -51,6 +51,9 @@ export default function Page({ params }: Props) {
   // 사용자 인증 정보 가져오기
   const { user } = useAuthRedirect('/', 0);
 
+  // 수정 가능 여부 확인 (레벨 3 이상)
+  const canEdit = typeof user?.level === 'number' && user.level >= 3;
+
   // 새 게임 기본 객체 생성 함수
   const createEmptyGame = () => ({
     court: '',
@@ -355,7 +358,7 @@ export default function Page({ params }: Props) {
         </div>
 
         {/* 게임 결과 노출 설정 - 관리자만 표시 */}
-        {typeof user?.level === 'number' && user.level >= 3 && (
+        {canEdit && (
           <div className="flex items-center gap-2 my-4">
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
@@ -572,26 +575,28 @@ export default function Page({ params }: Props) {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleGameUpdate(index)}
-                    >
-                      수정
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleGameDelete(index)}
-                    >
-                      삭제
-                    </Button>
-                  </div>
+                  {canEdit && (
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleGameUpdate(index)}
+                      >
+                        수정
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleGameDelete(index)}
+                      >
+                        삭제
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -609,7 +614,7 @@ export default function Page({ params }: Props) {
         </Button>
 
         {/* 전체 수정/삭제 버튼 - 관리자만 표시 */}
-        {typeof user?.level === 'number' && user.level >= 3 && (
+        {canEdit && (
           <div className="flex gap-2 mt-8 mb-10">
             <Button
               type="button"

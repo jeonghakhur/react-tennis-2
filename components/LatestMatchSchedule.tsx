@@ -6,9 +6,10 @@ import { useMemo, useState, useRef, useEffect } from 'react';
 import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
 import { GameResult } from '@/model/gameResult';
-import MatchPrintPageContent from '@/components/MatchPrintPageContent';
+// import MatchPrintPageContent from '@/components/MatchPrintPageContent';
 import { getSchedule } from '@/service/schedule';
 import { PrinterIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface LatestMatchScheduleProps {
   isLoading?: boolean;
@@ -20,8 +21,9 @@ export default function LatestMatchSchedule({
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldRestoreScroll, setShouldRestoreScroll] = useState(false);
   const savedScrollPosition = useRef<number>(0);
-  const [showPrint, setShowPrint] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
+  // const [showPrint, setShowPrint] = useState(false);
+  // const printRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // 최신 match_done 게임 데이터를 가져오기
   const {
@@ -73,13 +75,13 @@ export default function LatestMatchSchedule({
   };
 
   // 인쇄 핸들러
-  const handlePrint = () => {
-    setShowPrint(true);
-    setTimeout(() => {
-      window.print();
-      setShowPrint(false);
-    }, 200);
-  };
+  // const handlePrint = () => {
+  //   setShowPrint(true);
+  //   setTimeout(() => {
+  //     window.print();
+  //     setShowPrint(false);
+  //   }, 200);
+  // };
 
   if (isLoading) {
     return (
@@ -171,7 +173,10 @@ export default function LatestMatchSchedule({
               type="button"
               variant="outline"
               size="sm"
-              onClick={handlePrint}
+              // onClick={handlePrint}
+              onClick={() =>
+                router.push(`/match/${gameResult.scheduleID}/print`)
+              }
               className="flex-1"
               disabled={!schedule || scheduleLoading}
             >
@@ -181,7 +186,7 @@ export default function LatestMatchSchedule({
           </div>
         </div>
       </div>
-      {showPrint && schedule && gameResult && (
+      {/* {showPrint && schedule && gameResult && (
         <div ref={printRef} className="print-area">
           <MatchPrintPageContent
             matchData={{
@@ -193,7 +198,7 @@ export default function LatestMatchSchedule({
             }}
           />
         </div>
-      )}
+      )} */}
     </div>
   );
 }

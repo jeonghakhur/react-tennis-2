@@ -153,7 +153,10 @@ export default function CurrentPlayingGame({ data, isLoading, mutate }: Props) {
                 <div className="font-semibold whitespace-nowrap">
                   게임 {index + 1}
                 </div>
-                <div className="text-sm text-gray-600">{result.time}</div>
+                <div className="text-sm text-gray-600">
+                  {result.court && `${result.court}코트 `}
+                  {result.time}
+                </div>
               </div>
               <div className="flex gap-2">
                 <div className="flex flex-col gap-2 flex-1">

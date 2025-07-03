@@ -242,6 +242,51 @@ td {
     display: none !important;
   }
 
+  /* 프린트 시 배경색과 이미지 출력 허용 */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 배경색 강제 출력 */
+  body {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 테이블 헤더 배경색 출력 */
+  th {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: #f8f9fa !important;
+  }
+
+  /* 카드 배경색 출력 */
+  .card {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 버튼 배경색 출력 */
+  .btn-social {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .btn-social.kakao {
+    background-color: #ffeb00 !important;
+  }
+
+  .btn-social.naver {
+    background-color: #02c75a !important;
+    color: white !important;
+  }
+
   .print-area {
     display: block;
     /* margin-left: -16px; */
