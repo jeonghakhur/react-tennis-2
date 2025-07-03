@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import useSWR from 'swr';
+import { signOut } from 'next-auth/react';
 import {
   Select,
   SelectTrigger,
@@ -81,9 +82,18 @@ export default function User() {
 
   return (
     <div>
-      <div className="flex justify-end items-center gap-2 mr-6 mt-4">
-        <Switch checked={largeFont} onCheckedChange={setLargeFont} />
-        <span className="text-xm">큰글씨보기</span>
+      <div className="flex justify-between items-center gap-2 px-4 my-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => signOut({ callbackUrl: '/' })}
+        >
+          로그아웃
+        </Button>
+        <div className="flex items-center gap-2">
+          <Switch checked={largeFont} onCheckedChange={setLargeFont} />
+          <span className="text-xm">큰글씨보기</span>
+        </div>
       </div>
       <LoadingGrid loading={loading} />
       {!isLoading && (

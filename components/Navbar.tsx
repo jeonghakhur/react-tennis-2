@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import { Button } from './ui/button';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -105,13 +105,6 @@ export default function NavBar() {
             <div className="ml-auto">
               {user ? (
                 <div className="flex items-center">
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={() => signOut({ callbackUrl: '/' })}
-                  >
-                    로그아웃
-                  </Button>
                   <Link href="/user">
                     <Image
                       src={user.image ?? '/default_profile.png'}
