@@ -109,7 +109,7 @@ export default function LatestGameResult({
   const hasMoreGames = totalGames > 2;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
+    <div className="bg-white rounded-lg shadow-md p-4 print-hidden">
       <div className="mb-4 flex justify-between items-center">
         <h3 className="text-lg font-semibold text-gray-800">최근게임결과</h3>
         <div className="text-sm text-gray-600 text-right">

@@ -31,7 +31,7 @@ export default function LatestPendingSchedule({ selectedSchedule }: Props) {
   const workoutInfo = getWorkoutInfo(schedule);
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-4">
+    <div className="bg-white shadow-md rounded-lg p-4 print-hidden">
       <div className="mb-4 flex justify-between items-center">
         <h3 className="text-xl font-bold text-gray-800">다음게임일정</h3>
         <div className="text-sm text-gray-600 text-right">

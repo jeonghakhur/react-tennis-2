@@ -6,6 +6,9 @@ import { useMemo, useState, useRef, useEffect } from 'react';
 import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
 import { GameResult } from '@/model/gameResult';
+import MatchPrintPageContent from '@/components/MatchPrintPageContent';
+import { getSchedule } from '@/service/schedule';
+import { PrinterIcon } from 'lucide-react';
 
 interface LatestMatchScheduleProps {
   isLoading?: boolean;
@@ -17,6 +20,8 @@ export default function LatestMatchSchedule({
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldRestoreScroll, setShouldRestoreScroll] = useState(false);
   const savedScrollPosition = useRef<number>(0);
+  const [showPrint, setShowPrint] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
 
   // 최신 match_done 게임 데이터를 가져오기
   const {
@@ -25,7 +30,14 @@ export default function LatestMatchSchedule({
     error: gameError,
   } = useSWR<GameResult>('/api/games/latest?status=shared');
 
-  const isLoading = externalLoading || gameLoading;
+  // schedule 정보 fetch (attendees, courtNumbers 등)
+  const { data: schedule, isLoading: scheduleLoading } = useSWR(
+    gameResult?.scheduleID ? `/api/schedule/${gameResult.scheduleID}` : null,
+    () => (gameResult ? getSchedule(gameResult.scheduleID) : undefined),
+    { revalidateOnFocus: false }
+  );
+
+  const isLoading = externalLoading || gameLoading || scheduleLoading;
 
   const formattedDate = useMemo(() => {
     if (!gameResult?.date) return '';
@@ -58,6 +70,15 @@ export default function LatestMatchSchedule({
       savedScrollPosition.current = window.scrollY;
       setIsExpanded(true);
     }
+  };
+
+  // 인쇄 핸들러
+  const handlePrint = () => {
+    setShowPrint(true);
+    setTimeout(() => {
+      window.print();
+      setShowPrint(false);
+    }, 200);
   };
 
   if (isLoading) {
@@ -95,58 +116,82 @@ export default function LatestMatchSchedule({
   const hasMoreGames = totalGames > 2;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <div className="mb-4 flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-gray-800">
-          진행예정게임대진
-        </h3>
-        <div className="text-sm text-gray-600 text-right">
-          {formattedDate}
-          <br />
-          {gameResult.courtName}
-        </div>
-      </div>
-
-      {/* 각 게임별 상세 결과 */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-center mb-2">
-          <div className="text-sm font-semibold text-gray-700">
-            게임별 대진 (총 {totalGames}게임)
+    <div>
+      <div className="bg-white rounded-lg shadow-md p-4 print-hidden">
+        <div className="mb-4 flex justify-between items-center">
+          <h3 className="text-lg font-semibold text-gray-800">
+            진행예정게임대진
+          </h3>
+          <div className="text-sm text-gray-600 text-right">
+            {formattedDate}
+            <br />
+            {gameResult.courtName}
           </div>
         </div>
-        {displayedGames.map((game, index) => (
-          <div key={index} className="bg-gray-50 rounded-lg p-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-gray-700">
-                게임 {index + 1}
-              </span>
-              <span className="text-sm text-gray-500">{game.time}</span>
-            </div>
-            <div className="flex justify-between gap-2 text-base">
-              <div>
-                {game.players[0]}/{game.players[1]}
-              </div>
-              <div>vs</div>
-              <div>
-                {game.players[2]}/{game.players[3]}
-              </div>
+        {/* 각 게임별 상세 결과 */}
+        <div className="space-y-3">
+          <div className="flex justify-between items-center mb-2">
+            <div className="text-sm font-semibold text-gray-700">
+              게임별 대진 (총 {totalGames}게임)
             </div>
           </div>
-        ))}
+          {displayedGames.map((game, index) => (
+            <div key={index} className="bg-gray-50 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-gray-700">
+                  게임 {index + 1}
+                </span>
+                <span className="text-sm text-gray-500">{game.time}</span>
+              </div>
+              <div className="flex justify-between gap-2 text-base">
+                <div>
+                  {game.players[0]}/{game.players[1]}
+                </div>
+                <div>vs</div>
+                <div>
+                  {game.players[2]}/{game.players[3]}
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className="flex gap-2">
+            {hasMoreGames && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleToggleExpansion}
+                className="flex-1"
+              >
+                {isExpanded ? '접기' : `+${totalGames - 2}개의 게임 더보기`}
+              </Button>
+            )}
+            {/* 대진표출력 버튼 */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              className="flex-1"
+              disabled={!schedule || scheduleLoading}
+            >
+              <PrinterIcon className="w-4 h-4" />
+              대진표출력
+            </Button>
+          </div>
+        </div>
       </div>
-
-      {/* 더보기 버튼 */}
-      {hasMoreGames && (
-        <div className="mt-4 text-center">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleToggleExpansion}
-            className="text-sm"
-          >
-            {isExpanded ? '접기' : `+${totalGames - 2}개의 게임 더보기`}
-          </Button>
+      {showPrint && schedule && gameResult && (
+        <div ref={printRef} className="print-area">
+          <MatchPrintPageContent
+            matchData={{
+              games: gameResult.games,
+              courtNumbers: schedule.courtNumbers,
+              attendees: schedule.attendees,
+              courtName: gameResult.courtName,
+              date: typeof gameResult.date === 'string' ? gameResult.date : '',
+            }}
+          />
         </div>
       )}
     </div>

@@ -118,7 +118,7 @@ export default function Home() {
 
         {/* 선택된 날짜의 스케줄이 있으면 해당 스케줄만, 없으면 기존처럼 전체/다음 일정 */}
         <LatestPendingSchedule selectedSchedule={selectedSchedule} />
-        <div className="flex flex-col items-center ">
+        <div className="flex flex-col items-center print-hidden">
           <Popover open={showCalendar} onOpenChange={setShowCalendar}>
             <PopoverTrigger asChild className="w-full">
               <button

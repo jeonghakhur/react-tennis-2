@@ -326,7 +326,6 @@ export default function ScheduleList() {
                       type="button"
                       className="flex-1"
                       variant="outline"
-                      size="lg"
                       onClick={() => {
                         router.push(`/schedule/${schedule.id}`);
                       }}
@@ -337,22 +336,20 @@ export default function ScheduleList() {
                       type="button"
                       className="flex-1"
                       variant="default"
-                      size="lg"
                       onClick={() => {
                         router.push(`/match/${schedule.id}`);
                       }}
                     >
-                      대진표 ({status})
+                      대진표({status})
                     </Button>
                     {schedule.status === 'done' && (
                       <Button
                         type="button"
                         className="flex-1"
                         variant="default"
-                        size="lg"
                         onClick={() => router.push(`/games/${schedule.id}`)}
                       >
-                        게임결과보기
+                        게임결과
                       </Button>
                     )}
                   </div>
@@ -377,7 +374,7 @@ export default function ScheduleList() {
                         size="lg"
                         onClick={() => router.push(`/games/${schedule.id}`)}
                       >
-                        게임결과보기
+                        게임결과
                       </Button>
                     )}
                   </>

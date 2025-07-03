@@ -176,8 +176,8 @@ export default function LatestGameRanking() {
   }
 
   return (
-    <div>
-      <h2 className="mb-4 flex items-center justify-between">
+    <div className="print-hidden">
+      <h2 className="mb-4 flex items-center justify-between ">
         <div className="text-xl text-gray-800 font-semibold">최근게임순위</div>
         {latestGame && (
           <div className="text-sm text-gray-600 text-right">

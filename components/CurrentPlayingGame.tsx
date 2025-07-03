@@ -108,7 +108,7 @@ export default function CurrentPlayingGame({ data, isLoading, mutate }: Props) {
   }
 
   return (
-    <div className="">
+    <div className="print-hidden">
       {dataLoading && <LoadingGrid loading={true} />}
       <div className="mb-4 flex justify-between items-center">
         <h3 className="text-lg font-semibold text-gray-800">진행중 게임</h3>

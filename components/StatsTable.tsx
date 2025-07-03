@@ -339,7 +339,7 @@ export default function StatsTable() {
   }
 
   return (
-    <div>
+    <div className="print-hidden">
       <h2 className="text-xl font-semibold text-gray-800 mb-4">전체순위</h2>
       {isAdmin && (
         <div className="flex gap-2 mb-4">

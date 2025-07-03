@@ -35,6 +35,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import useGame from '@/hooks/useGames';
 import { ScheduleProps } from '@/model/schedule';
+import MatchPrintPageContent from '@/components/MatchPrintPageContent';
 
 interface Attendee {
   name: string;
@@ -60,7 +61,8 @@ interface MatchSchedulerProps {
   courts: number;
   courtNumbers: { number: string; startTime: string; endTime: string }[];
   scheduleId: string;
-  id?: string;
+  courtName?: string;
+  date?: string | undefined;
 }
 
 function shuffleArray(array: any[]) {
@@ -77,7 +79,8 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   endTime,
   courtNumbers,
   scheduleId,
-  id,
+  courtName,
+  date,
 }) => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [idleSummary, setIdleSummary] = useState<Record<string, string[]>>({});
@@ -88,6 +91,9 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   const [showScore, setShowScore] = useState(false);
   const [scheduleStatus, setScheduleStatus] =
     useState<ScheduleProps['status']>('attendees');
+  const [showPrint, setShowPrint] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
+  console.log(typeof date);
 
   // useGame 훅을 최상단에서 호출
   const {
@@ -668,138 +674,163 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
   MatchRow.displayName = 'MatchRow';
 
+  const handlePrint = () => {
+    setShowPrint(true);
+    setTimeout(() => {
+      window.print();
+      setShowPrint(false);
+    }, 200);
+  };
+
+  // matchData 구성 (기존 로직 활용)
+  const matchData = {
+    games: matches,
+    courtNumbers: courtNumbers.map((c) => ({ number: c.number })),
+    attendees: attendees as any[],
+    courtName: courtName ? String(courtName) : undefined,
+    date: date,
+  };
+
   return (
-    <div className="pb-20">
-      <div className="flex items-center gap-2 mb-4 justify-between">
-        <label htmlFor="scoreCheck" className="font-bold">
-          스코어 입력
-        </label>
-        <Switch
-          id="scoreCheck"
-          name="scoreCheck"
-          checked={showScore}
-          onCheckedChange={setShowScore}
-        />
-      </div>
-
-      {/* 스케줄 상태 설정 */}
-      <div className="flex mb-4 items-center">
-        <Label className="text-base font-bold" htmlFor="scheduleStatus">
-          게임진행 상태
-        </Label>
-        <Select
-          value={scheduleStatus || 'pending'}
-          onValueChange={(v) => setScheduleStatus(v as ScheduleProps['status'])}
-        >
-          <SelectTrigger className="w-32  ml-auto mr-2" id="scheduleStatus">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending">대기중</SelectItem>
-            <SelectItem value="attendees">참석자등록</SelectItem>
-            <SelectItem value="matchmaking">대진표작성</SelectItem>
-            <SelectItem value="shared">대진표공유</SelectItem>
-            <SelectItem value="playing">게임진행</SelectItem>
-            <SelectItem value="done">게임완료</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button
-          variant="outline"
-          onClick={() => router.push(`/match/${id}/print`)}
-        >
-          <Printer />
-        </Button>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="table">
+    <div>
+      {showPrint && (
+        <div ref={printRef} className="print-area -mx-5">
+          <MatchPrintPageContent matchData={matchData} className="px-0" />
+        </div>
+      )}
+      <div className="pb-20 print-hidden">
+        <div className="flex items-center gap-2 mb-4 justify-between">
+          <label htmlFor="scoreCheck" className="font-bold">
+            스코어 입력
+          </label>
+          <Switch
+            id="scoreCheck"
+            name="scoreCheck"
+            checked={showScore}
+            onCheckedChange={setShowScore}
+          />
+        </div>
+        {/* 스케줄 상태 설정 */}
+        <div className="flex mb-4 items-center">
+          <Label className="text-base font-bold" htmlFor="scheduleStatus">
+            게임진행 상태
+          </Label>
+          <Select
+            value={scheduleStatus || 'pending'}
+            onValueChange={(v) =>
+              setScheduleStatus(v as ScheduleProps['status'])
+            }
+          >
+            <SelectTrigger className="w-32  ml-auto mr-2" id="scheduleStatus">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pending">대기중</SelectItem>
+              <SelectItem value="attendees">참석자등록</SelectItem>
+              <SelectItem value="matchmaking">대진표작성</SelectItem>
+              <SelectItem value="shared">대진표공유</SelectItem>
+              <SelectItem value="playing">게임진행</SelectItem>
+              <SelectItem value="done">게임완료</SelectItem>
+            </SelectContent>
+          </Select>
+          {scheduleStatus !== 'pending' && scheduleStatus !== 'attendees' && (
+            <Button
+              variant="outline"
+              onClick={handlePrint}
+              // onClick={() => router.push(`/match/${id}/print`)}
+            >
+              <Printer />
+            </Button>
+          )}
+        </div>
+        <div className="overflow-x-auto">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>시간</th>
+                <th>코트</th>
+                <th>페어</th>
+                {showScore && <th>스코어</th>}
+                <th>대기자</th>
+              </tr>
+            </thead>
+            <tbody>
+              {matches.map((match, index) => {
+                // 현재 시간의 첫 번째 경기인지 확인
+                const isFirstMatch =
+                  index === 0 || matches[index - 1]?.time !== match.time;
+                // 해당 시간대의 경기 수 계산
+                const rowspan = matches.filter(
+                  (m) => m?.time === match.time
+                ).length;
+                return (
+                  <MatchRow
+                    key={index}
+                    match={match}
+                    matchIndex={index}
+                    rowspan={rowspan}
+                    isFirstMatch={isFirstMatch}
+                    showScore={showScore}
+                  />
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <h2 className="text-lg font-bold my-4">시간대별 사용 가능한 코트 수</h2>
+        <table className="table mb-6">
           <thead>
             <tr>
               <th>시간</th>
-              <th>코트</th>
-              <th>페어</th>
-              {showScore && <th>스코어</th>}
-              <th>대기자</th>
+              <th>사용 가능 코트 수</th>
+              <th>코트 번호</th>
             </tr>
           </thead>
           <tbody>
-            {matches.map((match, index) => {
-              // 현재 시간의 첫 번째 경기인지 확인
-              const isFirstMatch =
-                index === 0 || matches[index - 1]?.time !== match.time;
-              // 해당 시간대의 경기 수 계산
-              const rowspan = matches.filter(
-                (m) => m?.time === match.time
-              ).length;
-              return (
-                <MatchRow
-                  key={index}
-                  match={match}
-                  matchIndex={index}
-                  rowspan={rowspan}
-                  isFirstMatch={isFirstMatch}
-                  showScore={showScore}
-                />
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      <h2 className="text-lg font-bold my-4">시간대별 사용 가능한 코트 수</h2>
-      <table className="table mb-6">
-        <thead>
-          <tr>
-            <th>시간</th>
-            <th>사용 가능 코트 수</th>
-            <th>코트 번호</th>
-          </tr>
-        </thead>
-        <tbody>
-          {getCourtAvailabilityByTime().map((slot, idx) => (
-            <tr key={idx}>
-              <td>{slot.time}</td>
-              <td>{slot.count}</td>
-              <td>{slot.courts.join(', ')}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <h2 className="text-lg font-bold my-4">Games Played</h2>
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Player</th>
-            <th>Games Played</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.entries(gamesPlayed)
-            .sort(([playerA], [playerB]) => playerA.localeCompare(playerB))
-            .map(([player, count], index) => (
-              <tr key={index}>
-                <td>{player}</td>
-                <td>{count}</td>
+            {getCourtAvailabilityByTime().map((slot, idx) => (
+              <tr key={idx}>
+                <td>{slot.time}</td>
+                <td>{slot.count}</td>
+                <td>{slot.courts.join(', ')}</td>
               </tr>
             ))}
-        </tbody>
-      </table>
-      <div className="button-group">
-        <Button onClick={handleRegenerate} size="lg" className="">
-          대진 새로고침
-        </Button>
-        <Button onClick={handleMatchesReset} size="lg" variant="default">
-          대진 직접작성
-        </Button>
-        <Button
-          onClick={() => handleSubmit()}
-          size="lg"
-          className="bg-blue-600"
-          disabled={loading}
-        >
-          {loading ? '저장 중...' : '저장'}
-        </Button>
+          </tbody>
+        </table>
+        <h2 className="text-lg font-bold my-4">Games Played</h2>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Games Played</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(gamesPlayed)
+              .sort(([playerA], [playerB]) => playerA.localeCompare(playerB))
+              .map(([player, count], index) => (
+                <tr key={index}>
+                  <td>{player}</td>
+                  <td>{count}</td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+        <div className="button-group">
+          <Button onClick={handleRegenerate} size="lg" className="">
+            대진 새로고침
+          </Button>
+          <Button onClick={handleMatchesReset} size="lg" variant="default">
+            대진 직접작성
+          </Button>
+          <Button
+            onClick={() => handleSubmit()}
+            size="lg"
+            className="bg-blue-600"
+            disabled={loading}
+          >
+            {loading ? '저장 중...' : '저장'}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -827,7 +858,14 @@ export default function Page({ params }: Props) {
           courts={parseInt(schedule.courtCount, 10)}
           courtNumbers={schedule.courtNumbers}
           scheduleId={id}
-          id={id}
+          courtName={schedule.courtName}
+          date={
+            typeof schedule.date === 'string'
+              ? schedule.date
+              : schedule.date instanceof Date
+                ? schedule.date.toISOString()
+                : undefined
+          }
         />
       )}
     </Container>
