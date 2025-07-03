@@ -223,9 +223,33 @@ td {
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 } */
 
-/* 프린트 시 네비게이션 등 숨김 */
+/* .print-area {
+  display: none;
+  opacity: 0;
+  height: 0;
+  overflow: hidden;
+} */
+
 @media print {
-  .header-wrapper {
+  /* 일단 전체 출력 막지 않음 */
+
+  .print-hidden {
     display: none !important;
   }
+
+  .print-area {
+    display: block;
+    width: 1136px;
+    box-sizing: border-box;
+    opacity: 1;
+    height: auto;
+  }
+
+  .print-break {
+    break-before: page;
+  }
+
+  /* .print-scacle {
+    transform: scale(0.8);
+  } */
 }

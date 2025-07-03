@@ -3,12 +3,12 @@
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { Fragment, useRef } from 'react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Game } from '@/model/gameResult';
 import { AttendanceProps } from '@/model/schedule';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
 
 export default function MatchPrintPage() {
   const params = useParams();
@@ -87,11 +87,31 @@ export default function MatchPrintPage() {
       }
     });
   });
-  // 대기수 계산: 전체 시간 슬롯 - 출전 게임수
+  // 대기수 계산: 각 참석자가 실제 참석 가능한 시간 슬롯 - 출전 게임수
   Object.keys(playerGameStats).forEach((name) => {
-    if (playerGameStats[name]) {
+    const attendee = attendees.find((a) => a && a.name === name);
+    if (
+      playerGameStats[name] &&
+      attendee &&
+      attendee.startHour &&
+      attendee.startMinute &&
+      attendee.endHour &&
+      attendee.endMinute
+    ) {
+      const startHour = String(attendee.startHour).padStart(2, '0');
+      const startMinute = String(attendee.startMinute).padStart(2, '0');
+      const endHour = String(attendee.endHour).padStart(2, '0');
+      const endMinute = String(attendee.endMinute).padStart(2, '0');
+      const availableSlots = timeSet.filter((time) => {
+        const start = new Date(`2023-01-01T${startHour}:${startMinute}`);
+        const end = new Date(`2023-01-01T${endHour}:${endMinute}`);
+        const slot = new Date(`2023-01-01T${time}:00`);
+        return start <= slot && slot < end;
+      });
       playerGameStats[name].waiting =
-        timeSet.length - playerGameStats[name].total;
+        availableSlots.length - playerGameStats[name].total;
+    } else if (playerGameStats[name]) {
+      playerGameStats[name].waiting = 0;
     }
   });
 
@@ -103,254 +123,244 @@ export default function MatchPrintPage() {
     (a) => a.gender === '여' || a.gender === '여성'
   );
 
-  const handleDownloadPDF = async () => {
-    if (printRef.current) {
-      const canvas = await html2canvas(printRef.current);
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: [canvas.width, canvas.height],
-      });
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      pdf.save('대진표.pdf');
-    }
-  };
-
   return (
-    <div className="p-4 bg-white min-h-screen" ref={printRef}>
+    <div className="px-4 bg-white min-h-screen" ref={printRef}>
+      <div className="flex gap-2 mb-2 print-hidden">
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={() => window.print()}
+        >
+          <Printer /> 인쇄하기
+        </Button>
+      </div>
       {/* 코트장소, 날짜/요일 */}
-      <h1 className="text-2xl font-bold text-center mb-4">
-        {matchData.courtName && <span>{matchData.courtName} | </span>}
-        {matchData.date && (
-          <span>
-            {format(new Date(matchData.date), 'yyyy-MM-dd (EEE)', {
-              locale: ko,
-            })}
-          </span>
-        )}
-      </h1>
-      <div className="overflow-x-auto">
-        <table className="w-full border text-center font-bold table-2">
-          <thead>
-            <tr>
-              <th className="border p-2">시간</th>
-              {courtSet.map((court) => (
-                <th key={court} className="border p-2" colSpan={4}>
-                  {court}번
-                </th>
-              ))}
-              <th className="border p-2">대기자</th>
-            </tr>
-          </thead>
-          <tbody>
-            {timeSet.map((time) => {
-              const rowGames = courtSet.map((court: string) =>
-                games.find(
-                  (g: { time: string; court: string }) =>
-                    g.time === time && g.court === court
-                )
-              );
-              const playing = rowGames.flatMap((g) => g?.players ?? []);
-              const waiting = attendees
-                .filter(
-                  (a: {
-                    startHour: string;
-                    startMinute: string;
-                    endHour: string;
-                    endMinute: string;
-                  }) => {
-                    const start = new Date(
-                      `2023-01-01T${a.startHour}:${a.startMinute}`
-                    );
-                    const end = new Date(
-                      `2023-01-01T${a.endHour}:${a.endMinute}`
-                    );
-                    const slot = new Date(`2023-01-01T${time}:00`);
-                    return start <= slot && slot < end;
-                  }
-                )
-                .map((a) => a.name)
-                .filter((name) => !playing.includes(name));
-              return (
-                <Fragment key={time}>
-                  <tr key={time}>
-                    <td className="border p-2" rowSpan={2}>
-                      {time}
-                    </td>
-                    {rowGames.map((_, idx) => {
-                      if (
-                        !rowGames[idx] ||
-                        !rowGames[idx].players ||
-                        rowGames[idx].players.length < 4
-                      ) {
+      <div className="print-area">
+        <h1 className="text-sx font-bold text-center mb-2">
+          {matchData.courtName && <span>{matchData.courtName} | </span>}
+          {matchData.date && (
+            <span>
+              {format(new Date(matchData.date), 'yyyy-MM-dd (EEE)', {
+                locale: ko,
+              })}
+            </span>
+          )}
+        </h1>
+        <div className="overflow-x-auto">
+          <table className="w-full border text-center font-bold table-2 text-xs">
+            <thead>
+              <tr>
+                <th className="border p-2">시간</th>
+                {courtSet.map((court) => (
+                  <th key={court} className="border p-2" colSpan={4}>
+                    {court}번
+                  </th>
+                ))}
+                <th className="border p-2">대기자</th>
+              </tr>
+            </thead>
+            <tbody>
+              {timeSet.map((time) => {
+                const rowGames = courtSet.map((court: string) =>
+                  games.find(
+                    (g: { time: string; court: string }) =>
+                      g.time === time && g.court === court
+                  )
+                );
+                const playing = rowGames.flatMap((g) => g?.players ?? []);
+                const waiting = attendees
+                  .filter(
+                    (a: {
+                      startHour: string;
+                      startMinute: string;
+                      endHour: string;
+                      endMinute: string;
+                    }) => {
+                      const start = new Date(
+                        `2023-01-01T${a.startHour}:${a.startMinute}`
+                      );
+                      const end = new Date(
+                        `2023-01-01T${a.endHour}:${a.endMinute}`
+                      );
+                      const slot = new Date(`2023-01-01T${time}:00`);
+                      return start <= slot && slot < end;
+                    }
+                  )
+                  .map((a) => a.name)
+                  .filter((name) => !playing.includes(name));
+                return (
+                  <Fragment key={time}>
+                    <tr key={time}>
+                      <td className="border p-2" rowSpan={2}>
+                        {time}
+                      </td>
+                      {rowGames.map((_, idx) => {
+                        if (
+                          !rowGames[idx] ||
+                          !rowGames[idx].players ||
+                          rowGames[idx].players.length < 4
+                        ) {
+                          return (
+                            <td
+                              key={idx}
+                              className={`border p-0 whitespace-nowrap ${courtColors[idx % courtColors.length]}`}
+                              colSpan={4}
+                            />
+                          );
+                        }
+                        const pair1 = rowGames[idx].players
+                          .slice(0, 2)
+                          .join('/');
+                        const pair2 = rowGames[idx].players
+                          .slice(2, 4)
+                          .join('/');
                         return (
-                          <td
-                            key={idx}
-                            className={`border p-0 whitespace-nowrap ${courtColors[idx % courtColors.length]}`}
-                            colSpan={4}
-                          />
+                          <Fragment key={idx}>
+                            <td
+                              className={`p-2 whitespace-nowrap  ${courtColors[idx % courtColors.length]}`}
+                            >
+                              {pair1}
+                            </td>
+                            <td
+                              className={`px-4 ${courtColors[idx % courtColors.length]}`}
+                            ></td>
+                            <td
+                              className={`px-4 ${courtColors[idx % courtColors.length]}`}
+                            ></td>
+                            <td
+                              className={`p-2 whitespace-nowrap ${courtColors[idx % courtColors.length]}`}
+                            >
+                              {pair2}
+                            </td>
+                          </Fragment>
                         );
-                      }
-                      const pair1 = rowGames[idx].players.slice(0, 2).join('/');
-                      const pair2 = rowGames[idx].players.slice(2, 4).join('/');
-                      return (
+                      })}
+                      <td className="border p-2 whitespace-nowrap" rowSpan={2}>
+                        {Array.isArray(waiting) && waiting.length > 0
+                          ? Array.from({
+                              length: Math.ceil(waiting.length / 2),
+                            }).map((_, idx) => (
+                              <span key={idx}>
+                                {waiting.slice(idx * 2, idx * 2 + 2).join(', ')}
+                                {idx < Math.ceil(waiting.length / 2) - 1 && (
+                                  <br />
+                                )}
+                              </span>
+                            ))
+                          : waiting}
+                      </td>
+                    </tr>
+                    <tr>
+                      {rowGames.map((_, idx) => (
                         <Fragment key={idx}>
                           <td
-                            className={`p-2 whitespace-nowrap  ${courtColors[idx % courtColors.length]}`}
+                            className={` ${courtColors[idx % courtColors.length]} text-transparent`}
                           >
-                            {pair1}
+                            {' - '}
                           </td>
                           <td
-                            className={`px-4 ${courtColors[idx % courtColors.length]}`}
+                            className={`${courtColors[idx % courtColors.length]}`}
                           ></td>
                           <td
-                            className={`px-4 ${courtColors[idx % courtColors.length]}`}
+                            className={`${courtColors[idx % courtColors.length]}`}
                           ></td>
                           <td
-                            className={`p-2 whitespace-nowrap ${courtColors[idx % courtColors.length]}`}
-                          >
-                            {pair2}
-                          </td>
+                            className={`${courtColors[idx % courtColors.length]}`}
+                          ></td>
                         </Fragment>
-                      );
-                    })}
-                    <td className="border p-2 whitespace-nowrap" rowSpan={2}>
-                      {waiting.join(', ')}
+                      ))}
+                    </tr>
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex gap-2 overflow-x-auto print-break">
+          <div className="max-w-2xl mx-auto my-6">
+            <h2 className="font-bold mb-2 text-center text-blue-700">
+              남성 참석자별 게임수/시간/코트/대기
+            </h2>
+            <table className="w-full border text-center table-2 text-xs whitespace-nowrap">
+              <thead>
+                <tr>
+                  <th className="border p-2">이름</th>
+                  <th className="border p-2">전체</th>
+                  <th className="border p-2">남복</th>
+                  <th className="border p-2">혼복</th>
+                  <th className="border p-2">게임시간/코트</th>
+                  <th className="border p-2">대기수</th>
+                </tr>
+              </thead>
+              <tbody>
+                {maleAttendees.map((a) => (
+                  <tr key={a.name}>
+                    <td className="border p-2">{a.name}</td>
+                    <td className="border p-2">
+                      {playerGameStats[a.name]?.total ?? 0}
+                    </td>
+                    <td className="border p-2">
+                      {playerGameStats[a.name]?.남복 ?? 0}
+                    </td>
+                    <td className="border p-2">
+                      {playerGameStats[a.name]?.혼복 ?? 0}
+                    </td>
+                    <td className="border p-2 text-left">
+                      {playerGameStats[a.name]?.times
+                        .map((t) => `${t.time}(${t.court})`)
+                        .join(', ')}
+                    </td>
+                    <td className="border p-2">
+                      {playerGameStats[a.name]?.waiting ?? 0}
                     </td>
                   </tr>
-                  <tr>
-                    {rowGames.map((_, idx) => (
-                      <Fragment key={idx}>
-                        <td
-                          className={` ${courtColors[idx % courtColors.length]} text-transparent`}
-                        >
-                          {' - '}
-                        </td>
-                        <td
-                          className={`${courtColors[idx % courtColors.length]}`}
-                        ></td>
-                        <td
-                          className={`${courtColors[idx % courtColors.length]}`}
-                        ></td>
-                        <td
-                          className={`${courtColors[idx % courtColors.length]}`}
-                        ></td>
-                      </Fragment>
-                    ))}
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {/* 참석자별 게임수 표 - 여성 */}
+          <div className="max-w-2xl mx-auto my-6">
+            <h2 className="font-bold mb-2 text-center text-pink-700">
+              여성 참석자별 게임수/시간/코트/대기
+            </h2>
+            <table className="w-full border text-center table-2 text-xs whitespace-nowrap">
+              <thead>
+                <tr>
+                  <th className="border p-2">이름</th>
+                  <th className="border p-2">전체</th>
+                  <th className="border p-2">여복</th>
+                  <th className="border p-2">혼복</th>
+                  <th className="border p-2">게임시간/코트</th>
+                  <th className="border p-2">대기수</th>
+                </tr>
+              </thead>
+              <tbody>
+                {femaleAttendees.map((a) => (
+                  <tr key={a.name}>
+                    <td className="border p-2">{a.name}</td>
+                    <td className="border p-2">
+                      {playerGameStats[a.name]?.total ?? 0}
+                    </td>
+                    <td className="border p-2">
+                      {playerGameStats[a.name]?.여복 ?? 0}
+                    </td>
+                    <td className="border p-2">
+                      {playerGameStats[a.name]?.혼복 ?? 0}
+                    </td>
+                    <td className="border p-2 text-left">
+                      {playerGameStats[a.name]?.times
+                        .map((t) => `${t.time}(${t.court})`)
+                        .join(', ')}
+                    </td>
+                    <td className="border p-2">
+                      {playerGameStats[a.name]?.waiting ?? 0}
+                    </td>
                   </tr>
-                </Fragment>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <div className="flex gap-2 overflow-x-auto">
-        <div className="max-w-2xl mx-auto my-6">
-          <h2 className="font-bold mb-2 text-center text-blue-700">
-            남성 참석자별 게임수/시간/코트/대기
-          </h2>
-          <table className="w-full border text-center">
-            <thead>
-              <tr>
-                <th className="border p-2">이름</th>
-                <th className="border p-2">전체</th>
-                <th className="border p-2">남복</th>
-                <th className="border p-2">여복</th>
-                <th className="border p-2">혼복</th>
-                <th className="border p-2">게임시간/코트</th>
-                <th className="border p-2">대기수</th>
-              </tr>
-            </thead>
-            <tbody>
-              {maleAttendees.map((a) => (
-                <tr key={a.name}>
-                  <td className="border p-2">{a.name}</td>
-                  <td className="border p-2">
-                    {playerGameStats[a.name]?.total ?? 0}
-                  </td>
-                  <td className="border p-2">
-                    {playerGameStats[a.name]?.남복 ?? 0}
-                  </td>
-                  <td className="border p-2">
-                    {playerGameStats[a.name]?.여복 ?? 0}
-                  </td>
-                  <td className="border p-2">
-                    {playerGameStats[a.name]?.혼복 ?? 0}
-                  </td>
-                  <td className="border p-2 text-left">
-                    {playerGameStats[a.name]?.times
-                      .map((t) => `${t.time}(${t.court})`)
-                      .join(', ')}
-                  </td>
-                  <td className="border p-2">
-                    {playerGameStats[a.name]?.waiting ?? 0}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-        {/* 참석자별 게임수 표 - 여성 */}
-        <div className="max-w-2xl mx-auto my-6">
-          <h2 className="font-bold mb-2 text-center text-pink-700">
-            여성 참석자별 게임수/시간/코트/대기
-          </h2>
-          <table className="w-full border text-center">
-            <thead>
-              <tr>
-                <th className="border p-2">이름</th>
-                <th className="border p-2">전체</th>
-                <th className="border p-2">남복</th>
-                <th className="border p-2">여복</th>
-                <th className="border p-2">혼복</th>
-                <th className="border p-2">게임시간/코트</th>
-                <th className="border p-2">대기수</th>
-              </tr>
-            </thead>
-            <tbody>
-              {femaleAttendees.map((a) => (
-                <tr key={a.name}>
-                  <td className="border p-2">{a.name}</td>
-                  <td className="border p-2">
-                    {playerGameStats[a.name]?.total ?? 0}
-                  </td>
-                  <td className="border p-2">
-                    {playerGameStats[a.name]?.남복 ?? 0}
-                  </td>
-                  <td className="border p-2">
-                    {playerGameStats[a.name]?.여복 ?? 0}
-                  </td>
-                  <td className="border p-2">
-                    {playerGameStats[a.name]?.혼복 ?? 0}
-                  </td>
-                  <td className="border p-2 text-left">
-                    {playerGameStats[a.name]?.times
-                      .map((t) => `${t.time}(${t.court})`)
-                      .join(', ')}
-                  </td>
-                  <td className="border p-2">
-                    {playerGameStats[a.name]?.waiting ?? 0}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div className="flex gap-2 mt-4 print:hidden">
-        <button
-          onClick={handleDownloadPDF}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          PDF로 저장
-        </button>
-        <button
-          onClick={() => window.print()}
-          className="px-4 py-2 bg-gray-500 text-white rounded"
-        >
-          인쇄하기
-        </button>
       </div>
     </div>
   );

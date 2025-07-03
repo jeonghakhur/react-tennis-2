@@ -21,7 +21,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, Printer } from 'lucide-react';
 import {
   Command,
   CommandEmpty,
@@ -683,7 +683,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
       </div>
 
       {/* 스케줄 상태 설정 */}
-      <div className="mb-6 flex justify-between items-center">
+      <div className="flex mb-4 items-center">
         <Label className="text-base font-bold" htmlFor="scheduleStatus">
           게임진행 상태
         </Label>
@@ -691,7 +691,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
           value={scheduleStatus || 'pending'}
           onValueChange={(v) => setScheduleStatus(v as ScheduleProps['status'])}
         >
-          <SelectTrigger className="w-32" id="scheduleStatus">
+          <SelectTrigger className="w-32  ml-auto mr-2" id="scheduleStatus">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -705,45 +705,46 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
         </Select>
         <Button
           variant="outline"
-          size="lg"
           onClick={() => router.push(`/match/${id}/print`)}
         >
-          대진표인쇄미리보기
+          <Printer />
         </Button>
       </div>
 
-      <table className="table">
-        <thead>
-          <tr>
-            <th>시간</th>
-            <th>코트</th>
-            <th>페어</th>
-            {showScore && <th>스코어</th>}
-            <th>대기자</th>
-          </tr>
-        </thead>
-        <tbody>
-          {matches.map((match, index) => {
-            // 현재 시간의 첫 번째 경기인지 확인
-            const isFirstMatch =
-              index === 0 || matches[index - 1]?.time !== match.time;
-            // 해당 시간대의 경기 수 계산
-            const rowspan = matches.filter(
-              (m) => m?.time === match.time
-            ).length;
-            return (
-              <MatchRow
-                key={index}
-                match={match}
-                matchIndex={index}
-                rowspan={rowspan}
-                isFirstMatch={isFirstMatch}
-                showScore={showScore}
-              />
-            );
-          })}
-        </tbody>
-      </table>
+      <div className="overflow-x-auto">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>시간</th>
+              <th>코트</th>
+              <th>페어</th>
+              {showScore && <th>스코어</th>}
+              <th>대기자</th>
+            </tr>
+          </thead>
+          <tbody>
+            {matches.map((match, index) => {
+              // 현재 시간의 첫 번째 경기인지 확인
+              const isFirstMatch =
+                index === 0 || matches[index - 1]?.time !== match.time;
+              // 해당 시간대의 경기 수 계산
+              const rowspan = matches.filter(
+                (m) => m?.time === match.time
+              ).length;
+              return (
+                <MatchRow
+                  key={index}
+                  match={match}
+                  matchIndex={index}
+                  rowspan={rowspan}
+                  isFirstMatch={isFirstMatch}
+                  showScore={showScore}
+                />
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
       <h2 className="text-lg font-bold my-4">시간대별 사용 가능한 코트 수</h2>
       <table className="table mb-6">

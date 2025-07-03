@@ -38,7 +38,7 @@ export default function NavBar() {
   }, [largeFont]);
 
   return (
-    <div className="header-wrapper mb-3 px-6 py-3">
+    <div className="print-hidden mb-3 px-6 py-3">
       {status !== 'loading' && (
         <div className="flex items-center">
           <ul className="flex gap-x-3 text-lg font-bold">
