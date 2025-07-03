@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Game } from '@/model/gameResult';
 import { AttendanceProps } from '@/model/schedule';
+import { Button } from './ui/button';
 
 interface MatchPrintPageContentProps {
   matchData:
@@ -132,9 +133,14 @@ export default function MatchPrintPageContent({
   );
 
   return (
-    <div>
+    <div className="">
+      <div className="print-hidden px-4">
+        <Button variant="outline" onClick={() => window.print()}>
+          인쇄하기
+        </Button>
+      </div>
       {/* 코트장소, 날짜/요일 */}
-      <div className={`print-area print-visible ${className}`}>
+      <div className={`print-area  px-4 print-visible ${className}`}>
         <h1 className="text-sx font-bold text-center mb-2">
           {matchData.courtName && <span>{matchData.courtName} | </span>}
           {matchData.date && (
