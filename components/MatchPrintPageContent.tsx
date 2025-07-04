@@ -3,7 +3,6 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Game } from '@/model/gameResult';
 import { AttendanceProps } from '@/model/schedule';
-import { Button } from './ui/button';
 import Skeleton from './common/Skeleton';
 
 interface MatchPrintPageContentProps {
@@ -134,15 +133,9 @@ export default function MatchPrintPageContent({
   );
 
   return (
-    <div className="">
-      <div className="print-hidden px-4 mb-2 text-right">
-        <Button variant="outline" onClick={() => window.print()}>
-          인쇄하기
-        </Button>
-      </div>
-      {/* 코트장소, 날짜/요일 */}
-      <div className={`print-area  px-4 print-visible ${className}`}>
-        <h1 className="text-sx font-bold text-center mb-2">
+    <div className={`print-area print-visible ${className}`}>
+      <div className="flex justify-between items-center mb-2">
+        <h1 className="text-sx font-bold">
           {matchData.courtName && <span>{matchData.courtName} | </span>}
           {matchData.date && (
             <span>
@@ -152,223 +145,238 @@ export default function MatchPrintPageContent({
             </span>
           )}
         </h1>
-        <div className="overflow-x-auto pr-[1px]">
-          <table className="w-full border text-center font-bold table-2 text-xs">
+        <button
+          onClick={() => window.print()}
+          className="flex items-center gap-1 text-sm text-blue-700 hover:text-blue-900 transition-colors underline underline-offset-4 print-hidden"
+        >
+          대진표인쇄
+          <svg
+            className="w-3 h-3 opacity-60"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
+        </button>
+      </div>
+      <div className="overflow-x-auto pr-[1px]">
+        <table className="w-full border text-center font-bold table-2 text-xs">
+          <thead>
+            <tr>
+              <th className="border p-2">시간</th>
+              {courtSet.map((court) => (
+                <th key={court} className="border p-2" colSpan={4}>
+                  {court}번
+                </th>
+              ))}
+              <th className="border p-2">대기자</th>
+            </tr>
+          </thead>
+          <tbody>
+            {timeSet.map((time) => {
+              const rowGames = courtSet.map((court: string) =>
+                games.find(
+                  (g: { time: string; court: string }) =>
+                    g.time === time && g.court === court
+                )
+              );
+              const playing = rowGames.flatMap((g) => g?.players ?? []);
+              const waiting = attendees
+                .filter(
+                  (a: {
+                    startHour: string;
+                    startMinute: string;
+                    endHour: string;
+                    endMinute: string;
+                  }) => {
+                    const start = new Date(
+                      `2023-01-01T${a.startHour}:${a.startMinute}`
+                    );
+                    const end = new Date(
+                      `2023-01-01T${a.endHour}:${a.endMinute}`
+                    );
+                    const slot = new Date(`2023-01-01T${time}:00`);
+                    return start <= slot && slot < end;
+                  }
+                )
+                .map((a) => a.name)
+                .filter((name) => !playing.includes(name));
+              return (
+                <Fragment key={time}>
+                  <tr key={time}>
+                    <td className="border p-2" rowSpan={2}>
+                      {time}
+                    </td>
+                    {rowGames.map((_, idx) => {
+                      if (
+                        !rowGames[idx] ||
+                        !rowGames[idx].players ||
+                        rowGames[idx].players.length < 4
+                      ) {
+                        return (
+                          <td
+                            key={idx}
+                            className={`border p-0 whitespace-nowrap ${courtColors[idx % courtColors.length]}`}
+                            colSpan={4}
+                          />
+                        );
+                      }
+                      const pair1 = rowGames[idx].players.slice(0, 2).join('/');
+                      const pair2 = rowGames[idx].players.slice(2, 4).join('/');
+                      return (
+                        <Fragment key={idx}>
+                          <td
+                            className={`p-2 whitespace-nowrap  ${courtColors[idx % courtColors.length]}`}
+                          >
+                            {pair1}
+                          </td>
+                          <td
+                            className={`px-4 ${courtColors[idx % courtColors.length]}`}
+                          ></td>
+                          <td
+                            className={`px-4 ${courtColors[idx % courtColors.length]}`}
+                          ></td>
+                          <td
+                            className={`p-2 whitespace-nowrap ${courtColors[idx % courtColors.length]}`}
+                          >
+                            {pair2}
+                          </td>
+                        </Fragment>
+                      );
+                    })}
+                    <td className="border p-2 whitespace-nowrap" rowSpan={2}>
+                      {Array.isArray(waiting) && waiting.length > 0
+                        ? Array.from({
+                            length: Math.ceil(waiting.length / 2),
+                          }).map((_, idx) => (
+                            <span key={idx}>
+                              {waiting.slice(idx * 2, idx * 2 + 2).join(', ')}
+                              {idx < Math.ceil(waiting.length / 2) - 1 && (
+                                <br />
+                              )}
+                            </span>
+                          ))
+                        : waiting}
+                    </td>
+                  </tr>
+                  <tr>
+                    {rowGames.map((_, idx) => (
+                      <Fragment key={idx}>
+                        <td
+                          className={` ${courtColors[idx % courtColors.length]} text-transparent`}
+                        >
+                          {' - '}
+                        </td>
+                        <td
+                          className={`${courtColors[idx % courtColors.length]}`}
+                        ></td>
+                        <td
+                          className={`${courtColors[idx % courtColors.length]}`}
+                        ></td>
+                        <td
+                          className={`${courtColors[idx % courtColors.length]}`}
+                        ></td>
+                      </Fragment>
+                    ))}
+                  </tr>
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto mt-4">
+        <div className="flex-1">
+          <h2 className="font-bold mb-2 text-center text-blue-700">
+            남성 참석자별 게임수/시간/코트/대기
+          </h2>
+          <table className="w-full border text-center table-2 text-xs whitespace-nowrap ">
             <thead>
               <tr>
-                <th className="border p-2">시간</th>
-                {courtSet.map((court) => (
-                  <th key={court} className="border p-2" colSpan={4}>
-                    {court}번
-                  </th>
-                ))}
-                <th className="border p-2">대기자</th>
+                <th className="border">이름</th>
+                <th className="border">전체</th>
+                <th className="border">남복</th>
+                <th className="border">혼복</th>
+                <th className="border">게임시간/코트</th>
+                <th className="border">대기수</th>
               </tr>
             </thead>
             <tbody>
-              {timeSet.map((time) => {
-                const rowGames = courtSet.map((court: string) =>
-                  games.find(
-                    (g: { time: string; court: string }) =>
-                      g.time === time && g.court === court
-                  )
-                );
-                const playing = rowGames.flatMap((g) => g?.players ?? []);
-                const waiting = attendees
-                  .filter(
-                    (a: {
-                      startHour: string;
-                      startMinute: string;
-                      endHour: string;
-                      endMinute: string;
-                    }) => {
-                      const start = new Date(
-                        `2023-01-01T${a.startHour}:${a.startMinute}`
-                      );
-                      const end = new Date(
-                        `2023-01-01T${a.endHour}:${a.endMinute}`
-                      );
-                      const slot = new Date(`2023-01-01T${time}:00`);
-                      return start <= slot && slot < end;
-                    }
-                  )
-                  .map((a) => a.name)
-                  .filter((name) => !playing.includes(name));
-                return (
-                  <Fragment key={time}>
-                    <tr key={time}>
-                      <td className="border p-2" rowSpan={2}>
-                        {time}
-                      </td>
-                      {rowGames.map((_, idx) => {
-                        if (
-                          !rowGames[idx] ||
-                          !rowGames[idx].players ||
-                          rowGames[idx].players.length < 4
-                        ) {
-                          return (
-                            <td
-                              key={idx}
-                              className={`border p-0 whitespace-nowrap ${courtColors[idx % courtColors.length]}`}
-                              colSpan={4}
-                            />
-                          );
-                        }
-                        const pair1 = rowGames[idx].players
-                          .slice(0, 2)
-                          .join('/');
-                        const pair2 = rowGames[idx].players
-                          .slice(2, 4)
-                          .join('/');
-                        return (
-                          <Fragment key={idx}>
-                            <td
-                              className={`p-2 whitespace-nowrap  ${courtColors[idx % courtColors.length]}`}
-                            >
-                              {pair1}
-                            </td>
-                            <td
-                              className={`px-4 ${courtColors[idx % courtColors.length]}`}
-                            ></td>
-                            <td
-                              className={`px-4 ${courtColors[idx % courtColors.length]}`}
-                            ></td>
-                            <td
-                              className={`p-2 whitespace-nowrap ${courtColors[idx % courtColors.length]}`}
-                            >
-                              {pair2}
-                            </td>
-                          </Fragment>
-                        );
-                      })}
-                      <td className="border p-2 whitespace-nowrap" rowSpan={2}>
-                        {Array.isArray(waiting) && waiting.length > 0
-                          ? Array.from({
-                              length: Math.ceil(waiting.length / 2),
-                            }).map((_, idx) => (
-                              <span key={idx}>
-                                {waiting.slice(idx * 2, idx * 2 + 2).join(', ')}
-                                {idx < Math.ceil(waiting.length / 2) - 1 && (
-                                  <br />
-                                )}
-                              </span>
-                            ))
-                          : waiting}
-                      </td>
-                    </tr>
-                    <tr>
-                      {rowGames.map((_, idx) => (
-                        <Fragment key={idx}>
-                          <td
-                            className={` ${courtColors[idx % courtColors.length]} text-transparent`}
-                          >
-                            {' - '}
-                          </td>
-                          <td
-                            className={`${courtColors[idx % courtColors.length]}`}
-                          ></td>
-                          <td
-                            className={`${courtColors[idx % courtColors.length]}`}
-                          ></td>
-                          <td
-                            className={`${courtColors[idx % courtColors.length]}`}
-                          ></td>
-                        </Fragment>
-                      ))}
-                    </tr>
-                  </Fragment>
-                );
-              })}
+              {maleAttendees.map((a) => (
+                <tr key={a.name}>
+                  <td className="border">{a.name}</td>
+                  <td className="border">
+                    {playerGameStats[a.name]?.total ?? 0}
+                  </td>
+                  <td className="border">
+                    {playerGameStats[a.name]?.남복 ?? 0}
+                  </td>
+                  <td className="border">
+                    {playerGameStats[a.name]?.혼복 ?? 0}
+                  </td>
+                  <td className="border text-left">
+                    {playerGameStats[a.name]?.times
+                      .map((t) => `${t.time}(${t.court})`)
+                      .join(', ')}
+                  </td>
+                  <td className="border">
+                    {playerGameStats[a.name]?.waiting ?? 0}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
-        <div className="flex gap-2 overflow-x-auto mt-4">
-          <div className="flex-1">
-            <h2 className="font-bold mb-2 text-center text-blue-700">
-              남성 참석자별 게임수/시간/코트/대기
-            </h2>
-            <table className="w-full border text-center table-2 text-xs whitespace-nowrap ">
-              <thead>
-                <tr>
-                  <th className="border">이름</th>
-                  <th className="border">전체</th>
-                  <th className="border">남복</th>
-                  <th className="border">혼복</th>
-                  <th className="border">게임시간/코트</th>
-                  <th className="border">대기수</th>
+        {/* 참석자별 게임수 표 - 여성 */}
+        <div className="flex-1 pr-[1px]">
+          <h2 className="font-bold mb-2 text-center text-pink-700">
+            여성 참석자별 게임수/시간/코트/대기
+          </h2>
+          <table className="w-full border text-center table-2 text-xs whitespace-nowrap">
+            <thead>
+              <tr>
+                <th className="border">이름</th>
+                <th className="border">전체</th>
+                <th className="border">여복</th>
+                <th className="border">혼복</th>
+                <th className="border">게임시간/코트</th>
+                <th className="border">대기수</th>
+              </tr>
+            </thead>
+            <tbody>
+              {femaleAttendees.map((a) => (
+                <tr key={a.name}>
+                  <td className="border">{a.name}</td>
+                  <td className="border">
+                    {playerGameStats[a.name]?.total ?? 0}
+                  </td>
+                  <td className="border">
+                    {playerGameStats[a.name]?.여복 ?? 0}
+                  </td>
+                  <td className="border">
+                    {playerGameStats[a.name]?.혼복 ?? 0}
+                  </td>
+                  <td className="border text-left">
+                    {playerGameStats[a.name]?.times
+                      .map((t) => `${t.time}(${t.court})`)
+                      .join(', ')}
+                  </td>
+                  <td className="border">
+                    {playerGameStats[a.name]?.waiting ?? 0}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {maleAttendees.map((a) => (
-                  <tr key={a.name}>
-                    <td className="border">{a.name}</td>
-                    <td className="border">
-                      {playerGameStats[a.name]?.total ?? 0}
-                    </td>
-                    <td className="border">
-                      {playerGameStats[a.name]?.남복 ?? 0}
-                    </td>
-                    <td className="border">
-                      {playerGameStats[a.name]?.혼복 ?? 0}
-                    </td>
-                    <td className="border text-left">
-                      {playerGameStats[a.name]?.times
-                        .map((t) => `${t.time}(${t.court})`)
-                        .join(', ')}
-                    </td>
-                    <td className="border">
-                      {playerGameStats[a.name]?.waiting ?? 0}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {/* 참석자별 게임수 표 - 여성 */}
-          <div className="flex-1 pr-[1px]">
-            <h2 className="font-bold mb-2 text-center text-pink-700">
-              여성 참석자별 게임수/시간/코트/대기
-            </h2>
-            <table className="w-full border text-center table-2 text-xs whitespace-nowrap">
-              <thead>
-                <tr>
-                  <th className="border">이름</th>
-                  <th className="border">전체</th>
-                  <th className="border">여복</th>
-                  <th className="border">혼복</th>
-                  <th className="border">게임시간/코트</th>
-                  <th className="border">대기수</th>
-                </tr>
-              </thead>
-              <tbody>
-                {femaleAttendees.map((a) => (
-                  <tr key={a.name}>
-                    <td className="border">{a.name}</td>
-                    <td className="border">
-                      {playerGameStats[a.name]?.total ?? 0}
-                    </td>
-                    <td className="border">
-                      {playerGameStats[a.name]?.여복 ?? 0}
-                    </td>
-                    <td className="border">
-                      {playerGameStats[a.name]?.혼복 ?? 0}
-                    </td>
-                    <td className="border text-left">
-                      {playerGameStats[a.name]?.times
-                        .map((t) => `${t.time}(${t.court})`)
-                        .join(', ')}
-                    </td>
-                    <td className="border">
-                      {playerGameStats[a.name]?.waiting ?? 0}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
-      <div className="print-hidden pb-20">{''}</div>
     </div>
   );
 }

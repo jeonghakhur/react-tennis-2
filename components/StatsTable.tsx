@@ -102,7 +102,8 @@ function calculateStats(games: GameResult[]): PlayerStats[] {
 
   // 승률 계산
   Object.values(stats).forEach((s) => {
-    s.winRate = s.game > 0 ? s.win / s.game : 0;
+    const denominator = s.win + s.lose;
+    s.winRate = denominator > 0 ? s.win / denominator : 0;
   });
 
   // 정렬: 승점 → 승률 → 마진
