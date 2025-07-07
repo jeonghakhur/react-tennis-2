@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import React, { Fragment } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Game } from '@/model/gameResult';
@@ -132,6 +132,45 @@ export default function MatchPrintPageContent({
     (a) => a.gender === '여' || a.gender === '여성'
   );
 
+  // 중복된 코트 셀 렌더링 함수 추출
+  function renderCourtCell(
+    rowGame: Game | undefined,
+    idx: number,
+    courtColors: string[],
+    colSpan = 4
+  ) {
+    if (!rowGame || !rowGame.players || rowGame.players.length < 4) {
+      return (
+        <td
+          key={idx}
+          className={`border ${courtColors[idx % courtColors.length]}`}
+          colSpan={colSpan}
+        />
+      );
+    }
+    const pair1 = rowGame.players.slice(0, 2).join('/');
+    const pair2 = rowGame.players.slice(2, 4).join('/');
+    return (
+      <Fragment key={idx}>
+        <td className={`${courtColors[idx % courtColors.length]}`}>{pair1}</td>
+        <td className={`!px-3 ${courtColors[idx % courtColors.length]}`}></td>
+        <td className={`!px-3 ${courtColors[idx % courtColors.length]}`}></td>
+        <td className={`${courtColors[idx % courtColors.length]}`}>{pair2}</td>
+      </Fragment>
+    );
+  }
+
+  function renderEmptyCourtCell(idx: number, courtColors: string[]) {
+    return (
+      <Fragment key={idx}>
+        <td className={`${courtColors[idx % courtColors.length]}`}></td>
+        <td className={`!py-4 ${courtColors[idx % courtColors.length]}`}></td>
+        <td className={`${courtColors[idx % courtColors.length]}`}></td>
+        <td className={`${courtColors[idx % courtColors.length]}`}></td>
+      </Fragment>
+    );
+  }
+
   return (
     <div className={`print-area print-visible ${className}`}>
       <div className="flex justify-between items-center mb-2">
@@ -166,7 +205,7 @@ export default function MatchPrintPageContent({
         </button>
       </div>
       <div className="overflow-x-auto pr-[1px]">
-        <table className="w-full border text-center font-bold table-2 text-xs">
+        <table className="w-full border text-center font-bold table-2 text-lg">
           <thead>
             <tr>
               <th className="border p-2">시간</th>
@@ -210,47 +249,13 @@ export default function MatchPrintPageContent({
               return (
                 <Fragment key={time}>
                   <tr key={time}>
-                    <td className="border p-2" rowSpan={2}>
+                    <td className="border " rowSpan={2}>
                       {time}
                     </td>
-                    {rowGames.map((_, idx) => {
-                      if (
-                        !rowGames[idx] ||
-                        !rowGames[idx].players ||
-                        rowGames[idx].players.length < 4
-                      ) {
-                        return (
-                          <td
-                            key={idx}
-                            className={`border p-0 whitespace-nowrap ${courtColors[idx % courtColors.length]}`}
-                            colSpan={4}
-                          />
-                        );
-                      }
-                      const pair1 = rowGames[idx].players.slice(0, 2).join('/');
-                      const pair2 = rowGames[idx].players.slice(2, 4).join('/');
-                      return (
-                        <Fragment key={idx}>
-                          <td
-                            className={`p-2 whitespace-nowrap  ${courtColors[idx % courtColors.length]}`}
-                          >
-                            {pair1}
-                          </td>
-                          <td
-                            className={`px-4 ${courtColors[idx % courtColors.length]}`}
-                          ></td>
-                          <td
-                            className={`px-4 ${courtColors[idx % courtColors.length]}`}
-                          ></td>
-                          <td
-                            className={`p-2 whitespace-nowrap ${courtColors[idx % courtColors.length]}`}
-                          >
-                            {pair2}
-                          </td>
-                        </Fragment>
-                      );
-                    })}
-                    <td className="border p-2 whitespace-nowrap" rowSpan={2}>
+                    {rowGames.map((_, idx) =>
+                      renderCourtCell(rowGames[idx], idx, courtColors)
+                    )}
+                    <td className="border  whitespace-nowrap" rowSpan={2}>
                       {Array.isArray(waiting) && waiting.length > 0
                         ? Array.from({
                             length: Math.ceil(waiting.length / 2),
@@ -266,24 +271,17 @@ export default function MatchPrintPageContent({
                     </td>
                   </tr>
                   <tr>
-                    {rowGames.map((_, idx) => (
-                      <Fragment key={idx}>
-                        <td
-                          className={` ${courtColors[idx % courtColors.length]} text-transparent`}
-                        >
-                          {' - '}
-                        </td>
-                        <td
-                          className={`${courtColors[idx % courtColors.length]}`}
-                        ></td>
-                        <td
-                          className={`${courtColors[idx % courtColors.length]}`}
-                        ></td>
-                        <td
-                          className={`${courtColors[idx % courtColors.length]}`}
-                        ></td>
-                      </Fragment>
-                    ))}
+                    {rowGames.map((_, idx) => {
+                      if (
+                        !rowGames[idx] ||
+                        !rowGames[idx].players ||
+                        rowGames[idx].players.length < 4
+                      ) {
+                        return renderCourtCell(rowGames[idx], idx, courtColors);
+                      } else {
+                        return renderEmptyCourtCell(idx, courtColors);
+                      }
+                    })}
                   </tr>
                 </Fragment>
               );
@@ -297,7 +295,7 @@ export default function MatchPrintPageContent({
           <h2 className="font-bold mb-2 text-center text-blue-700">
             남성 참석자별 게임수/시간/코트/대기
           </h2>
-          <table className="w-full border text-center table-2 text-xs whitespace-nowrap ">
+          <table className="w-full border text-center table-2 whitespace-nowrap ">
             <thead>
               <tr>
                 <th className="border">이름</th>
@@ -339,7 +337,7 @@ export default function MatchPrintPageContent({
           <h2 className="font-bold mb-2 text-center text-pink-700">
             여성 참석자별 게임수/시간/코트/대기
           </h2>
-          <table className="w-full border text-center table-2 text-xs whitespace-nowrap">
+          <table className="w-full border text-center table-2 whitespace-nowrap">
             <thead>
               <tr>
                 <th className="border">이름</th>
