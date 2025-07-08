@@ -205,7 +205,7 @@ export default function MatchPrintPageContent({
         </button>
       </div>
       <div className="overflow-x-auto pr-[1px]">
-        <table className="w-full border text-center font-bold table-2 text-lg">
+        <table className="w-full border text-center font-bold table-2 text-lg whitespace-nowrap">
           <thead>
             <tr>
               <th className="border p-2">시간</th>

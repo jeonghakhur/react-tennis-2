@@ -39,7 +39,7 @@ export default function ScheduleList() {
   // 조회기간 UI 노출 상태
   const [showPeriod, setShowPeriod] = useState(false);
   // 인피니티 스크롤 상태
-  const [visibleCount, setVisibleCount] = useState(5);
+  const [visibleCount, setVisibleCount] = useState(10);
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
