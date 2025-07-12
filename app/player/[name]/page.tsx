@@ -14,10 +14,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
   Legend,
-  Line,
   ComposedChart,
+  ReferenceLine,
 } from 'recharts';
 import { useState } from 'react';
 
@@ -287,7 +286,7 @@ export default function PlayerGameHistory() {
               </div>
             )}
 
-            <div className="h-64">
+            <div className="h-96">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
                   data={qualifiedPairs
@@ -295,8 +294,8 @@ export default function PlayerGameHistory() {
                     .map((pair, index) => ({
                       name: pair.partner,
                       순위: currentPage * 10 + index + 1,
-                      승률: pair.winRate,
-                      총경기: pair.totalGames,
+                      승리: pair.wins,
+                      패배: -pair.losses, // 마이너스 값으로 표시
                       승: pair.wins,
                       무: pair.draws,
                       패: pair.losses,
@@ -319,21 +318,21 @@ export default function PlayerGameHistory() {
                   />
                   <YAxis
                     yAxisId="left"
-                    domain={[0, 100]}
-                    tickFormatter={(value) => `${value}%`}
-                    fontSize={10}
-                  />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    domain={[0, (dataMax: number) => Math.max(dataMax, 10)]}
-                    tickFormatter={(value) => `${value}경기`}
+                    domain={[
+                      (dataMin: number) => Math.min(dataMin, -5),
+                      (dataMax: number) => Math.max(dataMax, 5),
+                    ]}
+                    tickFormatter={(value) => `${Math.abs(value)}경기`}
                     fontSize={10}
                   />
                   <Tooltip
                     formatter={(value, name) => {
-                      if (name === '승률') return [`${value}%`, '승률'];
-                      if (name === '총경기') return [value, '총 경기'];
+                      if (name === '승리') return [value, '승리'];
+                      if (name === '패배')
+                        return [
+                          typeof value === 'number' ? Math.abs(value) : value,
+                          '패배',
+                        ];
                       if (name === '순위') return [value, '순위'];
                       if (name === '승') return [value, '승'];
                       if (name === '무') return [value, '무'];
@@ -345,8 +344,8 @@ export default function PlayerGameHistory() {
                   <Legend />
                   <Bar
                     yAxisId="left"
-                    dataKey="승률"
-                    fill="#3b82f6"
+                    dataKey="승리"
+                    fill="#10b981"
                     radius={[4, 4, 0, 0]}
                     onClick={(data) => {
                       if (data && data.name) {
@@ -354,33 +353,22 @@ export default function PlayerGameHistory() {
                       }
                     }}
                     style={{ cursor: 'pointer' }}
-                    name="승률"
-                  >
-                    {qualifiedPairs
-                      .slice(currentPage * 10, (currentPage + 1) * 10)
-                      .map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={
-                            entry.winRate >= 50
-                              ? '#10b981'
-                              : entry.winRate >= 30
-                                ? '#f59e0b'
-                                : '#ef4444'
-                          }
-                        />
-                      ))}
-                  </Bar>
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="총경기"
-                    stroke="#8b5cf6"
-                    strokeWidth={3}
-                    dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6 }}
-                    name="총 경기"
+                    name="승리"
                   />
+                  <Bar
+                    yAxisId="left"
+                    dataKey="패배"
+                    fill="#ef4444"
+                    radius={[4, 4, 0, 0]}
+                    onClick={(data) => {
+                      if (data && data.name) {
+                        handlePairClick(data.name);
+                      }
+                    }}
+                    style={{ cursor: 'pointer' }}
+                    name="패배"
+                  />
+                  <ReferenceLine y={0} stroke="#000" yAxisId="left" />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>

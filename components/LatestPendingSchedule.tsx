@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 type Props = {
   selectedSchedule?: GetScheduleProps | null;
@@ -13,6 +14,7 @@ type Props = {
 export default function LatestPendingSchedule({ selectedSchedule }: Props) {
   const router = useRouter();
   const schedule = selectedSchedule;
+  const { data: session } = useSession();
   if (!schedule) return null;
 
   const getWorkoutInfo = (schedule: GetScheduleProps) => {
@@ -95,15 +97,18 @@ export default function LatestPendingSchedule({ selectedSchedule }: Props) {
           >
             참석투표
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => router.push(`/match/${schedule.id}`)}
-            className="flex-1"
-          >
-            대진표작성
-          </Button>
+
+          {session && session.user && session.user.level >= 3 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/match/${schedule.id}`)}
+              className="flex-1"
+            >
+              대진표작성
+            </Button>
+          )}
         </div>
       )}
     </div>
