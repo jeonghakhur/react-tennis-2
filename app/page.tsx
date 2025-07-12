@@ -6,7 +6,6 @@ import LatestPendingSchedule from '@/components/LatestPendingSchedule';
 import LatestMatchSchedule from '@/components/LatestMatchSchedule';
 import StatsTable from '@/components/StatsTable';
 import LatestGameRanking from '@/components/LatestGameRanking';
-import { useSession } from 'next-auth/react';
 import useSWR from 'swr';
 import { GetScheduleProps } from '@/model/schedule';
 import CurrentPlayingGame from '@/components/CurrentPlayingGame';
@@ -22,8 +21,6 @@ import {
 } from '@/components/ui/popover';
 
 export default function Home() {
-  const { data: session, status } = useSession();
-
   const today = new Date();
   const [currentWeekStart, setCurrentWeekStart] = useState(
     startOfWeek(today, { weekStartsOn: 0 })
@@ -88,20 +85,8 @@ export default function Home() {
     );
   }, [schedules]);
 
-  if (status === 'loading' || gamesLoading || playingGameLoading) {
+  if (gamesLoading || playingGameLoading) {
     return <Skeleton lines={3} cardHeight={120} />;
-  }
-
-  const userLevel = session?.user?.level ?? 0;
-
-  if (userLevel < 1) {
-    return (
-      <Container>
-        <div className="text-center py-20 text-lg text-gray-500">
-          권한이 없습니다. 관리자에게 문의해주세요.
-        </div>
-      </Container>
-    );
   }
 
   return (
