@@ -25,32 +25,34 @@ export default function Page() {
       {isLoading ? (
         <LoadingGrid loading={loading} />
       ) : (
-        <table className="w-full table">
-          <thead>
-            <tr>
-              <th>번호</th>
-              <th>이름</th>
-              <th>성별</th>
-              <th>거주지</th>
-              <th>출생년도</th>
-              <th>레벨</th>
-            </tr>
-          </thead>
-          <tbody>
-            {members?.map((member, idx) => (
-              <tr key={member.id}>
-                <td>{members.length - idx}</td>
-                <td>
-                  <Link href={`/members/${member.id}`}>{member.name}</Link>
-                </td>
-                <td>{member.gender}</td>
-                <td>{member.address}</td>
-                <td>{member.birthyear}</td>
-                <td>{member.level}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full table whitespace-nowrap">
+            <thead>
+              <tr>
+                <th>번호</th>
+                <th>이름</th>
+                <th>성별</th>
+                <th>거주지</th>
+                <th>출생년도</th>
+                <th>레벨</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {members?.map((member, idx) => (
+                <tr key={member.id}>
+                  <td>{members.length - idx}</td>
+                  <td>
+                    <Link href={`/members/${member.id}`}>{member.name}</Link>
+                  </td>
+                  <td>{member.gender}</td>
+                  <td>{member.address}</td>
+                  <td>{member.birthyear}</td>
+                  <td>{member.level}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </Container>
   );
