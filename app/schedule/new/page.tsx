@@ -12,7 +12,6 @@ import {
   AttendanceProps,
 } from '@/model/schedule';
 import FormDatePicker from '@/components/FormDatePicker';
-import FormSelectTime from '@/components/FormSelectTime';
 import FormCourtName from '@/components/FormCourtName';
 import useSchedule from '@/hooks/useSchedule';
 import FormMembers from '@/components/FormMembers';
@@ -38,6 +37,8 @@ import useAuthRedirect from '@/hooks/useAuthRedirect';
 
 export default function ScheduleForm() {
   const [loading, setLoading] = useState<boolean>(false);
+  const [earliestStartTime, setEarliestStartTime] = useState<number>(19);
+  const [latestEndTime, setLatestEndTime] = useState<number>(22);
   const router = useRouter();
   const { postSchedule } = useSchedule();
 
@@ -56,15 +57,35 @@ export default function ScheduleForm() {
     resolver: zodResolver(ScheduleFormSchema),
     defaultValues: {
       date: new Date(),
-      startTime: '19',
-      endTime: '22',
+      startTime: '6',
+      endTime: '24',
       courtNumbers: [{ number: '1', startTime: '19', endTime: '22' }],
       attendees: [],
       status: 'pending',
     },
   });
 
-  const startTime = parseInt(form.watch('startTime'), 10);
+  // 코트들의 시작시간과 종료시간을 감시하여 최소/최대 시간 계산
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const courtNumbers = form.watch('courtNumbers') || [];
+
+  // 코트 시간이 변경될 때마다 최소/최대 시간 상태 업데이트
+  useEffect(() => {
+    if (courtNumbers.length > 0) {
+      const earliest = Math.min(
+        ...courtNumbers.map((court) => parseInt(court.startTime || '19', 10))
+      );
+      const latest = Math.max(
+        ...courtNumbers.map((court) => parseInt(court.endTime || '22', 10))
+      );
+
+      setEarliestStartTime(earliest);
+      setLatestEndTime(latest);
+    } else {
+      setEarliestStartTime(19);
+      setLatestEndTime(22);
+    }
+  }, [courtNumbers, earliestStartTime, latestEndTime]);
 
   function onSubmit(data: ScheduleFormType) {
     console.log('📝 폼 제출 데이터:', data);
@@ -101,8 +122,8 @@ export default function ScheduleForm() {
 
   const handleCourtCountChange = (count: string) => {
     const countNumber = parseInt(count, 10);
-    const defaultStart = form.watch('startTime') || '19';
-    const defaultEnd = form.watch('endTime') || '22';
+    const defaultStart = '19';
+    const defaultEnd = '22';
     const prevCourts = form.getValues('courtNumbers') || [];
     let courts = prevCourts.slice(0, countNumber);
     if (courts.length < countNumber) {
@@ -144,7 +165,7 @@ export default function ScheduleForm() {
         >
           <div className="grid gap-6">
             <FormDatePicker form={form} />
-
+            {/* 
             <div className="grid grid-cols-2 gap-4">
               <FormSelectTime
                 form={form}
@@ -158,10 +179,9 @@ export default function ScheduleForm() {
                 startTime={startTime}
                 label="종료시간"
               />
-            </div>
+            </div> */}
 
             <FormCourtName form={form} />
-
             {form.watch('courtName') && (
               <FormField
                 control={form.control}
@@ -197,7 +217,34 @@ export default function ScheduleForm() {
             {form.watch('courtCount') && (
               <div className="flex flex-col gap-4">
                 {(form.watch('courtNumbers') || []).map((_, idx) => (
-                  <FormCourtNumber key={idx} form={form} idx={idx} />
+                  <FormCourtNumber
+                    key={idx}
+                    form={form}
+                    idx={idx}
+                    onTimeChange={() => {
+                      // 시간이 변경될 때마다 폼을 다시 트리거하여 최소/최대 시간 재계산
+                      form.trigger('courtNumbers');
+                      // 상태 업데이트를 위해 강제로 리렌더링
+                      setTimeout(() => {
+                        const updatedCourtNumbers =
+                          form.getValues('courtNumbers') || [];
+                        if (updatedCourtNumbers.length > 0) {
+                          const earliest = Math.min(
+                            ...updatedCourtNumbers.map((court) =>
+                              parseInt(court.startTime || '19', 10)
+                            )
+                          );
+                          const latest = Math.max(
+                            ...updatedCourtNumbers.map((court) =>
+                              parseInt(court.endTime || '22', 10)
+                            )
+                          );
+                          setEarliestStartTime(earliest);
+                          setLatestEndTime(latest);
+                        }
+                      }, 0);
+                    }}
+                  />
                 ))}
               </div>
             )}
@@ -210,8 +257,8 @@ export default function ScheduleForm() {
                 ...att,
                 userId: typeof att.userId === 'string' ? att.userId : '',
               }))}
-              startTime={Number(form.watch('startTime'))}
-              endTime={Number(form.watch('endTime'))}
+              startTime={earliestStartTime}
+              endTime={latestEndTime}
             />
 
             <div className="flex items-center gap-2 justify-between">

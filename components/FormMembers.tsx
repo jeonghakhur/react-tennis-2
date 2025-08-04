@@ -10,7 +10,7 @@ import {
   CommandItem,
   CommandList,
 } from './ui/command';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { FormItem, FormLabel } from './ui/form';
 import { Input } from './ui/input';
@@ -66,6 +66,16 @@ export default function FormMembers({
     endHour: String(endTime),
     endMinute: '00',
   });
+
+  // startTime과 endTime이 변경될 때 attendanceTime 상태 업데이트
+  useEffect(() => {
+    setAttendanceTime({
+      startHour: String(startTime),
+      startMinute: '00',
+      endHour: String(endTime),
+      endMinute: '00',
+    });
+  }, [startTime, endTime]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,

@@ -12,6 +12,17 @@ export async function POST(req: NextRequest) {
     console.log('🔍 POST /api/schedule 시작');
     console.log('👤 현재 사용자:', user);
 
+    // 사용자 정보 유효성 확인
+    if (!user || !user.id) {
+      console.error('❌ 유효하지 않은 사용자 정보:', user);
+      return NextResponse.json(
+        {
+          error: '사용자 인증에 실패했습니다.',
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     body.date = new Date(body.date);
 

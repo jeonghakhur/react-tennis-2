@@ -7,9 +7,14 @@ import FormSelectTime from './FormSelectTime';
 type FormProps = {
   form: UseFormReturn<ScheduleFormType>;
   idx: number;
+  onTimeChange?: () => void;
 };
 
-export default function FormCourtNumber({ form, idx }: FormProps) {
+export default function FormCourtNumber({
+  form,
+  idx,
+  onTimeChange,
+}: FormProps) {
   // 전체 운동 시작/종료시간을 가져옴
   const globalStart = form.watch('startTime') || '19';
   const globalEnd = form.watch('endTime') || '22';
@@ -39,11 +44,12 @@ export default function FormCourtNumber({ form, idx }: FormProps) {
         label="시작시간"
         startTime={parseInt(globalStart, 10)}
         endTime={parseInt(globalEnd, 10)}
-        onChange={(val) =>
+        onChange={(val) => {
           form.setValue(`courtNumbers.${idx}.startTime`, val, {
             shouldValidate: true,
-          })
-        }
+          });
+          onTimeChange?.();
+        }}
       />
       <FormSelectTime
         form={form}
@@ -52,11 +58,12 @@ export default function FormCourtNumber({ form, idx }: FormProps) {
         startTime={parseInt(globalStart, 10)}
         endTime={parseInt(globalEnd, 10)}
         value={form.watch(`courtNumbers.${idx}.endTime`) || globalEnd}
-        onChange={(val) =>
+        onChange={(val) => {
           form.setValue(`courtNumbers.${idx}.endTime`, val, {
             shouldValidate: true,
-          })
-        }
+          });
+          onTimeChange?.();
+        }}
       />
     </div>
   );

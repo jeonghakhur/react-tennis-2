@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import useSWR from 'swr';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import {
   Select,
   SelectTrigger,
@@ -20,17 +20,35 @@ import { toast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 
 export default function User() {
-  const { data, isLoading } = useSWR<SimpleUserProps>('/api/me');
+  const { status } = useSession();
+  const { data, isLoading, error } = useSWR<SimpleUserProps>('/api/me');
   const { control, register, handleSubmit, reset } = useForm<SimpleUserProps>();
   const [loading, setLoading] = useState<boolean>(isLoading);
-  const getInitialFont = () => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('bigFont');
-      return saved === 'true';
+  const [largeFont, setLargeFont] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // 클라이언트에서만 localStorage 값을 가져오기
+  useEffect(() => {
+    setIsClient(true);
+    const saved = localStorage.getItem('bigFont');
+    setLargeFont(saved === 'true');
+  }, []);
+
+  // 세션 상태 체크 및 강제 로그아웃 처리
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      console.log('🔒 세션이 만료되었습니다. 로그아웃 처리 중...');
+      signOut({ callbackUrl: '/auth/signin' });
+      return;
     }
-    return false;
-  };
-  const [largeFont, setLargeFont] = useState(getInitialFont);
+
+    // API 에러가 401(인증 실패)인 경우 강제 로그아웃
+    if (error && error.status === 401) {
+      console.log('🔒 인증 실패로 인한 강제 로그아웃 처리 중...');
+      signOut({ callbackUrl: '/auth/signin' });
+      return;
+    }
+  }, [status, error]);
 
   async function updateUser(updateData: SimpleUserProps) {
     return fetch('/api/me', {
@@ -91,7 +109,9 @@ export default function User() {
           로그아웃
         </Button>
         <div className="flex items-center gap-2">
-          <Switch checked={largeFont} onCheckedChange={setLargeFont} />
+          {isClient && (
+            <Switch checked={largeFont} onCheckedChange={setLargeFont} />
+          )}
           <span className="text-xm">큰글씨보기</span>
         </div>
       </div>

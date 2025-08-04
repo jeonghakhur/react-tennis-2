@@ -4,7 +4,6 @@ import FormCourtCount from '@/components/FormCourtCount';
 import FormCourtNumber from '@/components/FormCourtNumber';
 import FormDatePicker from '@/components/FormDatePicker';
 import FormMembers from '@/components/FormMembers';
-import FormSelectTime from '@/components/FormSelectTime';
 import { Container } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
@@ -37,6 +36,8 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
   const gender = user?.gender;
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
+  const [earliestStartTime, setEarliestStartTime] = useState<number>(19);
+  const [latestEndTime, setLatestEndTime] = useState<number>(22);
   const {
     schedule,
     isLoading,
@@ -66,6 +67,28 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
       });
     }
   }, [schedule, form, userName, gender]);
+
+  // 코트들의 시작시간과 종료시간을 감시하여 최소/최대 시간 계산
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const courtNumbers = form.watch('courtNumbers') || [];
+
+  // 코트 시간이 변경될 때마다 최소/최대 시간 상태 업데이트
+  useEffect(() => {
+    if (courtNumbers.length > 0) {
+      const earliest = Math.min(
+        ...courtNumbers.map((court) => parseInt(court.startTime || '19', 10))
+      );
+      const latest = Math.max(
+        ...courtNumbers.map((court) => parseInt(court.endTime || '22', 10))
+      );
+
+      setEarliestStartTime(earliest);
+      setLatestEndTime(latest);
+    } else {
+      setEarliestStartTime(parseInt(schedule?.startTime || '19', 10));
+      setLatestEndTime(parseInt(schedule?.endTime || '22', 10));
+    }
+  }, [courtNumbers, schedule?.startTime, schedule?.endTime]);
 
   useEffect(() => {
     if (Object.keys(form.formState.errors).length > 0) {
@@ -156,21 +179,6 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
               className="space-y-4 mb-4"
             >
               <FormDatePicker form={form} />
-              <div className="grid grid-cols-2 gap-4">
-                <FormSelectTime
-                  name="startTime"
-                  form={form}
-                  label="시작 시간"
-                  value={schedule?.startTime}
-                />
-                <FormSelectTime
-                  name="endTime"
-                  form={form}
-                  label="종료 시간"
-                  startTime={parseInt(schedule?.startTime, 10)}
-                  value={schedule?.endTime}
-                />
-              </div>
 
               <div>
                 <Label>코트이름</Label>
@@ -197,7 +205,34 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
               {form.watch('courtCount') && (
                 <div className="flex flex-col gap-4">
                   {(form.watch('courtNumbers') || []).map((_, idx) => (
-                    <FormCourtNumber key={idx} form={form} idx={idx} />
+                    <FormCourtNumber
+                      key={idx}
+                      form={form}
+                      idx={idx}
+                      onTimeChange={() => {
+                        // 시간이 변경될 때마다 폼을 다시 트리거하여 최소/최대 시간 재계산
+                        form.trigger('courtNumbers');
+                        // 상태 업데이트를 위해 강제로 리렌더링
+                        setTimeout(() => {
+                          const updatedCourtNumbers =
+                            form.getValues('courtNumbers') || [];
+                          if (updatedCourtNumbers.length > 0) {
+                            const earliest = Math.min(
+                              ...updatedCourtNumbers.map((court) =>
+                                parseInt(court.startTime || '19', 10)
+                              )
+                            );
+                            const latest = Math.max(
+                              ...updatedCourtNumbers.map((court) =>
+                                parseInt(court.endTime || '22', 10)
+                              )
+                            );
+                            setEarliestStartTime(earliest);
+                            setLatestEndTime(latest);
+                          }
+                        }, 0);
+                      }}
+                    />
                   ))}
                 </div>
               )}
@@ -210,8 +245,8 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
                   ...att,
                   userId: typeof att.userId === 'string' ? att.userId : '',
                 }))}
-                startTime={Number(schedule.startTime)}
-                endTime={Number(schedule.endTime)}
+                startTime={earliestStartTime}
+                endTime={latestEndTime}
               />
               <div className="flex items-center gap-2 justify-between">
                 <label htmlFor="status" className="font-bold">

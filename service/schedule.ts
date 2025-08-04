@@ -67,6 +67,38 @@ export async function createSchedule(
   console.log('👤 userId:', userId);
 
   try {
+    // 사용자 ID 유효성 확인
+    if (!userId) {
+      throw new Error('사용자 ID가 없습니다.');
+    }
+
+    // 사용자가 존재하는지 확인
+    const userExists = await client.fetch(
+      `*[_type == "user" && _id == $userId][0]`,
+      { userId }
+    );
+
+    if (!userExists) {
+      console.warn('⚠️ 존재하지 않는 사용자 ID:', userId);
+      // 사용자가 존재하지 않으면 author 필드를 제외하고 생성
+      const result = await client.create(
+        {
+          _type: 'schedule',
+          date,
+          startTime,
+          endTime,
+          courtName,
+          courtCount,
+          courtNumbers, // [{ number, startTime, endTime }]
+          attendees,
+          status: status || 'pending', // status 필드 추가 및 기본값 보장
+        },
+        { autoGenerateArrayKeys: true }
+      );
+      console.log('✅ Sanity 저장 성공 (author 없음):', result);
+      return result;
+    }
+
     // courtNumbers는 [{ number, startTime, endTime }] 형태의 객체 배열이어야 함
     const result = await client.create(
       {
