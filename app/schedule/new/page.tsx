@@ -69,7 +69,7 @@ export default function ScheduleForm() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const courtNumbers = form.watch('courtNumbers') || [];
 
-  // 코트 시간이 변경될 때마다 최소/최대 시간 상태 업데이트
+  // 코트 시간이 변경될 때마다 최소/최대 시간 상태 업데이트 및 전역 시간 동기화
   useEffect(() => {
     if (courtNumbers.length > 0) {
       const earliest = Math.min(
@@ -81,13 +81,34 @@ export default function ScheduleForm() {
 
       setEarliestStartTime(earliest);
       setLatestEndTime(latest);
+
+      // 전역 startTime과 endTime도 동기화 (실시간 업데이트)
+      form.setValue('startTime', earliest.toString());
+      form.setValue('endTime', latest.toString());
     } else {
       setEarliestStartTime(19);
       setLatestEndTime(22);
     }
-  }, [courtNumbers, earliestStartTime, latestEndTime]);
+  }, [courtNumbers, form]);
 
   function onSubmit(data: ScheduleFormType) {
+    // 코트별 시간을 기반으로 startTime과 endTime을 동적으로 계산
+    if (data.courtNumbers && data.courtNumbers.length > 0) {
+      const startTimes = data.courtNumbers.map((court) =>
+        parseInt(court.startTime || '19', 10)
+      );
+      const endTimes = data.courtNumbers.map((court) =>
+        parseInt(court.endTime || '22', 10)
+      );
+
+      const earliestStartTime = Math.min(...startTimes);
+      const latestEndTime = Math.max(...endTimes);
+
+      // 계산된 시간으로 startTime과 endTime 업데이트
+      data.startTime = earliestStartTime.toString();
+      data.endTime = latestEndTime.toString();
+    }
+
     console.log('📝 폼 제출 데이터:', data);
     setLoading(true);
 
@@ -122,9 +143,23 @@ export default function ScheduleForm() {
 
   const handleCourtCountChange = (count: string) => {
     const countNumber = parseInt(count, 10);
-    const defaultStart = '19';
-    const defaultEnd = '22';
     const prevCourts = form.getValues('courtNumbers') || [];
+
+    // 현재 코트들의 시간을 기반으로 기본 시간 계산
+    let defaultStart = '19';
+    let defaultEnd = '22';
+
+    if (prevCourts.length > 0) {
+      const startTimes = prevCourts.map((court) =>
+        parseInt(court.startTime || '19', 10)
+      );
+      const endTimes = prevCourts.map((court) =>
+        parseInt(court.endTime || '22', 10)
+      );
+      defaultStart = Math.min(...startTimes).toString();
+      defaultEnd = Math.max(...endTimes).toString();
+    }
+
     let courts = prevCourts.slice(0, countNumber);
     if (courts.length < countNumber) {
       courts = courts.concat(

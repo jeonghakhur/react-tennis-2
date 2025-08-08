@@ -57,6 +57,10 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
       form.reset({
         ...schedule,
         date: schedule.date ? new Date(schedule.date) : new Date(),
+        // 코트별 시간 선택 범위를 확장하기 위해 전역 시간 범위를 6시-24시로 설정
+        // 단, 기존 스케줄의 실제 시간 값은 그대로 유지
+        startTime: '6',
+        endTime: '24',
         // courtNumbers: schedule.courtNumbers.map((court) =>
         //   typeof court === 'string' ? court : court.number
         // ),
@@ -72,7 +76,7 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const courtNumbers = form.watch('courtNumbers') || [];
 
-  // 코트 시간이 변경될 때마다 최소/최대 시간 상태 업데이트
+  // 코트 시간이 변경될 때마다 최소/최대 시간 상태 업데이트 및 전역 시간 동기화
   useEffect(() => {
     if (courtNumbers.length > 0) {
       const earliest = Math.min(
@@ -84,11 +88,15 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
 
       setEarliestStartTime(earliest);
       setLatestEndTime(latest);
+
+      // 전역 startTime과 endTime도 동기화 (실시간 업데이트)
+      form.setValue('startTime', earliest.toString());
+      form.setValue('endTime', latest.toString());
     } else {
       setEarliestStartTime(parseInt(schedule?.startTime || '19', 10));
       setLatestEndTime(parseInt(schedule?.endTime || '22', 10));
     }
-  }, [courtNumbers, schedule?.startTime, schedule?.endTime]);
+  }, [courtNumbers, schedule?.startTime, schedule?.endTime, form]);
 
   useEffect(() => {
     if (Object.keys(form.formState.errors).length > 0) {
@@ -116,7 +124,24 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
   };
 
   async function onSubmit(data: ScheduleFormType) {
-    // console.log('data', data);
+    // 코트별 시간을 기반으로 startTime과 endTime을 동적으로 계산
+    if (data.courtNumbers && data.courtNumbers.length > 0) {
+      const startTimes = data.courtNumbers.map((court) =>
+        parseInt(court.startTime || '19', 10)
+      );
+      const endTimes = data.courtNumbers.map((court) =>
+        parseInt(court.endTime || '22', 10)
+      );
+
+      const earliestStartTime = Math.min(...startTimes);
+      const latestEndTime = Math.max(...endTimes);
+
+      // 계산된 시간으로 startTime과 endTime 업데이트
+      data.startTime = earliestStartTime.toString();
+      data.endTime = latestEndTime.toString();
+    }
+
+    console.log('수정된 데이터:', data);
     setLoading(true);
     try {
       await patchSchedule(data);
@@ -132,8 +157,21 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
   const handleCourtCountChange = (count: string) => {
     const countNumber = parseInt(count, 10);
     const currentCourtNumbers = form.getValues('courtNumbers') || [];
-    const defaultStart = form.watch('startTime') || '19';
-    const defaultEnd = form.watch('endTime') || '22';
+
+    // 현재 코트들의 시간을 기반으로 기본 시간 계산
+    let defaultStart = '19';
+    let defaultEnd = '22';
+
+    if (currentCourtNumbers.length > 0) {
+      const startTimes = currentCourtNumbers.map((court) =>
+        parseInt(court.startTime || '19', 10)
+      );
+      const endTimes = currentCourtNumbers.map((court) =>
+        parseInt(court.endTime || '22', 10)
+      );
+      defaultStart = Math.min(...startTimes).toString();
+      defaultEnd = Math.max(...endTimes).toString();
+    }
 
     if (countNumber > currentCourtNumbers.length) {
       const newCourts = Array.from(
