@@ -15,9 +15,9 @@ export default function FormCourtNumber({
   idx,
   onTimeChange,
 }: FormProps) {
-  // 전체 운동 시작/종료시간을 가져옴
-  const globalStart = form.watch('startTime') || '19';
-  const globalEnd = form.watch('endTime') || '22';
+  // 코트별 시간 선택은 항상 6시-24시 범위에서 가능하도록 설정
+  const timeRangeStart = 6;
+  const timeRangeEnd = 24;
   // console.log('courtNumbers', form.watch('courtNumbers'));
 
   return (
@@ -42,8 +42,8 @@ export default function FormCourtNumber({
         form={form}
         name={`courtNumbers.${idx}.startTime`}
         label="시작시간"
-        startTime={parseInt(globalStart, 10)}
-        endTime={parseInt(globalEnd, 10)}
+        startTime={timeRangeStart}
+        endTime={timeRangeEnd}
         onChange={(val) => {
           form.setValue(`courtNumbers.${idx}.startTime`, val, {
             shouldValidate: true,
@@ -55,9 +55,9 @@ export default function FormCourtNumber({
         form={form}
         name={`courtNumbers.${idx}.endTime`}
         label="종료시간"
-        startTime={parseInt(globalStart, 10)}
-        endTime={parseInt(globalEnd, 10)}
-        value={form.watch(`courtNumbers.${idx}.endTime`) || globalEnd}
+        startTime={timeRangeStart}
+        endTime={timeRangeEnd}
+        value={form.watch(`courtNumbers.${idx}.endTime`) || '22'}
         onChange={(val) => {
           form.setValue(`courtNumbers.${idx}.endTime`, val, {
             shouldValidate: true,
