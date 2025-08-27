@@ -216,7 +216,7 @@ export default function ScheduleDetailUser({ scheduleId, user }: Props) {
   const { date, courtName, startTime, endTime, attendees } = schedule;
 
   return (
-    <Container className="space-y-4">
+    <Container className="space-y-4 pb-[70px]">
       {loading && <LoadingGrid loading={loading} />}
       <Label className="w-full">참석 시간</Label>
       <div className="flex gap-x-2 items-center">

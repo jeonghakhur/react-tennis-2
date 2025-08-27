@@ -13,6 +13,7 @@ const nextConfig = {
       't5.kakaocdn.net',
       't6.kakaocdn.net',
       't7.kakaocdn.net',
+      'ssl.pstatic.net',
     ], // 외부 호스트를 추가합니다.
   },
 };
