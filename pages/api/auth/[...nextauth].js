@@ -22,7 +22,20 @@ export const authOptions = {
   ],
   callbacks: {
     async signIn({ user: { id, name, email, image }, account, profile }) {
-      if (!email || !name) {
+      // 필수 정보 확인
+      if (!email) {
+        console.error('❌ 이메일 정보가 없습니다');
+        return false;
+      }
+
+      // 네이버의 경우 name이 undefined일 수 있으므로 profile에서 가져오기
+      let userName = name;
+      if (account.provider === 'naver' && !name && profile?.response?.name) {
+        userName = profile.response.name;
+      }
+
+      if (!userName) {
+        console.error('❌ 이름 정보가 없습니다');
         return false;
       }
 
@@ -32,40 +45,41 @@ export const authOptions = {
       let birthday = null;
       let birthyear = null;
 
-      const isUser = await existingUser(email);
-
-      if (isUser) {
-        if (isUser.provider !== account.provider) {
-          return `/auth/signin?error=ALREADY_REGISTERED`;
-        }
-      }
-
-      if (provider === 'naver') {
-        const response = profile.response || {};
-        gender =
-          response.gender === 'M'
-            ? '남성'
-            : response.gender === 'F'
-              ? '여성'
-              : null;
-        phone_number = response.mobile || null;
-        birthday = response.birthday || null;
-        birthyear = response.birthyear || null;
-      }
-
-      if (provider === 'kakao') {
-        const response = profile.kakao_account || {};
-        gender = response.gender || null; // null로 설정
-        phone_number = response.phone_number || null;
-        birthday = response.birthday || null;
-        birthyear = response.birthyear || null;
-      }
-
-      // 새 사용자 추가
       try {
+        const isUser = await existingUser(email);
+
+        if (isUser) {
+          if (isUser.provider !== account.provider) {
+            return `/auth/signin?error=ALREADY_REGISTERED`;
+          }
+          return true; // 기존 사용자는 바로 로그인 허용
+        }
+
+        if (provider === 'naver') {
+          const response = profile.response || {};
+          gender =
+            response.gender === 'M'
+              ? '남성'
+              : response.gender === 'F'
+                ? '여성'
+                : null;
+          phone_number = response.mobile || null;
+          birthday = response.birthday || null;
+          birthyear = response.birthyear || null;
+        }
+
+        if (provider === 'kakao') {
+          const response = profile.kakao_account || {};
+          gender = response.gender || null;
+          phone_number = response.phone_number || null;
+          birthday = response.birthday || null;
+          birthyear = response.birthyear || null;
+        }
+
+        // 새 사용자 추가
         await addUser({
           id,
-          name,
+          name: userName,
           email,
           image,
           username: email.split('@')[0],
@@ -76,9 +90,10 @@ export const authOptions = {
           birthyear,
           provider: account.provider,
         });
+
         return true;
       } catch (error) {
-        console.error('사용자 등록 중 오류 발생:', error);
+        console.error('❌ 사용자 등록 중 오류 발생:', error);
         return false; // 로그인 실패
       }
     },

@@ -115,7 +115,7 @@ export default function User() {
           <span className="text-xm">큰글씨보기</span>
         </div>
       </div>
-      <LoadingGrid loading={loading} />
+      {isLoading && <LoadingGrid loading={loading} />}
       {!isLoading && (
         <form className="px-5" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
