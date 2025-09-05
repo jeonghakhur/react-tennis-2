@@ -6,15 +6,10 @@ import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import {
-  ScheduleFormSchema,
-  ScheduleFormType,
-  AttendanceProps,
-} from '@/model/schedule';
+import { ScheduleFormSchema, ScheduleFormType } from '@/model/schedule';
 import FormDatePicker from '@/components/FormDatePicker';
 import FormCourtName from '@/components/FormCourtName';
 import useSchedule from '@/hooks/useSchedule';
-import FormMembers from '@/components/FormMembers';
 import FormCourtNumber from '@/components/FormCourtNumber';
 import {
   Form,
@@ -37,8 +32,6 @@ import useAuthRedirect from '@/hooks/useAuthRedirect';
 
 export default function ScheduleForm() {
   const [loading, setLoading] = useState<boolean>(false);
-  const [earliestStartTime, setEarliestStartTime] = useState<number>(19);
-  const [latestEndTime, setLatestEndTime] = useState<number>(22);
   const router = useRouter();
   const { postSchedule } = useSchedule();
 
@@ -79,15 +72,9 @@ export default function ScheduleForm() {
         ...courtNumbers.map((court) => parseInt(court.endTime || '22', 10))
       );
 
-      setEarliestStartTime(earliest);
-      setLatestEndTime(latest);
-
       // 전역 startTime과 endTime도 동기화 (실시간 업데이트)
       form.setValue('startTime', earliest.toString());
       form.setValue('endTime', latest.toString());
-    } else {
-      setEarliestStartTime(19);
-      setLatestEndTime(22);
     }
   }, [courtNumbers, form]);
 
@@ -252,53 +239,14 @@ export default function ScheduleForm() {
             {form.watch('courtCount') && (
               <div className="flex flex-col gap-4">
                 {(form.watch('courtNumbers') || []).map((_, idx) => (
-                  <FormCourtNumber
-                    key={idx}
-                    form={form}
-                    idx={idx}
-                    onTimeChange={() => {
-                      // 시간이 변경될 때마다 폼을 다시 트리거하여 최소/최대 시간 재계산
-                      form.trigger('courtNumbers');
-                      // 상태 업데이트를 위해 강제로 리렌더링
-                      setTimeout(() => {
-                        const updatedCourtNumbers =
-                          form.getValues('courtNumbers') || [];
-                        if (updatedCourtNumbers.length > 0) {
-                          const earliest = Math.min(
-                            ...updatedCourtNumbers.map((court) =>
-                              parseInt(court.startTime || '19', 10)
-                            )
-                          );
-                          const latest = Math.max(
-                            ...updatedCourtNumbers.map((court) =>
-                              parseInt(court.endTime || '22', 10)
-                            )
-                          );
-                          setEarliestStartTime(earliest);
-                          setLatestEndTime(latest);
-                        }
-                      }, 0);
-                    }}
-                  />
+                  <FormCourtNumber key={idx} form={form} idx={idx} />
                 ))}
               </div>
             )}
 
-            <FormMembers
-              form={form}
-              attendees={(
-                (form.watch('attendees') as AttendanceProps[]) || []
-              ).map((att) => ({
-                ...att,
-                userId: typeof att.userId === 'string' ? att.userId : '',
-              }))}
-              startTime={earliestStartTime}
-              endTime={latestEndTime}
-            />
-
             <div className="flex items-center gap-2 justify-between">
               <label htmlFor="status" className="font-bold">
-                참석자 등록 완료
+                참석투표시작
               </label>
               <Switch
                 id="status"

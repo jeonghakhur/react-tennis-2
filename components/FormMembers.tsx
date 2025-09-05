@@ -91,6 +91,13 @@ export default function FormMembers({
     });
   };
 
+  // 본인이 이미 참석 신청했는지 확인 (이름과 ID가 모두 일치)
+  const isMyAttendance = () => {
+    return fields.some((att) => {
+      return att.name === user.name && att.author?._ref === user.id;
+    });
+  };
+
   async function handleAddMember(myAdd?: boolean) {
     let name = '';
     let gender = '';
@@ -280,14 +287,17 @@ export default function FormMembers({
           >
             게스트참석등록
           </Button>
-          <Button
-            variant="secondary"
-            onClick={() => handleAddMember(true)}
-            type="button"
-            className="w-full"
-          >
-            나의참석등록
-          </Button>
+
+          {!isMyAttendance() && (
+            <Button
+              variant="secondary"
+              onClick={() => handleAddMember(true)}
+              type="button"
+              className="w-full"
+            >
+              나의참석등록
+            </Button>
+          )}
         </div>
 
         <div>
