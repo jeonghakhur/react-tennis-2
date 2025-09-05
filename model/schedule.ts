@@ -19,6 +19,7 @@ export const ScheduleFormSchema = z.object({
   }),
   courtNumbers: z.array(
     z.object({
+      _key: z.string().optional(),
       number: z.string().min(1, '코트 번호를 입력해주세요.'),
       startTime: z.string(),
       endTime: z.string(),
@@ -31,6 +32,11 @@ export const ScheduleFormSchema = z.object({
     .array(
       z.object({
         _key: z.string(),
+        author: z
+          .object({
+            _ref: z.string(),
+          })
+          .optional(),
         name: z.string(),
         gender: z.string(),
         startHour: z.string(),
@@ -58,7 +64,12 @@ export type ScheduleProps = {
   courtName: string;
   otherCourtName?: string;
   courtCount: string;
-  courtNumbers: { number: string; startTime: string; endTime: string }[];
+  courtNumbers: {
+    _key?: string;
+    number: string;
+    startTime: string;
+    endTime: string;
+  }[];
   attendees: AttendanceProps[];
   status:
     | 'pending'
@@ -71,6 +82,9 @@ export type ScheduleProps = {
 
 export type AttendanceProps = {
   _key: string;
+  author?: {
+    _ref: string;
+  };
   name: string;
   gender: string;
   userId: string;

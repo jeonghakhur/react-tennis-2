@@ -1,17 +1,4 @@
-import { UserProps } from '@/model/user';
-import { Check, ChevronsUpDown } from 'lucide-react';
-import useSWR from 'swr';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from './ui/command';
 import { useRef, useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
 import { FormItem, FormLabel } from './ui/form';
 import { Input } from './ui/input';
 import {
@@ -22,18 +9,30 @@ import {
   SelectValue,
 } from './ui/select';
 import { Button } from './ui/button';
-import { AttendanceProps, ScheduleFormType } from '@/model/schedule';
+import {
+  AttendanceProps,
+  GetScheduleProps,
+  ScheduleFormType,
+} from '@/model/schedule';
 import {
   useFieldArray,
   UseFormReturn,
   FieldArrayWithId,
 } from 'react-hook-form';
+import { AuthUser } from '@/model/user';
 
 type Props = {
   form: UseFormReturn<ScheduleFormType>;
   attendees: AttendanceProps[];
   startTime: number;
   endTime: number;
+  postAttendance?: (
+    data: AttendanceProps
+  ) => Promise<GetScheduleProps | undefined>;
+  removeAttendance?: (
+    attendanceKey: string
+  ) => Promise<GetScheduleProps | undefined>;
+  user: AuthUser;
 };
 
 function uuid() {
@@ -49,16 +48,12 @@ export default function FormMembers({
   form,
   endTime,
   startTime,
+  postAttendance,
+  removeAttendance,
+  user,
 }: Props) {
-  const { data: members, isLoading } = useSWR<UserProps[]>('/api/members');
-
-  const [popoverOpen, setPopoverOpen] = useState<boolean>(false);
-  const [guestField, setGuestField] = useState<boolean>(false);
-  const [memberValue, setMemberValue] = useState<string>('');
   const guestNameRef = useRef<HTMLInputElement>(null);
   const genderRef = useRef<HTMLButtonElement>(null);
-  const [memberGender, setMemberGender] = useState<string>('남성');
-  const [memberId, setMemberId] = useState<string>('');
 
   const [attendanceTime, setAttendanceTime] = useState({
     startHour: String(startTime),
@@ -77,7 +72,7 @@ export default function FormMembers({
     });
   }, [startTime, endTime]);
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields } = useFieldArray({
     control: form.control,
     name: 'attendees',
   });
@@ -85,310 +80,261 @@ export default function FormMembers({
   // console.log('members', members);
 
   const isAttendee = (name: string, userId?: string) => {
-    console.log('userId', userId);
     if (userId) {
       return fields.some(
         (attendee: FieldArrayWithId<ScheduleFormType, 'attendees', 'id'>) =>
           'userId' in attendee && attendee.userId === userId
       );
     }
-    return fields.some(
-      (attendee: FieldArrayWithId<ScheduleFormType, 'attendees', 'id'>) =>
-        (!('userId' in attendee) || !attendee.userId) && attendee.name === name
-    );
+    return fields.some((attendee) => {
+      return attendee.name === name;
+    });
   };
 
-  const handleMemberChange = (id: string) => {
-    if (id === '직접입력') {
-      setGuestField(true);
-      setMemberGender('남성');
-      setMemberId('');
-      setMemberValue('직접입력');
-    } else {
-      setGuestField(false);
-      const found = members?.find((item) => item.id === id);
-      setMemberGender(found?.gender || '남성');
-      setMemberId(found?.id || '');
-      setMemberValue(found?.name || '');
-    }
-    setPopoverOpen(false);
-  };
-
-  function handleAddMember() {
+  async function handleAddMember(myAdd?: boolean) {
     let name = '';
-    let gender = memberGender;
-    let userId = '';
-    if (guestField) {
+    let gender = '';
+    if (myAdd) {
+      name = user.name;
+      gender = user.gender;
+    } else {
       name = guestNameRef.current?.value || '';
       gender = genderRef.current?.textContent || '남성';
-      userId = '';
-    } else {
-      name = memberValue;
-      userId = memberId;
     }
+
     if (!name) return;
-    if (isAttendee(name, userId)) {
+
+    if (isAttendee(name)) {
       alert('이미 추가된 참석자입니다.');
       return;
     }
-    append({
-      _key: uuid(),
-      name,
-      gender,
-      userId: userId || '',
-      startHour: attendanceTime.startHour,
-      startMinute: attendanceTime.startMinute,
-      endHour: attendanceTime.endHour,
-      endMinute: attendanceTime.endMinute,
-    } as AttendanceProps);
-
-    // 직접 입력 필드 초기화
-    if (guestField && guestNameRef.current) {
-      guestNameRef.current.value = '';
+    // postAttendance가 제공된 경우 사용
+    if (postAttendance) {
+      const attendanceData: AttendanceProps = {
+        _key: uuid(),
+        name,
+        gender,
+        userId: user.id,
+        startHour: attendanceTime.startHour,
+        startMinute: attendanceTime.startMinute,
+        endHour: attendanceTime.endHour,
+        endMinute: attendanceTime.endMinute,
+      };
+      try {
+        await postAttendance(attendanceData);
+      } catch (error) {
+        console.error('참석자 추가 실패:', error);
+        alert('참석자 추가에 실패했습니다.');
+      } finally {
+        if (guestNameRef.current) {
+          guestNameRef.current.value = '';
+        }
+      }
     }
   }
 
-  function handleRemoveMember(index: number) {
-    remove(index);
+  async function handleRemoveMember(attendees: AttendanceProps) {
+    const isConfirmed = confirm('참석자를 삭제하시겠습니까?');
+    if (!isConfirmed) {
+      return;
+    }
+    if (removeAttendance) {
+      try {
+        await removeAttendance(attendees._key);
+      } catch (error) {
+        console.error('참석자 삭제 실패:', error);
+      }
+    }
+
+    // remove(index);
   }
 
   return (
     <div>
-      {!isLoading && (
-        <div className="space-y-4">
-          <div className="flex items-align justify-between">
-            <FormLabel htmlFor="attendeesCheck">참석자 등록</FormLabel>
-          </div>
-          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-            <PopoverTrigger asChild className="w-full">
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={popoverOpen}
-                className="flex-1 mr-2 justify-between"
-              >
-                {memberValue === '직접입력'
-                  ? '직접입력'
-                  : members?.find((item) => item.name === memberValue)?.name ||
-                    '참석자를 선택해주세요.'}
-                <ChevronsUpDown className="opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="h-[300px]">
-              <Command className="w-full">
-                <CommandInput placeholder="Search member" />
-                <CommandList>
-                  <CommandEmpty>No member found.</CommandEmpty>
-                  <CommandGroup>
-                    <CommandItem
-                      value="직접입력"
-                      onSelect={(value) => {
-                        handleMemberChange(value);
-                      }}
-                    >
-                      직접입력
-                      <Check
-                        className={cn(
-                          'ml-auto',
-                          memberValue === '직접입력'
-                            ? 'opacity-100'
-                            : 'opacity-0'
-                        )}
-                      />
-                    </CommandItem>
-                    {members
-                      ?.slice()
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((member) => (
-                        <CommandItem
-                          key={member.id}
-                          value={member.name}
-                          onSelect={() => handleMemberChange(member.id)}
-                        >
-                          {member.name}
-                          <Check
-                            className={cn(
-                              'ml-auto',
-                              memberId === member.id
-                                ? 'opacity-100'
-                                : 'opacity-0'
-                            )}
-                          />
-                        </CommandItem>
-                      ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-          {guestField && (
-            <FormItem>
-              <div className="flex gap-x-2">
-                <Input
-                  type="text"
-                  ref={guestNameRef}
-                  placeholder="참석자 이름을 입력해주세요."
-                  className="flex-1 text-sm"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                    }
-                  }}
-                  onKeyUp={(e) => {
-                    if (e.key === 'Enter' && guestNameRef.current?.value) {
-                      e.preventDefault();
-                      handleAddMember();
-                      if (guestNameRef.current) {
-                        guestNameRef.current.value = '';
-                      }
-                    }
-                  }}
-                />
-                <Select defaultValue="남성">
-                  <SelectTrigger className="basis-[100px]" ref={genderRef}>
-                    <SelectValue placeholder="성별" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="남성">남성</SelectItem>
-                    <SelectItem value="여성">여성</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </FormItem>
-          )}
-          <FormItem>
-            <div className="flex gap-x-2 items-center">
-              <Select
-                value={attendanceTime.startHour}
-                onValueChange={(value) => {
-                  if (!value) return;
-                  setAttendanceTime((pre) => ({
-                    ...pre,
-                    startHour: value,
-                  }));
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: endTime - startTime }, (_, idx) => (
-                    <SelectItem value={String(startTime + idx)} key={idx}>
-                      {String(startTime + idx)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      <div className="space-y-4">
+        <div className="flex items-align justify-between">
+          <FormLabel htmlFor="attendeesCheck">게스트 등록</FormLabel>
+        </div>
 
-              <Select
-                value={attendanceTime.startMinute}
-                onValueChange={(value) => {
-                  if (!value) return;
-                  setAttendanceTime((pre) => ({
-                    ...pre,
-                    startMinute: value,
-                  }));
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="00">00</SelectItem>
-                  <SelectItem value="30">30</SelectItem>
-                </SelectContent>
-              </Select>
-              <span>~</span>
-              <Select
-                value={attendanceTime.endHour}
-                onValueChange={(value) => {
-                  if (!value) return;
-                  setAttendanceTime((pre) => ({ ...pre, endHour: value }));
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: endTime - startTime }, (_, idx) => (
-                    <SelectItem value={`${startTime + idx + 1}`} key={idx}>
-                      {startTime + idx + 1}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={attendanceTime.endMinute}
-                onValueChange={(value) => {
-                  if (!value) return;
-                  setAttendanceTime((pre) => ({
-                    ...pre,
-                    endMinute: value,
-                  }));
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="00">00</SelectItem>
-                  <SelectItem value="30">30</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </FormItem>
+        <FormItem>
+          <div className="flex gap-x-2">
+            <Input
+              type="text"
+              ref={guestNameRef}
+              placeholder="참석자 이름을 입력해주세요."
+              className="flex-1 text-sm"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                }
+              }}
+              onKeyUp={(e) => {
+                if (e.key === 'Enter' && guestNameRef.current?.value) {
+                  e.preventDefault();
+                  handleAddMember(false);
+                  if (guestNameRef.current) {
+                    guestNameRef.current.value = '';
+                  }
+                }
+              }}
+            />
+            <Select defaultValue="남성">
+              <SelectTrigger className="basis-[100px]" ref={genderRef}>
+                <SelectValue placeholder="성별" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="남성">남성</SelectItem>
+                <SelectItem value="여성">여성</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </FormItem>
+
+        <FormItem>
+          <div className="flex gap-x-2 items-center">
+            <Select
+              value={attendanceTime.startHour}
+              onValueChange={(value) => {
+                if (!value) return;
+                setAttendanceTime((pre) => ({
+                  ...pre,
+                  startHour: value,
+                }));
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: endTime - startTime }, (_, idx) => (
+                  <SelectItem value={String(startTime + idx)} key={idx}>
+                    {String(startTime + idx)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={attendanceTime.startMinute}
+              onValueChange={(value) => {
+                if (!value) return;
+                setAttendanceTime((pre) => ({
+                  ...pre,
+                  startMinute: value,
+                }));
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="00">00</SelectItem>
+                <SelectItem value="30">30</SelectItem>
+              </SelectContent>
+            </Select>
+            <span>~</span>
+            <Select
+              value={attendanceTime.endHour}
+              onValueChange={(value) => {
+                if (!value) return;
+                setAttendanceTime((pre) => ({ ...pre, endHour: value }));
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: endTime - startTime }, (_, idx) => (
+                  <SelectItem value={`${startTime + idx + 1}`} key={idx}>
+                    {startTime + idx + 1}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={attendanceTime.endMinute}
+              onValueChange={(value) => {
+                if (!value) return;
+                setAttendanceTime((pre) => ({
+                  ...pre,
+                  endMinute: value,
+                }));
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="00">00</SelectItem>
+                <SelectItem value="30">30</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </FormItem>
+        <div className="flex gap-x-2">
           <Button
             variant="secondary"
-            onClick={handleAddMember}
+            onClick={() => handleAddMember(false)}
             type="button"
             className="w-full"
           >
-            참석자 등록
+            게스트참석등록
           </Button>
-
-          <div>
-            {attendees && attendees.length > 0 && (
-              <>
-                <div>참석자 목록</div>
-                <table className="table w-full text-center text-xs">
-                  <thead>
-                    <tr>
-                      <th>번호</th>
-                      <th>참석자명</th>
-                      <th>성별</th>
-                      <th>참석시간</th>
-                      <th>삭제</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {attendees.map((field, idx) => (
-                      <tr key={idx}>
-                        <td>{idx + 1}</td>
-                        <td>{field.name}</td>
-                        <td>{field.gender}</td>
-                        <td>
-                          {field.startHour}:{field.startMinute}~{field.endHour}:
-                          {field.endMinute}
-                        </td>
-                        <td>
-                          <Button
-                            type="button"
-                            size="xs"
-                            variant="destructive"
-                            onClick={() => handleRemoveMember(idx)}
-                          >
-                            삭제
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </>
-            )}
-          </div>
+          <Button
+            variant="secondary"
+            onClick={() => handleAddMember(true)}
+            type="button"
+            className="w-full"
+          >
+            나의참석등록
+          </Button>
         </div>
-      )}
+
+        <div>
+          {attendees && attendees.length > 0 && (
+            <>
+              <div>참석자 목록</div>
+              <table className="table w-full text-center text-xs">
+                <thead>
+                  <tr>
+                    <th>번호</th>
+                    <th>참석자명</th>
+                    <th>성별</th>
+                    <th>참석시간</th>
+                    <th>삭제</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attendees.map((attendees, idx) => (
+                    <tr key={idx}>
+                      <td>{idx + 1}</td>
+                      <td>{attendees.name}</td>
+                      <td>{attendees.gender}</td>
+                      <td>
+                        {attendees.startHour}:{attendees.startMinute}~
+                        {attendees.endHour}:{attendees.endMinute}
+                      </td>
+                      <td>
+                        <Button
+                          type="button"
+                          size="xs"
+                          variant="destructive"
+                          onClick={() => {
+                            handleRemoveMember(attendees);
+                          }}
+                          disabled={attendees.author?._ref !== user.id}
+                        >
+                          삭제
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -41,7 +41,9 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
   const {
     schedule,
     isLoading,
+    postAttendance,
     patchSchedule,
+    removeAttendance,
     removeSchedule,
     addComment,
     removeComment,
@@ -146,7 +148,8 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
     try {
       await patchSchedule(data);
       await mutate('/api/schedule', undefined, { revalidate: true });
-      router.push('/schedule');
+      alert('스케줄이 수정되었습니다.');
+      // router.push('/schedule');
     } catch (error) {
       console.error(error);
     } finally {
@@ -242,36 +245,38 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
 
               {form.watch('courtCount') && (
                 <div className="flex flex-col gap-4">
-                  {(form.watch('courtNumbers') || []).map((_, idx) => (
-                    <FormCourtNumber
-                      key={idx}
-                      form={form}
-                      idx={idx}
-                      onTimeChange={() => {
-                        // 시간이 변경될 때마다 폼을 다시 트리거하여 최소/최대 시간 재계산
-                        form.trigger('courtNumbers');
-                        // 상태 업데이트를 위해 강제로 리렌더링
-                        setTimeout(() => {
-                          const updatedCourtNumbers =
-                            form.getValues('courtNumbers') || [];
-                          if (updatedCourtNumbers.length > 0) {
-                            const earliest = Math.min(
-                              ...updatedCourtNumbers.map((court) =>
-                                parseInt(court.startTime || '19', 10)
-                              )
-                            );
-                            const latest = Math.max(
-                              ...updatedCourtNumbers.map((court) =>
-                                parseInt(court.endTime || '22', 10)
-                              )
-                            );
-                            setEarliestStartTime(earliest);
-                            setLatestEndTime(latest);
-                          }
-                        }, 0);
-                      }}
-                    />
-                  ))}
+                  {(form.watch('courtNumbers') || []).map(
+                    (courtNumber, idx) => (
+                      <FormCourtNumber
+                        key={courtNumber._key || idx}
+                        form={form}
+                        idx={idx}
+                        onTimeChange={() => {
+                          // 시간이 변경될 때마다 폼을 다시 트리거하여 최소/최대 시간 재계산
+                          form.trigger('courtNumbers');
+                          // 상태 업데이트를 위해 강제로 리렌더링
+                          setTimeout(() => {
+                            const updatedCourtNumbers =
+                              form.getValues('courtNumbers') || [];
+                            if (updatedCourtNumbers.length > 0) {
+                              const earliest = Math.min(
+                                ...updatedCourtNumbers.map((court) =>
+                                  parseInt(court.startTime || '19', 10)
+                                )
+                              );
+                              const latest = Math.max(
+                                ...updatedCourtNumbers.map((court) =>
+                                  parseInt(court.endTime || '22', 10)
+                                )
+                              );
+                              setEarliestStartTime(earliest);
+                              setLatestEndTime(latest);
+                            }
+                          }, 0);
+                        }}
+                      />
+                    )
+                  )}
                 </div>
               )}
 
@@ -281,14 +286,16 @@ export default function ScheduleDetailAdmin({ scheduleId, user }: Props) {
                   (form.watch('attendees') as AttendanceProps[]) || []
                 ).map((att) => ({
                   ...att,
-                  userId: typeof att.userId === 'string' ? att.userId : '',
                 }))}
                 startTime={earliestStartTime}
                 endTime={latestEndTime}
+                postAttendance={postAttendance}
+                removeAttendance={removeAttendance}
+                user={user}
               />
               <div className="flex items-center gap-2 justify-between">
                 <label htmlFor="status" className="font-bold">
-                  참석자등록
+                  참석투표시작
                 </label>
                 <Switch
                   id="status"

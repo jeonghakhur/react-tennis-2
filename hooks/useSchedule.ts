@@ -7,6 +7,7 @@ import {
 import useSWR, { useSWRConfig } from 'swr';
 
 async function addAttendance(scheduleId: string, attendance: AttendanceProps) {
+  console.log('addAttendance', scheduleId, attendance);
   return fetch('/api/attendance', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -122,7 +123,8 @@ export default function useSchedule(scheduleId?: string) {
     {
       revalidateOnFocus: false, // 🔹 포커스 시 다시 요청 방지
       revalidateOnReconnect: false, // 🔹 네트워크 변경 시 다시 요청 방지
-      dedupingInterval: 60000, // 1분 동안 중복 요청 방지
+      // dedupingInterval: 60000, // 1분 동안 중복 요청 방지
+      refreshInterval: 10000,
     }
   );
   const { mutate: globalMutate } = useSWRConfig();
@@ -131,10 +133,12 @@ export default function useSchedule(scheduleId?: string) {
   const attendees = schedule?.attendees;
 
   const postAttendance = async (attendance: AttendanceProps) => {
-    if (!attendees) return;
+    if (!schedule) return;
+    const currentAttendees = schedule.attendees || [];
+
     const newSchedule = {
       ...schedule,
-      attendees: [...attendees, attendance],
+      attendees: [...currentAttendees, attendance],
     };
 
     return mutate(
@@ -224,6 +228,7 @@ export default function useSchedule(scheduleId?: string) {
     if (!schedule) return;
 
     const newSchedule = { ...schedule, ...updateData };
+    console.log('newSchedule:', newSchedule);
 
     return mutate(updateSchedule(scheduleId!, updateData), {
       optimisticData: newSchedule as unknown as GetScheduleProps,

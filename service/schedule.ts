@@ -128,6 +128,7 @@ export async function updateSchedule(
   scheduleId: string,
   updateData: ScheduleFormType
 ) {
+  console.log('updateData:', updateData);
   try {
     // courtNumbers는 [{ number, startTime, endTime }] 형태의 객체 배열이어야 함
     const updatedSchedule = await client
