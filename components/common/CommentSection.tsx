@@ -128,7 +128,7 @@ export default function CommentSection({
 
       {/* 코멘트 입력 - 읽기 전용이 아닐 때만 표시 */}
       {!readOnly && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 bg-white">
+        <div className="fixed bottom-0 left-0 right-0 bg-white p-4">
           <form
             onSubmit={(e) => {
               e.preventDefault();

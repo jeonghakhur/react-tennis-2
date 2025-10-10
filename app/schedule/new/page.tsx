@@ -118,12 +118,19 @@ export default function ScheduleForm() {
     postSchedule(data)
       .then((result) => {
         console.log('✅ 서버 응답:', result);
+        setLoading(false);
+        // 생성된 스케줄의 상세 페이지로 이동
+        if (result && result._id) {
+          router.push(`/schedule/${result._id}`);
+        } else {
+          // ID가 없는 경우 목록으로 이동
+          router.push('/schedule');
+        }
       })
       .catch((error) => {
         console.error('❌ 에러:', error);
-      })
-      .finally(() => {
         setLoading(false);
+        // 에러 발생 시에도 목록으로 이동
         router.push('/schedule');
       });
   }
