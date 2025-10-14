@@ -106,6 +106,7 @@ export const authOptions = {
       const dbUser = await getUserByEmail(token.email);
 
       if (dbUser) {
+        newToken.name = dbUser.name;
         newToken.level = dbUser.level;
         newToken.gender = dbUser.gender;
       }

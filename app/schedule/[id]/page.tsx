@@ -12,7 +12,7 @@ type Props = {
 export default function Page({ params }: Props) {
   const { user, isLoading } = useAuthRedirect('/auth/signin/', 1);
   const { id } = use(params); // params를 비동기로 처리
-
+  console.log(user);
   if (isLoading) return null;
 
   if (user) {

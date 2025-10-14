@@ -268,6 +268,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
 
   // 기존 게임 데이터 가져오기
   useEffect(() => {
+    console.log('game', game);
     if (gameLoading) return;
     if (gameError) {
       console.error('❌ 게임 데이터 조회 실패:', gameError);
