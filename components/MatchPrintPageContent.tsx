@@ -205,89 +205,119 @@ export default function MatchPrintPageContent({
         </button>
       </div>
       <div className="overflow-x-auto pr-[1px]">
-        <table className="w-full border text-center font-bold table-2 text-lg whitespace-nowrap">
-          <thead>
-            <tr>
-              <th className="border p-2">시간</th>
-              {courtSet.map((court) => (
-                <th key={court} className="border p-2" colSpan={4}>
-                  {court}번
-                </th>
-              ))}
-              <th className="border p-2">대기자</th>
-            </tr>
-          </thead>
-          <tbody>
-            {timeSet.map((time) => {
-              const rowGames = courtSet.map((court: string) =>
-                games.find(
-                  (g: { time: string; court: string }) =>
-                    g.time === time && g.court === court
-                )
-              );
-              const playing = rowGames.flatMap((g) => g?.players ?? []);
-              const waiting = attendees
-                .filter(
-                  (a: {
-                    startHour: string;
-                    startMinute: string;
-                    endHour: string;
-                    endMinute: string;
-                  }) => {
-                    const start = new Date(
-                      `2023-01-01T${a.startHour}:${a.startMinute}`
-                    );
-                    const end = new Date(
-                      `2023-01-01T${a.endHour}:${a.endMinute}`
-                    );
-                    const slot = new Date(`2023-01-01T${time}:00`);
-                    return start <= slot && slot < end;
-                  }
-                )
-                .map((a) => a.name)
-                .filter((name) => !playing.includes(name));
-              return (
-                <Fragment key={time}>
-                  <tr key={time}>
-                    <td className="border " rowSpan={2}>
-                      {time}
-                    </td>
-                    {rowGames.map((_, idx) =>
-                      renderCourtCell(rowGames[idx], idx, courtColors)
-                    )}
-                    <td className="border  whitespace-nowrap" rowSpan={2}>
-                      {Array.isArray(waiting) && waiting.length > 0
-                        ? Array.from({
-                            length: Math.ceil(waiting.length / 2),
-                          }).map((_, idx) => (
-                            <span key={idx}>
-                              {waiting.slice(idx * 2, idx * 2 + 2).join(', ')}
-                              {idx < Math.ceil(waiting.length / 2) - 1 && (
-                                <br />
-                              )}
-                            </span>
-                          ))
-                        : waiting}
-                    </td>
-                  </tr>
-                  <tr>
-                    {rowGames.map((_, idx) => {
-                      if (
-                        !rowGames[idx] ||
-                        !rowGames[idx].players ||
-                        rowGames[idx].players.length < 4
-                      ) {
-                        return renderCourtCell(rowGames[idx], idx, courtColors);
-                      } else {
-                        return renderEmptyCourtCell(idx, courtColors);
+        <div className="flex">
+          {/* 고정된 시간 컬럼 */}
+          <div className="flex-shrink-0">
+            <table className="border text-center font-bold table-2 text-lg">
+              <thead>
+                <tr>
+                  <th className="border p-2 w-20">시간</th>
+                </tr>
+              </thead>
+              <tbody>
+                {timeSet.map((time) => (
+                  <Fragment key={time}>
+                    <tr>
+                      <td className="border p-2" style={{ height: '70px' }}>
+                        {time}
+                      </td>
+                    </tr>
+                    <tr></tr>
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* 스크롤 가능한 참가자 영역 */}
+          <div className="flex-1 overflow-x-auto">
+            <table className="w-full border text-center font-bold table-2 text-lg whitespace-nowrap">
+              <thead>
+                <tr>
+                  {courtSet.map((court) => (
+                    <th key={court} className="border p-2" colSpan={4}>
+                      {court}번
+                    </th>
+                  ))}
+                  <th className="border p-2">대기자</th>
+                </tr>
+              </thead>
+              <tbody>
+                {timeSet.map((time) => {
+                  const rowGames = courtSet.map((court: string) =>
+                    games.find(
+                      (g: { time: string; court: string }) =>
+                        g.time === time && g.court === court
+                    )
+                  );
+                  const playing = rowGames.flatMap((g) => g?.players ?? []);
+                  const waiting = attendees
+                    .filter(
+                      (a: {
+                        startHour: string;
+                        startMinute: string;
+                        endHour: string;
+                        endMinute: string;
+                      }) => {
+                        const start = new Date(
+                          `2023-01-01T${a.startHour}:${a.startMinute}`
+                        );
+                        const end = new Date(
+                          `2023-01-01T${a.endHour}:${a.endMinute}`
+                        );
+                        const slot = new Date(`2023-01-01T${time}:00`);
+                        return start <= slot && slot < end;
                       }
-                    })}
-                  </tr>
-                </Fragment>
-              );
-            })}
-          </tbody>
-        </table>
+                    )
+                    .map((a) => a.name)
+                    .filter((name) => !playing.includes(name));
+                  return (
+                    <Fragment key={time}>
+                      <tr key={time}>
+                        {rowGames.map((_, idx) =>
+                          renderCourtCell(rowGames[idx], idx, courtColors)
+                        )}
+                        <td className="border whitespace-nowrap" rowSpan={2}>
+                          {Array.isArray(waiting) && waiting.length > 0
+                            ? Array.from({
+                                length: Math.ceil(waiting.length / 2),
+                              }).map((_, idx) => (
+                                <span key={idx}>
+                                  {waiting
+                                    .slice(idx * 2, idx * 2 + 2)
+                                    .join(', ')}
+                                  {idx < Math.ceil(waiting.length / 2) - 1 && (
+                                    <br />
+                                  )}
+                                </span>
+                              ))
+                            : waiting}
+                        </td>
+                      </tr>
+                      <tr>
+                        {rowGames.map((_, idx) => {
+                          if (
+                            !rowGames[idx] ||
+                            !rowGames[idx].players ||
+                            rowGames[idx].players.length < 4
+                          ) {
+                            return renderCourtCell(
+                              rowGames[idx],
+                              idx,
+                              courtColors
+                            );
+                          } else {
+                            return renderEmptyCourtCell(idx, courtColors);
+                          }
+                        })}
+                      </tr>
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-2 overflow-x-auto mt-4">
