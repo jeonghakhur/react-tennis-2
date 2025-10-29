@@ -187,7 +187,9 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
   );
 
   const generateSchedule = useCallback(() => {
-    shuffleArray(attendees);
+    // attendees 배열을 복사하여 변경
+    const shuffledAttendees = [...attendees];
+    shuffleArray(shuffledAttendees);
 
     const timeSlots: string[] = [];
     let currentTime = new Date(`2023-01-01T${startTime}:00`);
@@ -208,7 +210,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
     const idleByTime: Record<string, string[]> = {};
     const gamesCount: Record<string, number> = {};
 
-    attendees.forEach((attendee) => {
+    shuffledAttendees.forEach((attendee) => {
       gamesCount[attendee.name] = 0;
     });
 
@@ -216,7 +218,7 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
     const courtAvailability = getCourtAvailabilityByTime();
 
     timeSlots.forEach((slot, slotIdx) => {
-      const available = attendees.filter(
+      const available = shuffledAttendees.filter(
         (attendee) =>
           new Date(
             `2023-01-01T${attendee.startHour}:${attendee.startMinute}`
@@ -284,13 +286,13 @@ const TennisMatchScheduler: React.FC<MatchSchedulerProps> = ({
     } else {
       generateSchedule();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     game,
     gameLoading,
     gameError,
-    calculateIdleSummary,
-    calculateGamesPlayed,
-    generateSchedule,
+    // generateSchedule을 의존성에서 제거하여 무한 루프 방지
+    // calculateIdleSummary, calculateGamesPlayed도 제거
   ]);
 
   const handlePlayersChange = useCallback(
