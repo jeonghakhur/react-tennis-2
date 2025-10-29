@@ -33,6 +33,11 @@ export default function MatchPrintPageContent({
     'bg-pink-50',
   ];
 
+  // 큰글씨 모드 여부 확인 (HTML body에 big-font 클래스가 있는지)
+  const isBigFontMode =
+    typeof document !== 'undefined' &&
+    document.documentElement.classList.contains('big-font');
+
   if (isLoading) return <Skeleton lines={5} />;
   if (!matchData) return <div>데이터 없음</div>;
 
@@ -218,7 +223,10 @@ export default function MatchPrintPageContent({
                 {timeSet.map((time) => (
                   <Fragment key={time}>
                     <tr>
-                      <td className="border p-2" style={{ height: '70px' }}>
+                      <td
+                        className="border p-2"
+                        style={{ height: isBigFontMode ? '82px' : '70px' }}
+                      >
                         {time}
                       </td>
                     </tr>
