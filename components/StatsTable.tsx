@@ -2,7 +2,7 @@
 
 import { GameResult } from '@/model/gameResult';
 import LoadingGrid from '@/components/LoadingGrid';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { useMemo, useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
@@ -242,11 +242,6 @@ function StatsTableContent({ stats }: { stats: PlayerStats[] }) {
 }
 
 export default function StatsTable() {
-  const {
-    data: games,
-    isLoading,
-    error,
-  } = useSWR<GameResult[]>('/api/games?status=done');
   // 가입된 회원 목록 불러오기
   const { data: members } = useSWR<UserProps[]>('/api/members');
   const { user } = useAuthRedirect('/', 0);
@@ -270,6 +265,16 @@ export default function StatsTable() {
       });
   }, []);
 
+  // 날짜 필터가 적용된 API URL 생성
+  const gamesApiUrl = useMemo(() => {
+    if (!startDate || !endDate) return null;
+    const start = startDate.toISOString().slice(0, 10);
+    const end = endDate.toISOString().slice(0, 10);
+    return `/api/games?status=done&startDate=${start}&endDate=${end}`;
+  }, [startDate, endDate]);
+
+  const { data: games, isLoading, error } = useSWR<GameResult[]>(gamesApiUrl);
+
   // 적용 버튼 클릭 시 동작(서버 저장/조회 등 연동 필요)
   const handleApply = async () => {
     if (!startDate || !endDate) return;
@@ -288,7 +293,10 @@ export default function StatsTable() {
         return;
       }
       alert('조회기간이 저장되었습니다!');
-      // TODO: SWR mutate 등으로 데이터 갱신 필요시 추가
+      // 데이터 갱신
+      if (gamesApiUrl) {
+        mutate(gamesApiUrl);
+      }
     } catch {
       alert('조회기간 저장 중 오류 발생');
     }
@@ -308,11 +316,12 @@ export default function StatsTable() {
     return allStats.filter((s) => memberNames.includes(s.name));
   }, [games, memberNames]);
 
-  if (isLoading) {
+  // 날짜가 아직 로드되지 않았거나 데이터 로딩 중일 때
+  if (!gamesApiUrl || isLoading) {
     return (
       <div>
         <h2 className="text-xl font-semibold text-gray-800 mb-4">전체순위</h2>
-        <LoadingGrid loading={isLoading} />
+        <LoadingGrid loading={true} />
       </div>
     );
   }
@@ -323,17 +332,6 @@ export default function StatsTable() {
         <h2 className="text-xl font-semibold text-gray-800 mb-4">전체순위</h2>
         <div className="text-center py-20 text-lg text-red-500 overflow-x-auto">
           데이터를 불러오는 중 오류가 발생했습니다.
-        </div>
-      </div>
-    );
-  }
-
-  if (stats.length === 0) {
-    return (
-      <div>
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">전체순위</h2>
-        <div className="text-center py-20 text-lg text-gray-500">
-          집계할 데이터가 없습니다.
         </div>
       </div>
     );
