@@ -1,7 +1,6 @@
 'use client';
 
 import { GameResult } from '@/model/gameResult';
-import LoadingGrid from '@/components/LoadingGrid';
 import useSWR, { mutate } from 'swr';
 import { useMemo, useState, useEffect } from 'react';
 import { Button } from './ui/button';
@@ -273,7 +272,7 @@ export default function StatsTable() {
     return `/api/games?status=done&startDate=${start}&endDate=${end}`;
   }, [startDate, endDate]);
 
-  const { data: games, isLoading, error } = useSWR<GameResult[]>(gamesApiUrl);
+  const { data: games, error } = useSWR<GameResult[]>(gamesApiUrl);
 
   // 적용 버튼 클릭 시 동작(서버 저장/조회 등 연동 필요)
   const handleApply = async () => {
@@ -317,14 +316,14 @@ export default function StatsTable() {
   }, [games, memberNames]);
 
   // 날짜가 아직 로드되지 않았거나 데이터 로딩 중일 때
-  if (!gamesApiUrl || isLoading) {
-    return (
-      <div>
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">전체순위</h2>
-        <LoadingGrid loading={true} />
-      </div>
-    );
-  }
+  // if (!gamesApiUrl || isLoading) {
+  //   return (
+  //     <div>
+  //       <h2 className="text-xl font-semibold text-gray-800 mb-4">전체순위</h2>
+  //       <LoadingGrid loading={true} />
+  //     </div>
+  //   );
+  // }
 
   if (error) {
     return (
@@ -332,6 +331,17 @@ export default function StatsTable() {
         <h2 className="text-xl font-semibold text-gray-800 mb-4">전체순위</h2>
         <div className="text-center py-20 text-lg text-red-500 overflow-x-auto">
           데이터를 불러오는 중 오류가 발생했습니다.
+        </div>
+      </div>
+    );
+  }
+
+  if (stats.length === 0) {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">전체순위</h2>
+        <div className="text-center py-20 text-lg text-gray-500">
+          조회된 데이터가 없습니다.
         </div>
       </div>
     );
