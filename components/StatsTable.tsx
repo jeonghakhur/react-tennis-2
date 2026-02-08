@@ -301,9 +301,9 @@ export default function StatsTable() {
     }
   };
 
-  // 가입된 회원 이름 목록
+  // 가입된 회원 이름 목록 (API 에러 시 members가 배열이 아닐 수 있음)
   const memberNames = useMemo(
-    () => (members ? members.map((m) => m.name) : []),
+    () => (Array.isArray(members) ? members.map((m) => m.name) : []),
     [members]
   );
 

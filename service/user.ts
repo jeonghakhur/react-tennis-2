@@ -68,6 +68,10 @@ export async function updateUserById(id: string, updatedData: UserProps) {
     .commit(); // 변경 사항 저장
 }
 
+export async function deleteUserById(id: string) {
+  return client.delete(id);
+}
+
 export async function searchUsers(keyword?: string) {
   const query = keyword
     ? `&& (name match "*${keyword}*") || (username match "*${keyword}*")`

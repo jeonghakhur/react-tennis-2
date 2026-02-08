@@ -14,19 +14,29 @@ import {
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { UserProps } from '@/model/user';
+import { useSession } from 'next-auth/react';
 import { use, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import useSWR from 'swr';
+import { useRouter } from 'next/navigation';
 
 type Props = {
   params: Promise<{ id: string }>; // params가 Promise로 감싸져 있음
 };
 
 export default function Members({ params }: Props) {
+  const router = useRouter();
+  const { data: session } = useSession();
   const { id } = use(params); // params를 비동기로 처리
   const { data: member, isLoading } = useSWR<UserProps>(`/api/members/${id}`);
   const [loading, setLoading] = useState<boolean>(isLoading);
+  const [deleting, setDeleting] = useState(false);
   const { control, register, handleSubmit, reset } = useForm<UserProps>();
+
+  const currentUserId = session?.user?.id;
+  const isAdmin =
+    typeof session?.user?.level === 'number' && session.user.level >= 4;
+  const canDelete = isAdmin && member && currentUserId !== member.id;
 
   useEffect(() => {
     if (member) {
@@ -70,6 +80,38 @@ export default function Members({ params }: Props) {
         });
         setLoading(false);
       });
+  }
+
+  async function handleDelete() {
+    if (!canDelete || !member) return;
+    if (
+      !confirm(
+        `"${member.name}" 회원을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`
+      )
+    ) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/members/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({
+          title: data.error || '삭제에 실패했습니다.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      toast({ title: '회원이 삭제되었습니다.', duration: 1500 });
+      router.push('/members');
+    } catch {
+      toast({
+        title: '삭제 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -132,10 +174,20 @@ export default function Members({ params }: Props) {
                 placeholder="마포구 상암동"
               />
             </div>
-            <div>
-              <Button type="submit" className="w-full">
+            <div className="flex gap-2">
+              <Button type="submit" className="flex-1">
                 전송
               </Button>
+              {canDelete && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={deleting}
+                  onClick={handleDelete}
+                >
+                  {deleting ? '삭제 중…' : '회원 삭제'}
+                </Button>
+              )}
             </div>
           </div>
         </form>
