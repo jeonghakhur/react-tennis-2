@@ -83,7 +83,7 @@ export const authOptions = {
           email,
           image,
           username: email.split('@')[0],
-          level: 1,
+          level: 0,
           gender,
           phone_number,
           birthday,

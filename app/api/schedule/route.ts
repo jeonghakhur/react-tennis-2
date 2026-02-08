@@ -1,9 +1,11 @@
 import { ScheduleFormSchema } from '@/model/schedule';
 import { createSchedule, getAllSchedule } from '@/service/schedule';
-import { withSessionUser } from '@/util/session';
+import { rejectIfLevelZero, withSessionUser } from '@/util/session';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET() {
+  const forbidden = await rejectIfLevelZero();
+  if (forbidden) return forbidden;
   return getAllSchedule().then((data) => NextResponse.json(data));
 }
 

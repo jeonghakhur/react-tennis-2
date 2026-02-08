@@ -8,6 +8,7 @@ import AuthContext from '@/context/AuthContext';
 import SWRConfigContext from '@/context/SWRConfigContext';
 import clsx from 'clsx';
 import ConditionalNavBar from '@/components/ConditionalNavBar';
+import LevelGuard from '@/components/LevelGuard';
 
 const notoSans = Noto_Sans({
   subsets: ['latin'],
@@ -48,8 +49,8 @@ export default function RootLayout({
           <AuthContext>
             <SWRConfigContext>
               <ConditionalNavBar />
-              {/* Studio 페이지에서 NavBar 제외 */}
-              {children}
+              {/* 레벨 0 사용자는 로그인·권한 안내 페이지만 가능 */}
+              <LevelGuard>{children}</LevelGuard>
               {/* <ThemePanel /> */}
               <Toaster />
             </SWRConfigContext>
