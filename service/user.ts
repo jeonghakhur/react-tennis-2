@@ -68,8 +68,83 @@ export async function updateUserById(id: string, updatedData: UserProps) {
     .commit(); // 변경 사항 저장
 }
 
-export async function deleteUserById(id: string) {
-  return client.delete(id);
+type RefDoc = {
+  _id: string;
+  _type: string;
+  author?: { _ref?: string };
+  attendees?: Array<{ author?: { _ref?: string }; [key: string]: unknown }>;
+  comments?: Array<{ author?: { _ref?: string }; [key: string]: unknown }>;
+  editHistory?: Array<{ author?: { _ref?: string }; [key: string]: unknown }>;
+};
+
+function stripAuthorRef<
+  T extends { author?: { _ref?: string }; [key: string]: unknown },
+>(userId: string, items: T[] | undefined): T[] | undefined {
+  if (!items?.length) return undefined;
+  let changed = false;
+  const out = items.map((item) => {
+    if (item.author?._ref === userId) {
+      changed = true;
+      const next = { ...item };
+      delete next.author;
+      return next as T;
+    }
+    return item;
+  });
+  return changed ? out : undefined;
+}
+
+/** 해당 user를 참조하는 모든 문서에서 참조를 제거한 뒤 user 삭제 (한 트랜잭션) */
+export async function deleteUserById(userId: string) {
+  const refs = await client.fetch<RefDoc[]>(
+    `*[references($userId)]{ _id, _type, author, attendees, comments, editHistory }`,
+    { userId }
+  );
+
+  const tx = client.transaction();
+
+  for (const doc of refs) {
+    if (doc._type === 'gameResult') {
+      let patch = client.patch(doc._id);
+      let hasChange = false;
+      if (doc.author?._ref === userId) {
+        patch = patch.unset(['author']);
+        hasChange = true;
+      }
+      const fixedComments = stripAuthorRef(userId, doc.comments);
+      if (fixedComments) {
+        patch = patch.set({ comments: fixedComments });
+        hasChange = true;
+      }
+      const fixedEditHistory = stripAuthorRef(userId, doc.editHistory);
+      if (fixedEditHistory) {
+        patch = patch.set({ editHistory: fixedEditHistory });
+        hasChange = true;
+      }
+      if (hasChange) tx.patch(patch);
+    } else if (doc._type === 'schedule') {
+      let patch = client.patch(doc._id);
+      let hasChange = false;
+      if (doc.author?._ref === userId) {
+        patch = patch.unset(['author']);
+        hasChange = true;
+      }
+      const fixedAttendees = stripAuthorRef(userId, doc.attendees);
+      if (fixedAttendees) {
+        patch = patch.set({ attendees: fixedAttendees });
+        hasChange = true;
+      }
+      const fixedComments = stripAuthorRef(userId, doc.comments);
+      if (fixedComments) {
+        patch = patch.set({ comments: fixedComments });
+        hasChange = true;
+      }
+      if (hasChange) tx.patch(patch);
+    }
+  }
+
+  tx.delete(userId);
+  await tx.commit({ visibility: 'async' });
 }
 
 export async function searchUsers(keyword?: string) {
